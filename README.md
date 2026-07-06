@@ -5,9 +5,10 @@ local-first defensive security analyzer. Point it at a repository, run a scan,
 watch live progress, and browse the findings — all driving the `attackmap` CLI
 you already have installed.
 
-> **Status:** early scaffold (v0.1.0-dev). Milestone **M1** (spawn the CLI +
-> decode its report) is implemented and its core is verified; the SwiftUI views
-> are a working skeleton. See the
+> **Status:** early (v0.1.0-dev). **M1** (spawn the CLI + decode its report) and
+> **M2** (Overview + Findings master-detail, live progress with ETA) are
+> implemented; the Foundation core is verified, the SwiftUI layer builds in
+> Xcode. See the
 > [implementation plan](https://github.com/mlaify/AttackMap/blob/main/docs/macos-gui-plan.md).
 
 ## What it is

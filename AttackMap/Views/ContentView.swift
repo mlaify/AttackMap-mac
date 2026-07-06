@@ -1,12 +1,25 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// M1/M2 skeleton: pick a repo, run a scan, watch live progress, and browse the
-/// resulting findings. Rich per-section views (exploitability, paths, surface,
-/// diagrams) land in later milestones.
+/// Top-level window: a control bar, a live-progress strip, and a
+/// `NavigationSplitView` over the decoded report (Overview + Findings for M2;
+/// exploitability / paths / surface / diagrams land in later milestones).
 struct ContentView: View {
     @State private var model = ScanViewModel()
     @State private var showingImporter = false
+    @State private var section: Section? = .overview
+
+    enum Section: String, CaseIterable, Identifiable, Hashable {
+        case overview = "Overview"
+        case findings = "Findings"
+        var id: String { rawValue }
+        var systemImage: String {
+            switch self {
+            case .overview: return "square.grid.2x2"
+            case .findings: return "exclamationmark.shield"
+            }
+        }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -14,7 +27,7 @@ struct ContentView: View {
             Divider()
             progressBar
             Divider()
-            content
+            resultsArea
         }
         .fileImporter(
             isPresented: $showingImporter,
@@ -27,25 +40,21 @@ struct ContentView: View {
         }
     }
 
-    // MARK: Controls
+    // MARK: Control bar
 
     private var controlBar: some View {
         HStack(spacing: 12) {
-            Button {
-                showingImporter = true
-            } label: {
-                Label(model.repoURL?.lastPathComponent ?? "Choose repo…",
-                      systemImage: "folder")
+            Button { showingImporter = true } label: {
+                Label(model.repoURL?.lastPathComponent ?? "Choose repo…", systemImage: "folder")
             }
 
             Picker("LLM", selection: $model.llmMode) {
-                ForEach(ScanConfig.LLMMode.allCases) { mode in
-                    Text(mode.label).tag(mode)
-                }
+                ForEach(ScanConfig.LLMMode.allCases) { Text($0.label).tag($0) }
             }
             .frame(maxWidth: 220)
+            .disabled(model.isScanning)
 
-            Toggle("CVE", isOn: $model.runCVE)
+            Toggle("CVE", isOn: $model.runCVE).disabled(model.isScanning)
 
             Spacer()
 
@@ -64,7 +73,7 @@ struct ContentView: View {
         .padding(12)
     }
 
-    // MARK: Progress
+    // MARK: Progress strip
 
     @ViewBuilder private var progressBar: some View {
         HStack(spacing: 10) {
@@ -74,13 +83,13 @@ struct ContentView: View {
                     ProgressView().controlSize(.small)
                     Text(model.statusLabel).foregroundStyle(.secondary)
                 } else {
-                    ProgressView(value: model.fraction)
-                        .frame(maxWidth: 260)
+                    ProgressView(value: model.fraction).frame(maxWidth: 240)
                     Text("\(Int(model.fraction * 100))%").monospacedDigit()
+                    if !model.etaText.isEmpty {
+                        Text(model.etaText).font(.caption).foregroundStyle(.secondary)
+                    }
                     Text(model.currentFile)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
+                        .foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
                 }
             case .failed(let message):
                 Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
@@ -99,36 +108,25 @@ struct ContentView: View {
 
     // MARK: Results
 
-    @ViewBuilder private var content: some View {
+    @ViewBuilder private var resultsArea: some View {
         if let report = model.report {
-            Table(report.findingsByPriority) {
-                TableColumn("Severity") { finding in
-                    Text(finding.severity.capitalized)
-                        .foregroundStyle(color(for: finding.severity))
+            NavigationSplitView {
+                List(Section.allCases, selection: $section) { item in
+                    Label(item.rawValue, systemImage: item.systemImage).tag(item)
                 }
-                .width(90)
-                TableColumn("Finding", value: \.title)
-                TableColumn("Confidence", value: \.confidence).width(100)
-                TableColumn("Exploit") { finding in
-                    Text(finding.exploitability.map(String.init) ?? "—")
-                        .monospacedDigit()
+                .navigationSplitViewColumnWidth(min: 160, ideal: 180, max: 240)
+            } detail: {
+                switch section ?? .overview {
+                case .overview: OverviewView(report: report)
+                case .findings: FindingsView(report: report)
                 }
-                .width(70)
             }
         } else {
             ContentUnavailableView(
                 "No results yet",
                 systemImage: "shield.lefthalf.filled",
                 description: Text("Run a scan to see findings here."))
-        }
-    }
-
-    private func color(for severity: String) -> Color {
-        switch Severity(severity) {
-        case .critical, .high: return .red
-        case .medium: return .orange
-        case .low: return .yellow
-        case .info, .unknown: return .secondary
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 }

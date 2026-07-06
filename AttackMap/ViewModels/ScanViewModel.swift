@@ -23,9 +23,11 @@ final class ScanViewModel {
     private(set) var currentFile: String = ""
     private(set) var fraction: Double = 0
     private(set) var indeterminate: Bool = false
+    private(set) var etaText: String = ""
     private(set) var report: Report?
 
     private let runner = ProcessRunner()
+    private var startedAt: Date?
 
     var isScanning: Bool { phase == .scanning }
     var canRun: Bool { repoURL != nil && !isScanning }
@@ -53,7 +55,9 @@ final class ScanViewModel {
         fraction = 0
         indeterminate = false
         currentFile = ""
+        etaText = ""
         statusLabel = "Starting…"
+        startedAt = Date()
 
         Task {
             do {
@@ -87,14 +91,36 @@ final class ScanViewModel {
             statusLabel = event.label ?? "Scanning files"
         case .advance:
             indeterminate = false
-            if let fraction = event.fraction { self.fraction = fraction }
+            if let fraction = event.fraction {
+                self.fraction = fraction
+                etaText = estimatedTimeRemaining(fraction: fraction)
+            }
             currentFile = event.current ?? ""
         case .stage:
             indeterminate = true
             statusLabel = event.label ?? "Analyzing"
             currentFile = ""
+            etaText = ""
         case .done, .unknown:
             break
         }
+    }
+
+    /// Linear ETA from elapsed time and the current determinate fraction.
+    /// Empty until there's enough signal to be meaningful.
+    private func estimatedTimeRemaining(fraction: Double) -> String {
+        guard let startedAt, fraction > 0.02, fraction < 1 else { return "" }
+        let elapsed = Date().timeIntervalSince(startedAt)
+        let remaining = elapsed / fraction - elapsed
+        return "~\(Self.format(duration: remaining)) left"
+    }
+
+    /// mm:ss (or h:mm) for a non-negative duration.
+    static func format(duration seconds: Double) -> String {
+        let total = Int(max(0, seconds))
+        if total >= 3600 {
+            return "\(total / 3600)h\(String(format: "%02dm", (total % 3600) / 60))"
+        }
+        return String(format: "%d:%02d", total / 60, total % 60)
     }
 }
