@@ -1,0 +1,49 @@
+# XcodeGen spec — the source of truth for the Xcode project.
+# Generate the .xcodeproj with:  xcodegen generate   (brew install xcodegen)
+# Then:  open AttackMap.xcodeproj
+name: AttackMap
+options:
+  bundleIdPrefix: io.mlaify
+  deploymentTarget:
+    macOS: "15.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"          # language mode 5 for now; tighten to 6 later
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    DEVELOPMENT_TEAM: ""          # set your team in Xcode for signing
+    CODE_SIGN_STYLE: Automatic
+
+targets:
+  AttackMap:
+    type: application
+    platform: macOS
+    sources:
+      - path: AttackMap
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.mlaify.AttackMap
+        PRODUCT_NAME: AttackMap
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_LSMinimumSystemVersion: "15.0"
+        INFOPLIST_KEY_CFBundleDisplayName: AttackMap
+        ENABLE_HARDENED_RUNTIME: YES
+        # Dev tool: NOT sandboxed. It spawns the user-installed `attackmap`
+        # CLI and reads whatever repo folder the user picks — both of which
+        # App Sandbox would block. Revisit if we ever ship to the App Store.
+        ENABLE_APP_SANDBOX: NO
+
+  AttackMapTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: AttackMapTests
+    dependencies:
+      - target: AttackMap
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.mlaify.AttackMapTests
+        GENERATE_INFOPLIST_FILE: YES

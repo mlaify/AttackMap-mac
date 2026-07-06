@@ -1,0 +1,1482 @@
+{
+  "scan": {
+    "root": "/private/var/folders/s_/yb8k_hc54n5bq8tzh8t1qjf40000gn/T/tmp.GWMuiKCJcj",
+    "languages": [
+      "python"
+    ],
+    "routes": [
+      {
+        "path": "/user",
+        "method": "GET",
+        "file": "app.py",
+        "line": 5
+      },
+      {
+        "path": "/ping",
+        "method": "GET",
+        "file": "app.py",
+        "line": 11
+      }
+    ],
+    "external_calls": [],
+    "databases": [
+      {
+        "kind": "sql",
+        "file": "app.py",
+        "line": 9,
+        "evidence_text": "return con.execute(\"SELECT * FROM users WHERE id=\" + uid).fetchall()"
+      },
+      {
+        "kind": "sqlite",
+        "file": "app.py",
+        "line": 8,
+        "evidence_text": "con = sqlite3.connect(\"x.db\")"
+      }
+    ],
+    "auth_hints": [],
+    "service_hints": [],
+    "edge_hints": [],
+    "entrypoint_hints": [],
+    "protocol_hints": [],
+    "framework_hints": [],
+    "secret_hints": [],
+    "taint_chains": [
+      {
+        "route_path": "/user",
+        "route_method": "GET",
+        "route_file": "app.py",
+        "sink_kind": "subprocess_shell",
+        "sink_file": "app.py",
+        "sink_line": 14,
+        "hops": 0,
+        "files": [
+          "app.py"
+        ],
+        "evidence_text": "os.system(\"ping -c1 \" + host)",
+        "confidence": 0.65
+      }
+    ],
+    "dependencies": [],
+    "vulnerabilities": [],
+    "authz_candidates": [],
+    "crypto_weaknesses": [],
+    "web_hardening_issues": [],
+    "code_weaknesses": [],
+    "anomalies": [],
+    "files_scanned": 1
+  },
+  "architecture_summary": "# Architecture Summary\n\n## Overview\n- AttackMap inferred a web-facing repository with 2 entry points.\n- Files scanned: 1\n- Languages detected: python\n- Inferred entry points: 2\n- Datastores detected: sql, sqlite\n- External targets detected: none\n- Auth hints observed: none\n- Secret-like env references: 0\n\n## Entry Point Concentration\n- app.py: 2 routes\n\n## Likely Review Starting Point\n- Start with `app.py`. It contains 2 of the detected routes and is the fastest place to validate exposure and trust boundaries.\n\n## Inferred Trust Boundaries\n- repo -> web (contains)\n- web -> sql (uses)\n- web -> sqlite (uses)\n\n## Analyst Notes\n- AttackMap inferred this system shape heuristically from framework patterns, dependencies, and code hints.\n- Treat this as an initial map for security review, then validate the highest-risk routes and boundaries manually.",
+  "attack_surface_summary": "# Attack Surface\n\n## Priority View\n- High-risk entry points: 0\n- Public routes detected: 2\n- Internal-only routes detected: 0\n- Routes with likely data access: 2\n- Routes with outbound trust boundaries: 0\n\n## Highest-Risk Entry Points\n- No high-risk entry points were classified\n\n## Auth And Privileged Routes\n- No dedicated auth or admin routes were classified\n\n## Public Application Routes\n- [MEDIUM] GET /ping (app.py) -> public_api, public; no auth signals observed; data store reachable\n- [MEDIUM] GET /user (app.py) -> public_api, public; no auth signals observed; data store reachable\n\n## Operational And Internal Routes\n- No health, metrics, debug, or internal routes were classified\n\n## External Dependencies\n- No explicit outbound HTTP calls detected\n\n## Secrets And Auth Hints\n- No secret-like environment variable usage detected\n- No auth-related keywords observed",
+  "defensive_review": "# Defensive Review\n\n## System Overview\n- AttackMap reviewed a web/service-facing codebase with 2 inferred entry points across 1 scanned files.\n- Raw inferred entry points: 2\n- Observed runtime/public surfaces: 2\n- Protocol/lexicon-derived surfaces (inferred): 0\n- Internal-only surfaces: 0\n- Test/example/mocked surfaces (down-weighted): 0\n- Languages: python\n- Datastores: sql, sqlite\n- External dependencies observed: 0\n- Identified assets: 1 | controls observed: 0 | control absences: 1\n\n## Notable Observations\n- No notable cross-cutting observations were generated for this scan.\n\n## ATT&CK Techniques Mapped\n- `T1059` **Command and Scripting Interpreter** \u2014 _Execution_\n- `T1078` **Valid Accounts** \u2014 _Defense Evasion / Persistence / Initial Access_\n- `T1110` **Brute Force** \u2014 _Credential Access_\n- `T1190` **Exploit Public-Facing Application** \u2014 _Initial Access_\n- `T1556` **Modify Authentication Process** \u2014 _Defense Evasion / Persistence_\n- `T1565` **Data Manipulation** \u2014 _Impact_\n\n## Detection Opportunities\n- **Detection coverage for findings without a paired insight** _(signal=log)_\n  - _Why:_ These findings did not generate cross-cutting insights but are still actionable with runtime telemetry.\n  - _Suggested rule:_ Add per-finding logging at the affected handler with a structured `{finding_id, route, status_code}` payload, and aggregate in the SIEM.\n  - _ATT&CK:_ `T1059`, `T1078`, `T1110`, `T1556`\n\n## Asset Inventory\n- **Business / operational data store** (business_data, criticality=medium) \u2014 datastore:sql; datastore:sqlite\n\n## Defensive Controls\n\n**Expected but not observed (control absences):**\n- `rate_limiting` \u00b7 Rate limiting \u2014 Public routes observed without any rate-limiting markers.\n\n## Strengths\n- No obvious secret-like environment references were detected in executable paths.\n\n## Weaknesses / Risk Hotspots\n- [HIGH | score 25.0] Request-reachable OS command execution\n- Reason: exposure=6.0, trust_boundary=4.0, reachability=3.0\n- Provenance: observed_runtime=100%, protocol_derived=0%, low_quality=0%\n- [MEDIUM | score 25.0] Public routes likely sit close to sensitive data operations\n- Reason: exposure=6.0, trust_boundary=4.0, reachability=3.0\n- Provenance: observed_runtime=100%, protocol_derived=0%, low_quality=0%\n- Hotspot [score 18.0]: GET /user (app.py:5) -> public_api / medium\n- Reason: exposure=6.0, privilege=3.0\n- Provenance: observed_runtime=100%, protocol_derived=0%, low_quality=0%\n- Hotspot [score 18.0]: GET /ping (app.py:11) -> public_api / medium\n- Reason: exposure=6.0, privilege=3.0\n- Provenance: observed_runtime=100%, protocol_derived=0%, low_quality=0%\n\n## Key Evidence Chains\n- [score 25.0] Public input into sensitive data path: Unauthorized data access or modification through a public-facing application route.\n- Reason: exposure=6.0, privilege=6.0, trust_boundary=4.0\n- Key step: Entry: An attacker uses GET /user in app.py as a public foothold\n\n## Recommendations\n- [observed] Prefer argv-list subprocess calls with shell=False. Never interpolate request data into a shell string; validate and constrain any external command inputs.\n- [observed] Validate untrusted input before it reaches business logic, enforce authorization at the route boundary, and verify that downstream queries or writes stay parameterized.\n- Validate every trust boundary hop in attack paths with explicit authn/authz and least-privilege service credentials.\n- Add targeted tests for highest-risk routes and service edges to prevent regressions in boundary enforcement.\n\n## Analyst Notes\n- This defensive review is heuristic and intended as an engineering triage starting point.\n- Validate top risks with repository-specific architecture context and runtime controls.\n- Notable observations are cross-cutting hypotheses; treat them as triage prompts, not verdicts.",
+  "defensive_review_json": {
+    "schema_version": "1.2.0",
+    "target_metadata": {
+      "root": "/private/var/folders/s_/yb8k_hc54n5bq8tzh8t1qjf40000gn/T/tmp.GWMuiKCJcj",
+      "files_scanned": 1,
+      "languages": [
+        "python"
+      ]
+    },
+    "system_overview": {
+      "repository_type": "web/service-facing",
+      "raw_inferred_entry_point_count": 2,
+      "external_call_count": 0,
+      "database_count": 2,
+      "auth_hint_count": 0,
+      "secret_hint_count": 0,
+      "asset_count": 1,
+      "control_count_present": 0,
+      "control_count_absent": 1,
+      "notable_observation_count": 0,
+      "detection_opportunity_count": 1,
+      "attack_techniques_observed_count": 6
+    },
+    "attack_surface": {
+      "total_surfaces": 2,
+      "evidence_class_counts": {
+        "observed_runtime_public": 2,
+        "observed_runtime_internal": 0,
+        "inferred_protocol": 0,
+        "inferred": 0,
+        "low_quality": 0
+      },
+      "surfaces": [
+        {
+          "method": "GET",
+          "route": "/user",
+          "file": "app.py",
+          "line": 5,
+          "category": "public_api",
+          "exposure": "public",
+          "risk": "medium",
+          "evidence_class": "observed_runtime_public",
+          "auth_signals": [],
+          "data_store_interaction": true,
+          "outbound_integration": false
+        },
+        {
+          "method": "GET",
+          "route": "/ping",
+          "file": "app.py",
+          "line": 11,
+          "category": "public_api",
+          "exposure": "public",
+          "risk": "medium",
+          "evidence_class": "observed_runtime_public",
+          "auth_signals": [],
+          "data_store_interaction": true,
+          "outbound_integration": false
+        }
+      ]
+    },
+    "assets": [
+      {
+        "id": "asset:business_data",
+        "kind": "business_data",
+        "name": "Business / operational data store",
+        "criticality": "medium",
+        "locations": [
+          "app.py"
+        ],
+        "evidence": [
+          "datastore:sql",
+          "datastore:sqlite"
+        ]
+      }
+    ],
+    "controls": [
+      {
+        "id": "control:absent:rate_limiting",
+        "kind": "rate_limiting",
+        "name": "Rate limiting",
+        "strength": "absent",
+        "scope": "global",
+        "placements": [],
+        "evidence": [],
+        "notes": "Public routes observed without any rate-limiting markers."
+      }
+    ],
+    "notable_observations": [],
+    "detection_opportunities": [
+      {
+        "id": "detect:findings:residual",
+        "title": "Detection coverage for findings without a paired insight",
+        "rationale": "These findings did not generate cross-cutting insights but are still actionable with runtime telemetry.",
+        "signal_kind": "log",
+        "suggested_rule": "Add per-finding logging at the affected handler with a structured `{finding_id, route, status_code}` payload, and aggregate in the SIEM.",
+        "related_insight_ids": [],
+        "related_finding_titles": [
+          "Request-reachable OS command execution",
+          "Public routes likely sit close to sensitive data operations"
+        ],
+        "attack_techniques": [
+          {
+            "technique_id": "T1059",
+            "name": "Command and Scripting Interpreter",
+            "tactic": "Execution",
+            "url": "https://attack.mitre.org/techniques/T1059/"
+          },
+          {
+            "technique_id": "T1078",
+            "name": "Valid Accounts",
+            "tactic": "Defense Evasion / Persistence / Initial Access",
+            "url": "https://attack.mitre.org/techniques/T1078/"
+          },
+          {
+            "technique_id": "T1110",
+            "name": "Brute Force",
+            "tactic": "Credential Access",
+            "url": "https://attack.mitre.org/techniques/T1110/"
+          },
+          {
+            "technique_id": "T1556",
+            "name": "Modify Authentication Process",
+            "tactic": "Defense Evasion / Persistence",
+            "url": "https://attack.mitre.org/techniques/T1556/"
+          },
+          {
+            "technique_id": "T1190",
+            "name": "Exploit Public-Facing Application",
+            "tactic": "Initial Access",
+            "url": "https://attack.mitre.org/techniques/T1190/"
+          },
+          {
+            "technique_id": "T1565",
+            "name": "Data Manipulation",
+            "tactic": "Impact",
+            "url": "https://attack.mitre.org/techniques/T1565/"
+          }
+        ]
+      }
+    ],
+    "attack_techniques_observed": [
+      {
+        "technique_id": "T1059",
+        "name": "Command and Scripting Interpreter",
+        "tactic": "Execution",
+        "url": "https://attack.mitre.org/techniques/T1059/"
+      },
+      {
+        "technique_id": "T1078",
+        "name": "Valid Accounts",
+        "tactic": "Defense Evasion / Persistence / Initial Access",
+        "url": "https://attack.mitre.org/techniques/T1078/"
+      },
+      {
+        "technique_id": "T1110",
+        "name": "Brute Force",
+        "tactic": "Credential Access",
+        "url": "https://attack.mitre.org/techniques/T1110/"
+      },
+      {
+        "technique_id": "T1190",
+        "name": "Exploit Public-Facing Application",
+        "tactic": "Initial Access",
+        "url": "https://attack.mitre.org/techniques/T1190/"
+      },
+      {
+        "technique_id": "T1556",
+        "name": "Modify Authentication Process",
+        "tactic": "Defense Evasion / Persistence",
+        "url": "https://attack.mitre.org/techniques/T1556/"
+      },
+      {
+        "technique_id": "T1565",
+        "name": "Data Manipulation",
+        "tactic": "Impact",
+        "url": "https://attack.mitre.org/techniques/T1565/"
+      }
+    ],
+    "strengths": [
+      {
+        "statement": "No strong defensive indicators were detected heuristically.",
+        "evidence_basis": "inferred",
+        "evidence": []
+      }
+    ],
+    "weaknesses_risk_hotspots": {
+      "weaknesses": [
+        {
+          "title": "Request-reachable OS command execution",
+          "severity": "high",
+          "confidence": "medium",
+          "evidence_basis": "observed",
+          "evidence": [
+            "route GET /user in app.py",
+            "sink at app.py:14 (command execution)",
+            "import path: app.py (0 hop(s))"
+          ],
+          "mitigation": "Prefer argv-list subprocess calls with shell=False. Never interpolate request data into a shell string; validate and constrain any external command inputs.",
+          "attack_techniques": [
+            {
+              "technique_id": "T1059",
+              "name": "Command and Scripting Interpreter",
+              "tactic": "Execution",
+              "url": "https://attack.mitre.org/techniques/T1059/"
+            }
+          ]
+        },
+        {
+          "title": "Public routes likely sit close to sensitive data operations",
+          "severity": "medium",
+          "confidence": "medium",
+          "evidence_basis": "observed",
+          "evidence": [
+            "GET /user in app.py; no auth signals observed; data store reachable",
+            "GET /ping in app.py; no auth signals observed; data store reachable"
+          ],
+          "mitigation": "Validate untrusted input before it reaches business logic, enforce authorization at the route boundary, and verify that downstream queries or writes stay parameterized.",
+          "attack_techniques": [
+            {
+              "technique_id": "T1078",
+              "name": "Valid Accounts",
+              "tactic": "Defense Evasion / Persistence / Initial Access",
+              "url": "https://attack.mitre.org/techniques/T1078/"
+            },
+            {
+              "technique_id": "T1110",
+              "name": "Brute Force",
+              "tactic": "Credential Access",
+              "url": "https://attack.mitre.org/techniques/T1110/"
+            },
+            {
+              "technique_id": "T1556",
+              "name": "Modify Authentication Process",
+              "tactic": "Defense Evasion / Persistence",
+              "url": "https://attack.mitre.org/techniques/T1556/"
+            },
+            {
+              "technique_id": "T1190",
+              "name": "Exploit Public-Facing Application",
+              "tactic": "Initial Access",
+              "url": "https://attack.mitre.org/techniques/T1190/"
+            },
+            {
+              "technique_id": "T1565",
+              "name": "Data Manipulation",
+              "tactic": "Impact",
+              "url": "https://attack.mitre.org/techniques/T1565/"
+            }
+          ]
+        }
+      ],
+      "risk_hotspots": [
+        {
+          "surface": {
+            "method": "GET",
+            "route": "/ping",
+            "file": "app.py",
+            "category": "public_api",
+            "risk": "medium",
+            "exposure": "public"
+          },
+          "evidence_class": "observed_runtime_public",
+          "notes": [
+            "Public application routes are initial footholds for probing input handling and authorization gaps.",
+            "No auth indicators were observed near this route.",
+            "Datastore usage was detected elsewhere in the repository, so route-to-data flows are plausible."
+          ]
+        },
+        {
+          "surface": {
+            "method": "GET",
+            "route": "/user",
+            "file": "app.py",
+            "category": "public_api",
+            "risk": "medium",
+            "exposure": "public"
+          },
+          "evidence_class": "observed_runtime_public",
+          "notes": [
+            "Public application routes are initial footholds for probing input handling and authorization gaps.",
+            "No auth indicators were observed near this route.",
+            "Datastore usage was detected elsewhere in the repository, so route-to-data flows are plausible."
+          ]
+        }
+      ]
+    },
+    "evidence_chains": [
+      {
+        "name": "Public input into sensitive data path",
+        "impact": "Unauthorized data access or modification through a public-facing application route.",
+        "evidence_basis": "observed",
+        "steps": [
+          "Entry: An attacker uses GET /user in app.py as a public foothold",
+          "Weak point: Input validation or authorization is weaker than the route exposure suggests",
+          "Propagation: Attacker-controlled data reaches a `sql` data store in `app.py`",
+          "Impact: Confidentiality, integrity, or authorization guarantees around application data are weakened",
+          "Evidence: data store in same file: sql (app.py); data store in same file: sqlite (app.py)"
+        ]
+      }
+    ],
+    "recommendations": [
+      {
+        "priority": "high",
+        "evidence_basis": "observed",
+        "action": "Prefer argv-list subprocess calls with shell=False. Never interpolate request data into a shell string; validate and constrain any external command inputs.",
+        "linked_finding": "Request-reachable OS command execution"
+      },
+      {
+        "priority": "medium",
+        "evidence_basis": "observed",
+        "action": "Validate untrusted input before it reaches business logic, enforce authorization at the route boundary, and verify that downstream queries or writes stay parameterized.",
+        "linked_finding": "Public routes likely sit close to sensitive data operations"
+      }
+    ],
+    "raw_structured_signals": {
+      "scan": {
+        "root": "/private/var/folders/s_/yb8k_hc54n5bq8tzh8t1qjf40000gn/T/tmp.GWMuiKCJcj",
+        "languages": [
+          "python"
+        ],
+        "routes": [
+          {
+            "path": "/user",
+            "method": "GET",
+            "file": "app.py",
+            "line": 5
+          },
+          {
+            "path": "/ping",
+            "method": "GET",
+            "file": "app.py",
+            "line": 11
+          }
+        ],
+        "external_calls": [],
+        "databases": [
+          {
+            "kind": "sql",
+            "file": "app.py",
+            "line": 9,
+            "evidence_text": "return con.execute(\"SELECT * FROM users WHERE id=\" + uid).fetchall()"
+          },
+          {
+            "kind": "sqlite",
+            "file": "app.py",
+            "line": 8,
+            "evidence_text": "con = sqlite3.connect(\"x.db\")"
+          }
+        ],
+        "auth_hints": [],
+        "service_hints": [],
+        "edge_hints": [],
+        "entrypoint_hints": [],
+        "protocol_hints": [],
+        "framework_hints": [],
+        "secret_hints": [],
+        "taint_chains": [
+          {
+            "route_path": "/user",
+            "route_method": "GET",
+            "route_file": "app.py",
+            "sink_kind": "subprocess_shell",
+            "sink_file": "app.py",
+            "sink_line": 14,
+            "hops": 0,
+            "files": [
+              "app.py"
+            ],
+            "evidence_text": "os.system(\"ping -c1 \" + host)",
+            "confidence": 0.65
+          }
+        ],
+        "dependencies": [],
+        "vulnerabilities": [],
+        "authz_candidates": [],
+        "crypto_weaknesses": [],
+        "web_hardening_issues": [],
+        "code_weaknesses": [],
+        "anomalies": [],
+        "files_scanned": 1
+      },
+      "attack_surfaces": [
+        {
+          "route": "/user",
+          "method": "GET",
+          "file": "app.py",
+          "category": "public_api",
+          "exposure": "public",
+          "risk": "medium",
+          "auth_signals": [],
+          "data_store_interaction": true,
+          "outbound_integration": false,
+          "rationale": [
+            "Public application routes are initial footholds for probing input handling and authorization gaps.",
+            "No auth indicators were observed near this route.",
+            "Datastore usage was detected elsewhere in the repository, so route-to-data flows are plausible."
+          ],
+          "line": 5
+        },
+        {
+          "route": "/ping",
+          "method": "GET",
+          "file": "app.py",
+          "category": "public_api",
+          "exposure": "public",
+          "risk": "medium",
+          "auth_signals": [],
+          "data_store_interaction": true,
+          "outbound_integration": false,
+          "rationale": [
+            "Public application routes are initial footholds for probing input handling and authorization gaps.",
+            "No auth indicators were observed near this route.",
+            "Datastore usage was detected elsewhere in the repository, so route-to-data flows are plausible."
+          ],
+          "line": 11
+        }
+      ],
+      "findings": [
+        {
+          "title": "Request-reachable OS command execution",
+          "severity": "high",
+          "evidence": [
+            "route GET /user in app.py",
+            "sink at app.py:14 (command execution)",
+            "import path: app.py (0 hop(s))"
+          ],
+          "mitigation": "Prefer argv-list subprocess calls with shell=False. Never interpolate request data into a shell string; validate and constrain any external command inputs.",
+          "confidence": "medium",
+          "attack_techniques": [
+            {
+              "technique_id": "T1059",
+              "name": "Command and Scripting Interpreter",
+              "tactic": "Execution",
+              "url": "https://attack.mitre.org/techniques/T1059/"
+            }
+          ],
+          "tags": [
+            "taint-chain",
+            "input-handling",
+            "data-risk"
+          ],
+          "score": 75,
+          "exploitability": 100,
+          "exploitability_tier": "critical"
+        },
+        {
+          "title": "Public routes likely sit close to sensitive data operations",
+          "severity": "medium",
+          "evidence": [
+            "GET /user in app.py; no auth signals observed; data store reachable",
+            "GET /ping in app.py; no auth signals observed; data store reachable"
+          ],
+          "mitigation": "Validate untrusted input before it reaches business logic, enforce authorization at the route boundary, and verify that downstream queries or writes stay parameterized.",
+          "confidence": "medium",
+          "attack_techniques": [
+            {
+              "technique_id": "T1078",
+              "name": "Valid Accounts",
+              "tactic": "Defense Evasion / Persistence / Initial Access",
+              "url": "https://attack.mitre.org/techniques/T1078/"
+            },
+            {
+              "technique_id": "T1110",
+              "name": "Brute Force",
+              "tactic": "Credential Access",
+              "url": "https://attack.mitre.org/techniques/T1110/"
+            },
+            {
+              "technique_id": "T1556",
+              "name": "Modify Authentication Process",
+              "tactic": "Defense Evasion / Persistence",
+              "url": "https://attack.mitre.org/techniques/T1556/"
+            },
+            {
+              "technique_id": "T1190",
+              "name": "Exploit Public-Facing Application",
+              "tactic": "Initial Access",
+              "url": "https://attack.mitre.org/techniques/T1190/"
+            },
+            {
+              "technique_id": "T1565",
+              "name": "Data Manipulation",
+              "tactic": "Impact",
+              "url": "https://attack.mitre.org/techniques/T1565/"
+            }
+          ],
+          "tags": [
+            "exposed-endpoint",
+            "data-risk"
+          ],
+          "score": 37,
+          "exploitability": null,
+          "exploitability_tier": null
+        }
+      ],
+      "attack_paths": [
+        {
+          "name": "Public input into sensitive data path",
+          "steps": [
+            "Entry: An attacker uses GET /user in app.py as a public foothold",
+            "Weak point: Input validation or authorization is weaker than the route exposure suggests",
+            "Propagation: Attacker-controlled data reaches a `sql` data store in `app.py`",
+            "Impact: Confidentiality, integrity, or authorization guarantees around application data are weakened",
+            "Evidence: data store in same file: sql (app.py); data store in same file: sqlite (app.py)"
+          ],
+          "impact": "Unauthorized data access or modification through a public-facing application route."
+        }
+      ],
+      "assets": [
+        {
+          "id": "asset:business_data",
+          "kind": "business_data",
+          "name": "Business / operational data store",
+          "criticality": "medium",
+          "locations": [
+            "app.py"
+          ],
+          "evidence": [
+            "datastore:sql",
+            "datastore:sqlite"
+          ]
+        }
+      ],
+      "controls": [
+        {
+          "id": "control:absent:rate_limiting",
+          "kind": "rate_limiting",
+          "name": "Rate limiting",
+          "strength": "absent",
+          "scope": "global",
+          "placements": [],
+          "evidence": [],
+          "notes": "Public routes observed without any rate-limiting markers."
+        }
+      ],
+      "notable_observations": [],
+      "detection_opportunities": [
+        {
+          "id": "detect:findings:residual",
+          "title": "Detection coverage for findings without a paired insight",
+          "rationale": "These findings did not generate cross-cutting insights but are still actionable with runtime telemetry.",
+          "signal_kind": "log",
+          "suggested_rule": "Add per-finding logging at the affected handler with a structured `{finding_id, route, status_code}` payload, and aggregate in the SIEM.",
+          "related_insight_ids": [],
+          "related_finding_titles": [
+            "Request-reachable OS command execution",
+            "Public routes likely sit close to sensitive data operations"
+          ],
+          "attack_techniques": [
+            {
+              "technique_id": "T1059",
+              "name": "Command and Scripting Interpreter",
+              "tactic": "Execution",
+              "url": "https://attack.mitre.org/techniques/T1059/"
+            },
+            {
+              "technique_id": "T1078",
+              "name": "Valid Accounts",
+              "tactic": "Defense Evasion / Persistence / Initial Access",
+              "url": "https://attack.mitre.org/techniques/T1078/"
+            },
+            {
+              "technique_id": "T1110",
+              "name": "Brute Force",
+              "tactic": "Credential Access",
+              "url": "https://attack.mitre.org/techniques/T1110/"
+            },
+            {
+              "technique_id": "T1556",
+              "name": "Modify Authentication Process",
+              "tactic": "Defense Evasion / Persistence",
+              "url": "https://attack.mitre.org/techniques/T1556/"
+            },
+            {
+              "technique_id": "T1190",
+              "name": "Exploit Public-Facing Application",
+              "tactic": "Initial Access",
+              "url": "https://attack.mitre.org/techniques/T1190/"
+            },
+            {
+              "technique_id": "T1565",
+              "name": "Data Manipulation",
+              "tactic": "Impact",
+              "url": "https://attack.mitre.org/techniques/T1565/"
+            }
+          ]
+        }
+      ]
+    },
+    "limitations_meta": {
+      "analysis_mode": "heuristic",
+      "defensive_only": true,
+      "notes": [
+        "Observed vs inferred classifications are heuristic and based on route, file, and signal patterns.",
+        "Low-quality paths (tests/fixtures/mocks/examples) are retained in raw signals but separated in evidence class counts.",
+        "Use this artifact as a triage source-of-truth; validate high-priority items with repository context and runtime controls.",
+        "Assets, controls, and notable observations are heuristic overlays; absent-control entries indicate scanner did not find evidence, not necessarily that the control is missing in production.",
+        "ATT&CK technique mappings and detection opportunities are derived from insight kinds and finding-title keywords; treat them as triage hooks for SIEM/detection-engineering work, not authoritative MITRE mappings."
+      ]
+    }
+  },
+  "review_context_pack": {
+    "schema_version": "1.0.0",
+    "artifact_type": "attackmap_review_context_pack",
+    "attackmap_review_json": {
+      "schema_version": "1.2.0",
+      "target_metadata": {
+        "root": "/private/var/folders/s_/yb8k_hc54n5bq8tzh8t1qjf40000gn/T/tmp.GWMuiKCJcj",
+        "files_scanned": 1,
+        "languages": [
+          "python"
+        ]
+      },
+      "system_overview": {
+        "repository_type": "web/service-facing",
+        "raw_inferred_entry_point_count": 2,
+        "external_call_count": 0,
+        "database_count": 2,
+        "auth_hint_count": 0,
+        "secret_hint_count": 0,
+        "asset_count": 1,
+        "control_count_present": 0,
+        "control_count_absent": 1,
+        "notable_observation_count": 0,
+        "detection_opportunity_count": 1,
+        "attack_techniques_observed_count": 6
+      },
+      "attack_surface": {
+        "total_surfaces": 2,
+        "evidence_class_counts": {
+          "observed_runtime_public": 2,
+          "observed_runtime_internal": 0,
+          "inferred_protocol": 0,
+          "inferred": 0,
+          "low_quality": 0
+        },
+        "surfaces": [
+          {
+            "method": "GET",
+            "route": "/user",
+            "file": "app.py",
+            "line": 5,
+            "category": "public_api",
+            "exposure": "public",
+            "risk": "medium",
+            "evidence_class": "observed_runtime_public",
+            "auth_signals": [],
+            "data_store_interaction": true,
+            "outbound_integration": false
+          },
+          {
+            "method": "GET",
+            "route": "/ping",
+            "file": "app.py",
+            "line": 11,
+            "category": "public_api",
+            "exposure": "public",
+            "risk": "medium",
+            "evidence_class": "observed_runtime_public",
+            "auth_signals": [],
+            "data_store_interaction": true,
+            "outbound_integration": false
+          }
+        ]
+      },
+      "assets": [
+        {
+          "id": "asset:business_data",
+          "kind": "business_data",
+          "name": "Business / operational data store",
+          "criticality": "medium",
+          "locations": [
+            "app.py"
+          ],
+          "evidence": [
+            "datastore:sql",
+            "datastore:sqlite"
+          ]
+        }
+      ],
+      "controls": [
+        {
+          "id": "control:absent:rate_limiting",
+          "kind": "rate_limiting",
+          "name": "Rate limiting",
+          "strength": "absent",
+          "scope": "global",
+          "placements": [],
+          "evidence": [],
+          "notes": "Public routes observed without any rate-limiting markers."
+        }
+      ],
+      "notable_observations": [],
+      "detection_opportunities": [
+        {
+          "id": "detect:findings:residual",
+          "title": "Detection coverage for findings without a paired insight",
+          "rationale": "These findings did not generate cross-cutting insights but are still actionable with runtime telemetry.",
+          "signal_kind": "log",
+          "suggested_rule": "Add per-finding logging at the affected handler with a structured `{finding_id, route, status_code}` payload, and aggregate in the SIEM.",
+          "related_insight_ids": [],
+          "related_finding_titles": [
+            "Request-reachable OS command execution",
+            "Public routes likely sit close to sensitive data operations"
+          ],
+          "attack_techniques": [
+            {
+              "technique_id": "T1059",
+              "name": "Command and Scripting Interpreter",
+              "tactic": "Execution",
+              "url": "https://attack.mitre.org/techniques/T1059/"
+            },
+            {
+              "technique_id": "T1078",
+              "name": "Valid Accounts",
+              "tactic": "Defense Evasion / Persistence / Initial Access",
+              "url": "https://attack.mitre.org/techniques/T1078/"
+            },
+            {
+              "technique_id": "T1110",
+              "name": "Brute Force",
+              "tactic": "Credential Access",
+              "url": "https://attack.mitre.org/techniques/T1110/"
+            },
+            {
+              "technique_id": "T1556",
+              "name": "Modify Authentication Process",
+              "tactic": "Defense Evasion / Persistence",
+              "url": "https://attack.mitre.org/techniques/T1556/"
+            },
+            {
+              "technique_id": "T1190",
+              "name": "Exploit Public-Facing Application",
+              "tactic": "Initial Access",
+              "url": "https://attack.mitre.org/techniques/T1190/"
+            },
+            {
+              "technique_id": "T1565",
+              "name": "Data Manipulation",
+              "tactic": "Impact",
+              "url": "https://attack.mitre.org/techniques/T1565/"
+            }
+          ]
+        }
+      ],
+      "attack_techniques_observed": [
+        {
+          "technique_id": "T1059",
+          "name": "Command and Scripting Interpreter",
+          "tactic": "Execution",
+          "url": "https://attack.mitre.org/techniques/T1059/"
+        },
+        {
+          "technique_id": "T1078",
+          "name": "Valid Accounts",
+          "tactic": "Defense Evasion / Persistence / Initial Access",
+          "url": "https://attack.mitre.org/techniques/T1078/"
+        },
+        {
+          "technique_id": "T1110",
+          "name": "Brute Force",
+          "tactic": "Credential Access",
+          "url": "https://attack.mitre.org/techniques/T1110/"
+        },
+        {
+          "technique_id": "T1190",
+          "name": "Exploit Public-Facing Application",
+          "tactic": "Initial Access",
+          "url": "https://attack.mitre.org/techniques/T1190/"
+        },
+        {
+          "technique_id": "T1556",
+          "name": "Modify Authentication Process",
+          "tactic": "Defense Evasion / Persistence",
+          "url": "https://attack.mitre.org/techniques/T1556/"
+        },
+        {
+          "technique_id": "T1565",
+          "name": "Data Manipulation",
+          "tactic": "Impact",
+          "url": "https://attack.mitre.org/techniques/T1565/"
+        }
+      ],
+      "strengths": [
+        {
+          "statement": "No strong defensive indicators were detected heuristically.",
+          "evidence_basis": "inferred",
+          "evidence": []
+        }
+      ],
+      "weaknesses_risk_hotspots": {
+        "weaknesses": [
+          {
+            "title": "Request-reachable OS command execution",
+            "severity": "high",
+            "confidence": "medium",
+            "evidence_basis": "observed",
+            "evidence": [
+              "route GET /user in app.py",
+              "sink at app.py:14 (command execution)",
+              "import path: app.py (0 hop(s))"
+            ],
+            "mitigation": "Prefer argv-list subprocess calls with shell=False. Never interpolate request data into a shell string; validate and constrain any external command inputs.",
+            "attack_techniques": [
+              {
+                "technique_id": "T1059",
+                "name": "Command and Scripting Interpreter",
+                "tactic": "Execution",
+                "url": "https://attack.mitre.org/techniques/T1059/"
+              }
+            ]
+          },
+          {
+            "title": "Public routes likely sit close to sensitive data operations",
+            "severity": "medium",
+            "confidence": "medium",
+            "evidence_basis": "observed",
+            "evidence": [
+              "GET /user in app.py; no auth signals observed; data store reachable",
+              "GET /ping in app.py; no auth signals observed; data store reachable"
+            ],
+            "mitigation": "Validate untrusted input before it reaches business logic, enforce authorization at the route boundary, and verify that downstream queries or writes stay parameterized.",
+            "attack_techniques": [
+              {
+                "technique_id": "T1078",
+                "name": "Valid Accounts",
+                "tactic": "Defense Evasion / Persistence / Initial Access",
+                "url": "https://attack.mitre.org/techniques/T1078/"
+              },
+              {
+                "technique_id": "T1110",
+                "name": "Brute Force",
+                "tactic": "Credential Access",
+                "url": "https://attack.mitre.org/techniques/T1110/"
+              },
+              {
+                "technique_id": "T1556",
+                "name": "Modify Authentication Process",
+                "tactic": "Defense Evasion / Persistence",
+                "url": "https://attack.mitre.org/techniques/T1556/"
+              },
+              {
+                "technique_id": "T1190",
+                "name": "Exploit Public-Facing Application",
+                "tactic": "Initial Access",
+                "url": "https://attack.mitre.org/techniques/T1190/"
+              },
+              {
+                "technique_id": "T1565",
+                "name": "Data Manipulation",
+                "tactic": "Impact",
+                "url": "https://attack.mitre.org/techniques/T1565/"
+              }
+            ]
+          }
+        ],
+        "risk_hotspots": [
+          {
+            "surface": {
+              "method": "GET",
+              "route": "/ping",
+              "file": "app.py",
+              "category": "public_api",
+              "risk": "medium",
+              "exposure": "public"
+            },
+            "evidence_class": "observed_runtime_public",
+            "notes": [
+              "Public application routes are initial footholds for probing input handling and authorization gaps.",
+              "No auth indicators were observed near this route.",
+              "Datastore usage was detected elsewhere in the repository, so route-to-data flows are plausible."
+            ]
+          },
+          {
+            "surface": {
+              "method": "GET",
+              "route": "/user",
+              "file": "app.py",
+              "category": "public_api",
+              "risk": "medium",
+              "exposure": "public"
+            },
+            "evidence_class": "observed_runtime_public",
+            "notes": [
+              "Public application routes are initial footholds for probing input handling and authorization gaps.",
+              "No auth indicators were observed near this route.",
+              "Datastore usage was detected elsewhere in the repository, so route-to-data flows are plausible."
+            ]
+          }
+        ]
+      },
+      "evidence_chains": [
+        {
+          "name": "Public input into sensitive data path",
+          "impact": "Unauthorized data access or modification through a public-facing application route.",
+          "evidence_basis": "observed",
+          "steps": [
+            "Entry: An attacker uses GET /user in app.py as a public foothold",
+            "Weak point: Input validation or authorization is weaker than the route exposure suggests",
+            "Propagation: Attacker-controlled data reaches a `sql` data store in `app.py`",
+            "Impact: Confidentiality, integrity, or authorization guarantees around application data are weakened",
+            "Evidence: data store in same file: sql (app.py); data store in same file: sqlite (app.py)"
+          ]
+        }
+      ],
+      "recommendations": [
+        {
+          "priority": "high",
+          "evidence_basis": "observed",
+          "action": "Prefer argv-list subprocess calls with shell=False. Never interpolate request data into a shell string; validate and constrain any external command inputs.",
+          "linked_finding": "Request-reachable OS command execution"
+        },
+        {
+          "priority": "medium",
+          "evidence_basis": "observed",
+          "action": "Validate untrusted input before it reaches business logic, enforce authorization at the route boundary, and verify that downstream queries or writes stay parameterized.",
+          "linked_finding": "Public routes likely sit close to sensitive data operations"
+        }
+      ],
+      "raw_structured_signals": {
+        "scan": {
+          "root": "/private/var/folders/s_/yb8k_hc54n5bq8tzh8t1qjf40000gn/T/tmp.GWMuiKCJcj",
+          "languages": [
+            "python"
+          ],
+          "routes": [
+            {
+              "path": "/user",
+              "method": "GET",
+              "file": "app.py",
+              "line": 5
+            },
+            {
+              "path": "/ping",
+              "method": "GET",
+              "file": "app.py",
+              "line": 11
+            }
+          ],
+          "external_calls": [],
+          "databases": [
+            {
+              "kind": "sql",
+              "file": "app.py",
+              "line": 9,
+              "evidence_text": "return con.execute(\"SELECT * FROM users WHERE id=\" + uid).fetchall()"
+            },
+            {
+              "kind": "sqlite",
+              "file": "app.py",
+              "line": 8,
+              "evidence_text": "con = sqlite3.connect(\"x.db\")"
+            }
+          ],
+          "auth_hints": [],
+          "service_hints": [],
+          "edge_hints": [],
+          "entrypoint_hints": [],
+          "protocol_hints": [],
+          "framework_hints": [],
+          "secret_hints": [],
+          "taint_chains": [
+            {
+              "route_path": "/user",
+              "route_method": "GET",
+              "route_file": "app.py",
+              "sink_kind": "subprocess_shell",
+              "sink_file": "app.py",
+              "sink_line": 14,
+              "hops": 0,
+              "files": [
+                "app.py"
+              ],
+              "evidence_text": "os.system(\"ping -c1 \" + host)",
+              "confidence": 0.65
+            }
+          ],
+          "dependencies": [],
+          "vulnerabilities": [],
+          "authz_candidates": [],
+          "crypto_weaknesses": [],
+          "web_hardening_issues": [],
+          "code_weaknesses": [],
+          "anomalies": [],
+          "files_scanned": 1
+        },
+        "attack_surfaces": [
+          {
+            "route": "/user",
+            "method": "GET",
+            "file": "app.py",
+            "category": "public_api",
+            "exposure": "public",
+            "risk": "medium",
+            "auth_signals": [],
+            "data_store_interaction": true,
+            "outbound_integration": false,
+            "rationale": [
+              "Public application routes are initial footholds for probing input handling and authorization gaps.",
+              "No auth indicators were observed near this route.",
+              "Datastore usage was detected elsewhere in the repository, so route-to-data flows are plausible."
+            ],
+            "line": 5
+          },
+          {
+            "route": "/ping",
+            "method": "GET",
+            "file": "app.py",
+            "category": "public_api",
+            "exposure": "public",
+            "risk": "medium",
+            "auth_signals": [],
+            "data_store_interaction": true,
+            "outbound_integration": false,
+            "rationale": [
+              "Public application routes are initial footholds for probing input handling and authorization gaps.",
+              "No auth indicators were observed near this route.",
+              "Datastore usage was detected elsewhere in the repository, so route-to-data flows are plausible."
+            ],
+            "line": 11
+          }
+        ],
+        "findings": [
+          {
+            "title": "Request-reachable OS command execution",
+            "severity": "high",
+            "evidence": [
+              "route GET /user in app.py",
+              "sink at app.py:14 (command execution)",
+              "import path: app.py (0 hop(s))"
+            ],
+            "mitigation": "Prefer argv-list subprocess calls with shell=False. Never interpolate request data into a shell string; validate and constrain any external command inputs.",
+            "confidence": "medium",
+            "attack_techniques": [
+              {
+                "technique_id": "T1059",
+                "name": "Command and Scripting Interpreter",
+                "tactic": "Execution",
+                "url": "https://attack.mitre.org/techniques/T1059/"
+              }
+            ],
+            "tags": [
+              "taint-chain",
+              "input-handling",
+              "data-risk"
+            ],
+            "score": 75,
+            "exploitability": 100,
+            "exploitability_tier": "critical"
+          },
+          {
+            "title": "Public routes likely sit close to sensitive data operations",
+            "severity": "medium",
+            "evidence": [
+              "GET /user in app.py; no auth signals observed; data store reachable",
+              "GET /ping in app.py; no auth signals observed; data store reachable"
+            ],
+            "mitigation": "Validate untrusted input before it reaches business logic, enforce authorization at the route boundary, and verify that downstream queries or writes stay parameterized.",
+            "confidence": "medium",
+            "attack_techniques": [
+              {
+                "technique_id": "T1078",
+                "name": "Valid Accounts",
+                "tactic": "Defense Evasion / Persistence / Initial Access",
+                "url": "https://attack.mitre.org/techniques/T1078/"
+              },
+              {
+                "technique_id": "T1110",
+                "name": "Brute Force",
+                "tactic": "Credential Access",
+                "url": "https://attack.mitre.org/techniques/T1110/"
+              },
+              {
+                "technique_id": "T1556",
+                "name": "Modify Authentication Process",
+                "tactic": "Defense Evasion / Persistence",
+                "url": "https://attack.mitre.org/techniques/T1556/"
+              },
+              {
+                "technique_id": "T1190",
+                "name": "Exploit Public-Facing Application",
+                "tactic": "Initial Access",
+                "url": "https://attack.mitre.org/techniques/T1190/"
+              },
+              {
+                "technique_id": "T1565",
+                "name": "Data Manipulation",
+                "tactic": "Impact",
+                "url": "https://attack.mitre.org/techniques/T1565/"
+              }
+            ],
+            "tags": [
+              "exposed-endpoint",
+              "data-risk"
+            ],
+            "score": 37,
+            "exploitability": null,
+            "exploitability_tier": null
+          }
+        ],
+        "attack_paths": [
+          {
+            "name": "Public input into sensitive data path",
+            "steps": [
+              "Entry: An attacker uses GET /user in app.py as a public foothold",
+              "Weak point: Input validation or authorization is weaker than the route exposure suggests",
+              "Propagation: Attacker-controlled data reaches a `sql` data store in `app.py`",
+              "Impact: Confidentiality, integrity, or authorization guarantees around application data are weakened",
+              "Evidence: data store in same file: sql (app.py); data store in same file: sqlite (app.py)"
+            ],
+            "impact": "Unauthorized data access or modification through a public-facing application route."
+          }
+        ],
+        "assets": [
+          {
+            "id": "asset:business_data",
+            "kind": "business_data",
+            "name": "Business / operational data store",
+            "criticality": "medium",
+            "locations": [
+              "app.py"
+            ],
+            "evidence": [
+              "datastore:sql",
+              "datastore:sqlite"
+            ]
+          }
+        ],
+        "controls": [
+          {
+            "id": "control:absent:rate_limiting",
+            "kind": "rate_limiting",
+            "name": "Rate limiting",
+            "strength": "absent",
+            "scope": "global",
+            "placements": [],
+            "evidence": [],
+            "notes": "Public routes observed without any rate-limiting markers."
+          }
+        ],
+        "notable_observations": [],
+        "detection_opportunities": [
+          {
+            "id": "detect:findings:residual",
+            "title": "Detection coverage for findings without a paired insight",
+            "rationale": "These findings did not generate cross-cutting insights but are still actionable with runtime telemetry.",
+            "signal_kind": "log",
+            "suggested_rule": "Add per-finding logging at the affected handler with a structured `{finding_id, route, status_code}` payload, and aggregate in the SIEM.",
+            "related_insight_ids": [],
+            "related_finding_titles": [
+              "Request-reachable OS command execution",
+              "Public routes likely sit close to sensitive data operations"
+            ],
+            "attack_techniques": [
+              {
+                "technique_id": "T1059",
+                "name": "Command and Scripting Interpreter",
+                "tactic": "Execution",
+                "url": "https://attack.mitre.org/techniques/T1059/"
+              },
+              {
+                "technique_id": "T1078",
+                "name": "Valid Accounts",
+                "tactic": "Defense Evasion / Persistence / Initial Access",
+                "url": "https://attack.mitre.org/techniques/T1078/"
+              },
+              {
+                "technique_id": "T1110",
+                "name": "Brute Force",
+                "tactic": "Credential Access",
+                "url": "https://attack.mitre.org/techniques/T1110/"
+              },
+              {
+                "technique_id": "T1556",
+                "name": "Modify Authentication Process",
+                "tactic": "Defense Evasion / Persistence",
+                "url": "https://attack.mitre.org/techniques/T1556/"
+              },
+              {
+                "technique_id": "T1190",
+                "name": "Exploit Public-Facing Application",
+                "tactic": "Initial Access",
+                "url": "https://attack.mitre.org/techniques/T1190/"
+              },
+              {
+                "technique_id": "T1565",
+                "name": "Data Manipulation",
+                "tactic": "Impact",
+                "url": "https://attack.mitre.org/techniques/T1565/"
+              }
+            ]
+          }
+        ]
+      },
+      "limitations_meta": {
+        "analysis_mode": "heuristic",
+        "defensive_only": true,
+        "notes": [
+          "Observed vs inferred classifications are heuristic and based on route, file, and signal patterns.",
+          "Low-quality paths (tests/fixtures/mocks/examples) are retained in raw signals but separated in evidence class counts.",
+          "Use this artifact as a triage source-of-truth; validate high-priority items with repository context and runtime controls.",
+          "Assets, controls, and notable observations are heuristic overlays; absent-control entries indicate scanner did not find evidence, not necessarily that the control is missing in production.",
+          "ATT&CK technique mappings and detection opportunities are derived from insight kinds and finding-title keywords; treat them as triage hooks for SIEM/detection-engineering work, not authoritative MITRE mappings."
+        ]
+      }
+    },
+    "analyzer_metadata_used": [
+      {
+        "name": "python-web",
+        "description": "Built-in analyzer for Python web frameworks and related security signals.",
+        "scope": "Python source files handled by the current scanner-backed web heuristics.",
+        "ecosystems": [
+          "python",
+          "fastapi",
+          "flask"
+        ]
+      },
+      {
+        "name": "default",
+        "description": "Fallback built-in analyzer for code file suffixes not claimed by a specialized built-in.",
+        "scope": "Any CODE_EXTENSIONS suffix not covered by python-web or javascript-web.",
+        "ecosystems": []
+      }
+    ],
+    "source_quality_rules": {
+      "low_quality_path_segments": [
+        "/tests/",
+        "/__tests__/",
+        "/fixtures/",
+        "/mocks/",
+        "/examples/"
+      ],
+      "handling": {
+        "default": "down-rank low-quality signals in triage and prioritization",
+        "reporting": "retain low-quality signals in raw_structured_signals with explicit evidence-class labeling",
+        "operator_note": "do not treat low-quality-only evidence as strong production exposure without corroboration"
+      }
+    },
+    "output_hints": {
+      "audience": [
+        "security engineers",
+        "software engineers",
+        "tech leads"
+      ],
+      "style": {
+        "tone": "defensive, concrete, non-hype",
+        "reasoning": "evidence-first and uncertainty-aware",
+        "disallowed": [
+          "inventing findings or architecture elements",
+          "offensive exploitation guidance"
+        ]
+      },
+      "prioritization": "focus on highest-impact, highest-confidence chains and trust-boundary issues first"
+    },
+    "domain_hints": {
+      "tags": [
+        "general"
+      ],
+      "signals": []
+    },
+    "rag_expansion_hooks": {
+      "enabled": false,
+      "notes": "local-first context pack; retrieval slots intentionally minimal for future expansion",
+      "slots": []
+    },
+    "limitations_meta": {
+      "analysis_mode": "heuristic",
+      "notes": [
+        "Domain tags are inferred heuristically from routes, hints, and file patterns.",
+        "Analyzer metadata reflects analyzers selected to run after detect-filtering."
+      ]
+    }
+  },
+  "attack_surfaces": [
+    {
+      "route": "/user",
+      "method": "GET",
+      "file": "app.py",
+      "category": "public_api",
+      "exposure": "public",
+      "risk": "medium",
+      "auth_signals": [],
+      "data_store_interaction": true,
+      "outbound_integration": false,
+      "rationale": [
+        "Public application routes are initial footholds for probing input handling and authorization gaps.",
+        "No auth indicators were observed near this route.",
+        "Datastore usage was detected elsewhere in the repository, so route-to-data flows are plausible."
+      ],
+      "line": 5
+    },
+    {
+      "route": "/ping",
+      "method": "GET",
+      "file": "app.py",
+      "category": "public_api",
+      "exposure": "public",
+      "risk": "medium",
+      "auth_signals": [],
+      "data_store_interaction": true,
+      "outbound_integration": false,
+      "rationale": [
+        "Public application routes are initial footholds for probing input handling and authorization gaps.",
+        "No auth indicators were observed near this route.",
+        "Datastore usage was detected elsewhere in the repository, so route-to-data flows are plausible."
+      ],
+      "line": 11
+    }
+  ],
+  "findings": [
+    {
+      "id": "1d8ecde16c11bc7c",
+      "title": "Request-reachable OS command execution",
+      "severity": "high",
+      "evidence": [
+        "route GET /user in app.py",
+        "sink at app.py:14 (command execution)",
+        "import path: app.py (0 hop(s))"
+      ],
+      "mitigation": "Prefer argv-list subprocess calls with shell=False. Never interpolate request data into a shell string; validate and constrain any external command inputs.",
+      "confidence": "medium",
+      "attack_techniques": [
+        {
+          "technique_id": "T1059",
+          "name": "Command and Scripting Interpreter",
+          "tactic": "Execution",
+          "url": "https://attack.mitre.org/techniques/T1059/"
+        }
+      ],
+      "tags": [
+        "taint-chain",
+        "input-handling",
+        "data-risk"
+      ],
+      "score": 75,
+      "exploitability": 100,
+      "exploitability_tier": "critical"
+    },
+    {
+      "id": "0538ad5739d680ac",
+      "title": "Public routes likely sit close to sensitive data operations",
+      "severity": "medium",
+      "evidence": [
+        "GET /user in app.py; no auth signals observed; data store reachable",
+        "GET /ping in app.py; no auth signals observed; data store reachable"
+      ],
+      "mitigation": "Validate untrusted input before it reaches business logic, enforce authorization at the route boundary, and verify that downstream queries or writes stay parameterized.",
+      "confidence": "medium",
+      "attack_techniques": [],
+      "tags": [
+        "exposed-endpoint",
+        "data-risk"
+      ],
+      "score": 37,
+      "exploitability": null,
+      "exploitability_tier": null
+    }
+  ],
+  "attack_paths": [
+    {
+      "name": "Public input into sensitive data path",
+      "steps": [
+        "Entry: An attacker uses GET /user in app.py as a public foothold",
+        "Weak point: Input validation or authorization is weaker than the route exposure suggests",
+        "Propagation: Attacker-controlled data reaches a `sql` data store in `app.py`",
+        "Impact: Confidentiality, integrity, or authorization guarantees around application data are weakened",
+        "Evidence: data store in same file: sql (app.py); data store in same file: sqlite (app.py)"
+      ],
+      "impact": "Unauthorized data access or modification through a public-facing application route."
+    }
+  ],
+  "exploitability": [
+    {
+      "subject": "GET /user \u2192 subprocess_shell",
+      "route": "/user",
+      "method": "GET",
+      "sink_kind": "subprocess_shell",
+      "location": "app.py:14",
+      "score": 100,
+      "raw_score": 100,
+      "tier": "critical",
+      "factors": [
+        {
+          "name": "reaches subprocess_shell sink",
+          "points": 35,
+          "detail": "request-derived data reaches a command execution sink at app.py:14"
+        },
+        {
+          "name": "public exposure",
+          "points": 20,
+          "detail": "entry route GET /user is public (public_api)"
+        },
+        {
+          "name": "no auth at entry",
+          "points": 20,
+          "detail": "no auth signal observed on the entry route"
+        },
+        {
+          "name": "0-hop reachability",
+          "points": 15,
+          "detail": "0 import edge(s) from route to sink"
+        },
+        {
+          "name": "datastore at sink",
+          "points": 10,
+          "detail": "a datastore is co-located with the sink"
+        }
+      ]
+    }
+  ]
+}

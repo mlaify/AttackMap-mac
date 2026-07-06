@@ -1,0 +1,21 @@
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcscmblueprint
+*.xccheckout
+
+# XcodeGen output — the .xcodeproj is generated from project.yml.
+# Run `xcodegen generate` to (re)create it locally.
+*.xcodeproj
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# macOS
+.DS_Store
+
+# AttackMap GUI scan output written into scanned repos
+.attackmap-gui/
