@@ -11,7 +11,8 @@ struct OverviewView: View {
 
     private var severityCounts: [(Severity, Int)] {
         let grouped = Dictionary(grouping: report.findings) { Severity($0.severity) }
-        return [.critical, .high, .medium, .low, .info].compactMap { sev in
+        let order: [Severity] = [.critical, .high, .medium, .low, .info]
+        return order.compactMap { sev in
             let count = grouped[sev]?.count ?? 0
             return count > 0 ? (sev, count) : nil
         }
