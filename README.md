@@ -39,6 +39,11 @@ The `.xcodeproj` is generated from [`project.yml`](project.yml) and is
 git-ignored — `project.yml` is the source of truth. The app is **not**
 sandboxed (it must spawn the CLI and read arbitrary repo folders).
 
+> **After pulling changes that add/rename Swift files, re-run `xcodegen
+> generate`.** The generated project pins a file list at generation time, so new
+> source files won't be in the target (symptom: "Cannot find 'X' in scope")
+> until you regenerate.
+
 ## Architecture
 
 ```
