@@ -15,6 +15,7 @@ struct ContentView: View {
         case exploitability = "Exploitability"
         case paths = "Attack paths"
         case surface = "Attack surface"
+        case diagrams = "Diagrams"
         case review = "Review"
         var id: String { rawValue }
         var systemImage: String {
@@ -24,6 +25,7 @@ struct ContentView: View {
             case .exploitability: return "flame"
             case .paths: return "arrow.triangle.branch"
             case .surface: return "point.topleft.down.to.point.bottomright.curvepath"
+            case .diagrams: return "flowchart"
             case .review: return "doc.text"
             }
         }
@@ -130,15 +132,38 @@ struct ContentView: View {
                 case .exploitability: ExploitabilityView(report: report)
                 case .paths: AttackPathsView(report: report)
                 case .surface: AttackSurfaceView(report: report)
+                case .diagrams: DiagramView(outputDirectory: model.outputDirectory)
                 case .review: ReviewView(report: report)
                 }
             }
         } else {
+            emptyState
+        }
+    }
+
+    @ViewBuilder private var emptyState: some View {
+        let recents = RecentScansStore.all()
+        VStack(spacing: 16) {
             ContentUnavailableView(
                 "No results yet",
                 systemImage: "shield.lefthalf.filled",
-                description: Text("Run a scan to see findings here."))
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                description: Text("Choose a repository and run a scan."))
+            if !recents.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("RECENT").font(.caption.weight(.bold)).foregroundStyle(.secondary)
+                    ForEach(recents) { recent in
+                        Button {
+                            model.repoURL = recent.url
+                        } label: {
+                            Label(recent.name, systemImage: "folder")
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .frame(maxWidth: 280)
+            }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }

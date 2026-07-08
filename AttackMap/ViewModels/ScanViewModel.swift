@@ -25,6 +25,8 @@ final class ScanViewModel {
     private(set) var indeterminate: Bool = false
     private(set) var etaText: String = ""
     private(set) var report: Report?
+    /// Directory the last successful scan wrote its artifacts to (for diagrams).
+    private(set) var outputDirectory: URL?
 
     private let runner = ProcessRunner()
     private var startedAt: Date?
@@ -34,11 +36,19 @@ final class ScanViewModel {
 
     func run() {
         guard let repoURL else { return }
-        guard let cli = CLILocator.locate(explicitPath: cliPathOverride) else {
+        // Honor an explicit CLI path from Settings (shared via UserDefaults).
+        let override = UserDefaults.standard.string(forKey: "cliPathOverride") ?? cliPathOverride
+        guard let cli = CLILocator.locate(explicitPath: override) else {
             phase = .failed(
                 "attackmap not found. Install it (brew install mlaify/tap/attackmap) "
                 + "or set its path in Settings.")
             return
+        }
+
+        // Provide the API key only when an LLM mode actually needs it.
+        var environment: [String: String] = [:]
+        if llmMode != .none, let key = Keychain.get(account: Keychain.anthropicAPIKey), !key.isEmpty {
+            environment["ANTHROPIC_API_KEY"] = key
         }
 
         let output = repoURL.appendingPathComponent(".attackmap-gui/reports", isDirectory: true)
@@ -70,11 +80,16 @@ final class ScanViewModel {
                 statusLabel = "Scanning… (update attackmap for live progress)"
             }
             do {
-                let result = try await runner.run(executable: cli, config: config, progressJSON: progressJSON) { [weak self] event in
+                let result = try await runner.run(
+                    executable: cli, config: config,
+                    progressJSON: progressJSON, environment: environment
+                ) { [weak self] event in
                     Task { @MainActor in self?.apply(event) }
                 }
                 let decoded = try Report.load(from: result.reportURL)
                 report = decoded
+                outputDirectory = config.outputDirectory
+                RecentScansStore.record(repoURL, at: Date())
                 phase = .done
                 statusLabel = "Done — \(decoded.findings.count) finding"
                     + (decoded.findings.count == 1 ? "" : "s")

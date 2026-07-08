@@ -8,5 +8,9 @@ struct AttackMapApp: App {
                 .frame(minWidth: 900, minHeight: 560)
         }
         .windowStyle(.titleBar)
+
+        Settings {
+            SettingsView()
+        }
     }
 }

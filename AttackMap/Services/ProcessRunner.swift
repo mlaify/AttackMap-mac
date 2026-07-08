@@ -50,12 +50,13 @@ final class ProcessRunner: @unchecked Sendable {
     func run(executable: URL,
              config: ScanConfig,
              progressJSON: Bool,
+             environment extraEnvironment: [String: String] = [:],
              onProgress: @escaping @Sendable (ProgressEvent) -> Void) async throws -> ScanRunResult {
         let process = Process()
         process.executableURL = executable
         process.arguments = config.arguments(progressJSON: progressJSON)
         process.currentDirectoryURL = config.repoURL
-        process.environment = ProcessInfo.processInfo.environment
+        process.environment = ProcessInfo.processInfo.environment.merging(extraEnvironment) { _, new in new }
 
         let stdoutPipe = Pipe()
         let stderrPipe = Pipe()
