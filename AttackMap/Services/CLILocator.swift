@@ -28,6 +28,26 @@ enum CLILocator {
         return nil
     }
 
+    /// Whether this `attackmap` supports `--progress-format json` (the M0
+    /// NDJSON progress stream). Older releases (≤ 0.4.0) don't, and would exit
+    /// with a usage error, so the app feature-detects and falls back.
+    static func supportsProgressJSON(executable: URL) -> Bool {
+        let process = Process()
+        process.executableURL = executable
+        process.arguments = ["analyze", "--help"]
+        let stdout = Pipe()
+        process.standardOutput = stdout
+        process.standardError = Pipe()
+        do {
+            try process.run()
+        } catch {
+            return false
+        }
+        process.waitUntilExit()
+        let data = stdout.fileHandleForReading.readDataToEndOfFile()
+        return String(decoding: data, as: UTF8.self).contains("--progress-format")
+    }
+
     /// Ask the user's login shell to resolve `attackmap` on `PATH`. A GUI app
     /// launched from Finder doesn't inherit the shell's `PATH`, so we spawn the
     /// login shell to honor the user's real environment.

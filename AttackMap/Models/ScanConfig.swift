@@ -24,13 +24,17 @@ struct ScanConfig: Equatable {
     }
 
     /// The `attackmap analyze …` argument vector for this configuration.
-    func arguments() -> [String] {
+    ///
+    /// - Parameter progressJSON: emit `--progress-format json` (NDJSON progress,
+    ///   requires attackmap ≥ the M0 release). When false, fall back to
+    ///   `--no-progress` so older CLIs don't fail on an unknown option.
+    func arguments(progressJSON: Bool) -> [String] {
         var args = [
             "analyze", repoURL.path,
             "--format", "json",
             "--output", outputDirectory.path,
-            "--progress-format", "json",
         ]
+        args += progressJSON ? ["--progress-format", "json"] : ["--no-progress"]
         if runCVE { args += ["--cve"] }
         switch llmMode {
         case .none: break

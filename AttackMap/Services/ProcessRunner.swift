@@ -49,10 +49,11 @@ final class ProcessRunner: @unchecked Sendable {
     /// event (on an arbitrary queue — marshal to the main actor in the closure).
     func run(executable: URL,
              config: ScanConfig,
+             progressJSON: Bool,
              onProgress: @escaping @Sendable (ProgressEvent) -> Void) async throws -> ScanRunResult {
         let process = Process()
         process.executableURL = executable
-        process.arguments = config.arguments()
+        process.arguments = config.arguments(progressJSON: progressJSON)
         process.currentDirectoryURL = config.repoURL
         process.environment = ProcessInfo.processInfo.environment
 

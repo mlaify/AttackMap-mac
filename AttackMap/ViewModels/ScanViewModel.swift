@@ -60,8 +60,17 @@ final class ScanViewModel {
         startedAt = Date()
 
         Task {
+            // Older CLIs (≤ 0.4.0) don't know --progress-format; feature-detect
+            // off the main actor and fall back to a plain indeterminate scan.
+            let progressJSON = await Task.detached {
+                CLILocator.supportsProgressJSON(executable: cli)
+            }.value
+            if !progressJSON {
+                indeterminate = true
+                statusLabel = "Scanning… (update attackmap for live progress)"
+            }
             do {
-                let result = try await runner.run(executable: cli, config: config) { [weak self] event in
+                let result = try await runner.run(executable: cli, config: config, progressJSON: progressJSON) { [weak self] event in
                     Task { @MainActor in self?.apply(event) }
                 }
                 let decoded = try Report.load(from: result.reportURL)
