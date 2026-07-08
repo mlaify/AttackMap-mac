@@ -12,11 +12,19 @@ struct ContentView: View {
     enum Section: String, CaseIterable, Identifiable, Hashable {
         case overview = "Overview"
         case findings = "Findings"
+        case exploitability = "Exploitability"
+        case paths = "Attack paths"
+        case surface = "Attack surface"
+        case review = "Review"
         var id: String { rawValue }
         var systemImage: String {
             switch self {
             case .overview: return "square.grid.2x2"
             case .findings: return "exclamationmark.shield"
+            case .exploitability: return "flame"
+            case .paths: return "arrow.triangle.branch"
+            case .surface: return "point.topleft.down.to.point.bottomright.curvepath"
+            case .review: return "doc.text"
             }
         }
     }
@@ -119,6 +127,10 @@ struct ContentView: View {
                 switch section ?? .overview {
                 case .overview: OverviewView(report: report)
                 case .findings: FindingsView(report: report)
+                case .exploitability: ExploitabilityView(report: report)
+                case .paths: AttackPathsView(report: report)
+                case .surface: AttackSurfaceView(report: report)
+                case .review: ReviewView(report: report)
                 }
             }
         } else {
