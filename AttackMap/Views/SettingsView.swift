@@ -14,7 +14,7 @@ struct SettingsView: View {
                     .textFieldStyle(.roundedBorder)
                 Text(detectionStatus)
                     .font(.caption)
-                    .foregroundStyle(detected ? .secondary : .red)
+                    .foregroundStyle(detected ? Color.secondary : .red)
             }
 
             Section("Anthropic API key") {
