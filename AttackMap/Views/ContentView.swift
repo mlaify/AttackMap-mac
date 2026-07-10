@@ -98,6 +98,11 @@ struct ContentView: View {
                 if model.indeterminate {
                     ProgressView().controlSize(.small)
                     Text(model.statusLabel).foregroundStyle(.secondary)
+                        .lineLimit(1).truncationMode(.tail)
+                    if !model.stageElapsedText.isEmpty {
+                        Text(model.stageElapsedText)
+                            .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                    }
                 } else {
                     ProgressView(value: model.fraction).frame(maxWidth: 240)
                     Text("\(Int(model.fraction * 100))%").monospacedDigit()

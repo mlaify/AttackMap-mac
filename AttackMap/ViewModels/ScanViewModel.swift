@@ -24,6 +24,9 @@ final class ScanViewModel {
     private(set) var fraction: Double = 0
     private(set) var indeterminate: Bool = false
     private(set) var etaText: String = ""
+    /// Live elapsed time in the current indeterminate phase (e.g. an LLM call),
+    /// so a long "thinking" step always shows a moving timer.
+    private(set) var stageElapsedText: String = ""
     private(set) var report: Report?
     /// Directory the last successful scan wrote its artifacts to (for diagrams).
     private(set) var outputDirectory: URL?
@@ -36,6 +39,8 @@ final class ScanViewModel {
     private let watcher = RepoWatcher()
     private var startedAt: Date?
     private var rescanPending = false
+    private var stageStartedAt: Date?
+    private var stageTimerTask: Task<Void, Never>?
 
     var isScanning: Bool { phase == .scanning }
     var canRun: Bool { repoURL != nil && !isScanning }
@@ -76,6 +81,7 @@ final class ScanViewModel {
         indeterminate = false
         currentFile = ""
         etaText = ""
+        stopStageTimer()
         statusLabel = "Starting…"
         startedAt = Date()
 
@@ -114,6 +120,7 @@ final class ScanViewModel {
                 let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
                 phase = .failed(message)
             }
+            stopStageTimer()
             // A file change during the scan queues exactly one follow-up run.
             if rescanPending, watchEnabled {
                 rescanPending = false
@@ -165,10 +172,12 @@ final class ScanViewModel {
         switch event.kind {
         case .begin:
             indeterminate = false
+            stopStageTimer()
             fraction = 0
             statusLabel = event.label ?? "Scanning files"
         case .advance:
             indeterminate = false
+            stopStageTimer()
             if let fraction = event.fraction {
                 self.fraction = fraction
                 etaText = estimatedTimeRemaining(fraction: fraction)
@@ -179,9 +188,33 @@ final class ScanViewModel {
             statusLabel = event.label ?? "Analyzing"
             currentFile = ""
             etaText = ""
+            startStageTimer()
         case .done, .unknown:
             break
         }
+    }
+
+    // MARK: Indeterminate-phase timer
+
+    private func startStageTimer() {
+        stageTimerTask?.cancel()
+        stageStartedAt = Date()
+        stageElapsedText = "0:00"
+        stageTimerTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(1))
+                guard let self, self.indeterminate, let start = self.stageStartedAt else { break }
+                self.stageElapsedText = Self.format(duration: Date().timeIntervalSince(start))
+            }
+        }
+    }
+
+    private func stopStageTimer() {
+        guard stageTimerTask != nil else { return }
+        stageTimerTask?.cancel()
+        stageTimerTask = nil
+        stageStartedAt = nil
+        stageElapsedText = ""
     }
 
     /// Linear ETA from elapsed time and the current determinate fraction.
