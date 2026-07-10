@@ -27,9 +27,15 @@ final class ScanViewModel {
     private(set) var report: Report?
     /// Directory the last successful scan wrote its artifacts to (for diagrams).
     private(set) var outputDirectory: URL?
+    /// New / resolved finding counts vs. the immediately prior scan of this repo.
+    private(set) var lastDelta: (added: Int, resolved: Int)?
+    /// Whether watch mode is auto-rescanning on file changes.
+    private(set) var watchEnabled = false
 
     private let runner = ProcessRunner()
+    private let watcher = RepoWatcher()
     private var startedAt: Date?
+    private var rescanPending = false
 
     var isScanning: Bool { phase == .scanning }
     var canRun: Bool { repoURL != nil && !isScanning }
@@ -50,6 +56,10 @@ final class ScanViewModel {
         if llmMode != .none, let key = Keychain.get(account: Keychain.anthropicAPIKey), !key.isEmpty {
             environment["ANTHROPIC_API_KEY"] = key
         }
+
+        // Capture the prior scan's finding IDs so we can report new/resolved.
+        let hadPrevious = report != nil
+        let previousIDs = Set(report?.findings.map(\.id) ?? [])
 
         let output = repoURL.appendingPathComponent(".attackmap-gui/reports", isDirectory: true)
         try? FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
@@ -87,6 +97,13 @@ final class ScanViewModel {
                     Task { @MainActor in self?.apply(event) }
                 }
                 let decoded = try Report.load(from: result.reportURL)
+                if hadPrevious {
+                    let newIDs = Set(decoded.findings.map(\.id))
+                    lastDelta = (added: newIDs.subtracting(previousIDs).count,
+                                 resolved: previousIDs.subtracting(newIDs).count)
+                } else {
+                    lastDelta = nil
+                }
                 report = decoded
                 outputDirectory = config.outputDirectory
                 RecentScansStore.record(repoURL, at: Date())
@@ -97,11 +114,48 @@ final class ScanViewModel {
                 let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
                 phase = .failed(message)
             }
+            // A file change during the scan queues exactly one follow-up run.
+            if rescanPending, watchEnabled {
+                rescanPending = false
+                run()
+            }
         }
     }
 
     func cancel() {
         runner.cancel()
+    }
+
+    // MARK: Repo selection & watch mode
+
+    /// Set the repository; restarts the watcher if watch mode is on.
+    func setRepo(_ url: URL) {
+        repoURL = url
+        lastDelta = nil
+        if watchEnabled { startWatching() }
+    }
+
+    /// Toggle watch mode: auto re-scan (debounced) on file changes.
+    func setWatch(_ enabled: Bool) {
+        watchEnabled = enabled
+        if enabled { startWatching() } else { watcher.stop() }
+    }
+
+    private func startWatching() {
+        guard let repoURL else { watcher.stop(); return }
+        watcher.onChange = { [weak self] in
+            Task { @MainActor in self?.watchTriggeredRescan() }
+        }
+        watcher.start(url: repoURL)
+    }
+
+    private func watchTriggeredRescan() {
+        guard watchEnabled else { return }
+        if isScanning {
+            rescanPending = true   // coalesce; the running scan re-runs on finish
+        } else {
+            run()
+        }
     }
 
     /// Fold one progress event into observable state. A scan emits several

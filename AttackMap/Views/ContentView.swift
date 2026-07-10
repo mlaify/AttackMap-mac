@@ -45,7 +45,7 @@ struct ContentView: View {
             allowsMultipleSelection: false
         ) { result in
             if case .success(let urls) = result, let url = urls.first {
-                model.repoURL = url
+                model.setRepo(url)
             }
         }
     }
@@ -65,6 +65,12 @@ struct ContentView: View {
             .disabled(model.isScanning)
 
             Toggle("CVE", isOn: $model.runCVE).disabled(model.isScanning)
+
+            Toggle("Watch", isOn: Binding(
+                get: { model.watchEnabled },
+                set: { model.setWatch($0) }))
+            .help("Auto re-scan when files change")
+            .disabled(model.repoURL == nil)
 
             Spacer()
 
@@ -107,6 +113,15 @@ struct ContentView: View {
             case .done:
                 Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
                 Text(model.statusLabel).foregroundStyle(.secondary)
+                if let delta = model.lastDelta, delta.added > 0 || delta.resolved > 0 {
+                    Text("+\(delta.added) new · \(delta.resolved) resolved")
+                        .font(.caption)
+                        .foregroundStyle(delta.added > 0 ? Color.orange : .green)
+                }
+                if model.watchEnabled {
+                    Label("Watching", systemImage: "eye")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
             case .idle:
                 Text("Choose a repository and run a scan.").foregroundStyle(.secondary)
             }
@@ -153,7 +168,7 @@ struct ContentView: View {
                     Text("RECENT").font(.caption.weight(.bold)).foregroundStyle(.secondary)
                     ForEach(recents) { recent in
                         Button {
-                            model.repoURL = recent.url
+                            model.setRepo(recent.url)
                         } label: {
                             Label(recent.name, systemImage: "folder")
                                 .frame(maxWidth: .infinity, alignment: .leading)
