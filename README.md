@@ -5,11 +5,12 @@ local-first defensive security analyzer. Point it at a repository, run a scan,
 watch live progress, and browse the findings — all driving the `attackmap` CLI
 you already have installed.
 
-> **Status:** early (v0.1.0-dev). **M1–M4** implemented: spawn the CLI + decode
+> **Status:** v0.1.0-dev, **feature-complete (M1–M5)**: spawn the CLI + decode
 > its report, Overview + Findings master-detail, exploitability / attack-path /
 > attack-surface / review views, Mermaid diagrams, Settings (CLI path + API
-> key), and recent scans. The Foundation core is verified; the SwiftUI layer
-> builds in Xcode. **M5** (watch mode) is next. See the
+> key), recent scans, and **watch mode** (debounced auto re-scan with a
+> new/resolved delta). The whole app type-checks against the SDK; run it in
+> Xcode. See the
 > [implementation plan](https://github.com/mlaify/AttackMap/blob/main/docs/macos-gui-plan.md).
 
 Diagrams render offline via a vendored copy of
