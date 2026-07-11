@@ -34,6 +34,9 @@ final class ScanViewModel {
     private(set) var lastDelta: (added: Int, resolved: Int)?
     /// Whether watch mode is auto-rescanning on file changes.
     private(set) var watchEnabled = false
+    /// Non-fatal warning surfaced after a scan (e.g. an LLM mode that produced
+    /// no output because no backend was available).
+    private(set) var warning: String?
 
     private let runner = ProcessRunner()
     private let watcher = RepoWatcher()
@@ -81,6 +84,7 @@ final class ScanViewModel {
         indeterminate = false
         currentFile = ""
         etaText = ""
+        warning = nil
         stopStageTimer()
         statusLabel = "Starting…"
         startedAt = Date()
@@ -113,6 +117,7 @@ final class ScanViewModel {
                 report = decoded
                 outputDirectory = config.outputDirectory
                 RecentScansStore.record(repoURL, at: Date())
+                warning = llmOutputWarning(config: config, stderrTail: result.stderrTail)
                 phase = .done
                 statusLabel = "Done — \(decoded.findings.count) finding"
                     + (decoded.findings.count == 1 ? "" : "s")
@@ -215,6 +220,23 @@ final class ScanViewModel {
         stageTimerTask = nil
         stageStartedAt = nil
         stageElapsedText = ""
+    }
+
+    /// If an LLM mode was requested but produced no artifact (usually: no
+    /// backend — no API key and `claude` not found), return a message that
+    /// includes the engine's own "skipped" line when we captured it.
+    private func llmOutputWarning(config: ScanConfig, stderrTail: String) -> String? {
+        guard let artifact = config.llmMode.artifactFilename else { return nil }
+        let url = config.outputDirectory.appendingPathComponent(artifact)
+        guard !FileManager.default.fileExists(atPath: url.path) else { return nil }
+        let reason = stderrTail
+            .split(separator: "\n")
+            .last { $0.lowercased().contains("skip") }
+        if let reason {
+            return "\(config.llmMode.label): \(reason)"
+        }
+        return "\(config.llmMode.label) produced no output — check that an LLM backend "
+            + "is available (an API key, or the `claude` CLI on your PATH)."
     }
 
     /// Linear ETA from elapsed time and the current determinate fraction.

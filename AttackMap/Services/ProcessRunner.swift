@@ -5,6 +5,7 @@ struct ScanRunResult {
     let exitCode: Int32
     let reportURL: URL
     let stdout: String
+    let stderrTail: String
 }
 
 enum ScanRunError: Error, LocalizedError {
@@ -38,6 +39,20 @@ private final class LineBuffer {
     }
 }
 
+/// Keeps the last N non-progress stderr lines (e.g. "LLM review skipped: …"),
+/// so a silent backend failure can be surfaced to the user.
+private final class StderrTail {
+    private var lines: [String] = []
+    private let limit = 50
+
+    func append(_ line: String) {
+        lines.append(line)
+        if lines.count > limit { lines.removeFirst(lines.count - limit) }
+    }
+
+    var text: String { lines.joined(separator: "\n") }
+}
+
 /// Spawns `attackmap analyze …`, streams NDJSON progress from stderr, and
 /// resolves with the report location on success. Not tied to any UI type; the
 /// caller hops `onProgress` to the main actor as needed.
@@ -56,7 +71,14 @@ final class ProcessRunner: @unchecked Sendable {
         process.executableURL = executable
         process.arguments = config.arguments(progressJSON: progressJSON)
         process.currentDirectoryURL = config.repoURL
-        process.environment = ProcessInfo.processInfo.environment.merging(extraEnvironment) { _, new in new }
+
+        // Start from the app env, widen PATH to the login shell's (so tools the
+        // CLI shells out to — e.g. the `claude` backend — resolve), then apply
+        // caller overrides (API key).
+        var environment = ProcessInfo.processInfo.environment
+        environment["PATH"] = LoginShellEnvironment.mergedPath(with: environment["PATH"])
+        environment.merge(extraEnvironment) { _, new in new }
+        process.environment = environment
 
         let stdoutPipe = Pipe()
         let stderrPipe = Pipe()
@@ -64,12 +86,16 @@ final class ProcessRunner: @unchecked Sendable {
         process.standardError = stderrPipe
 
         let buffer = LineBuffer()
+        let stderrTail = StderrTail()
         stderrPipe.fileHandleForReading.readabilityHandler = { handle in
             let data = handle.availableData
             guard !data.isEmpty else { return }
             for line in buffer.take(data) {
                 if let event = ProgressEvent.decode(line: line) {
                     onProgress(event)
+                } else {
+                    let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !trimmed.isEmpty { stderrTail.append(trimmed) }
                 }
             }
         }
@@ -105,7 +131,9 @@ final class ProcessRunner: @unchecked Sendable {
         guard FileManager.default.fileExists(atPath: config.reportURL.path) else {
             throw ScanRunError.reportMissing(config.reportURL)
         }
-        return ScanRunResult(exitCode: code, reportURL: config.reportURL, stdout: stdout)
+        return ScanRunResult(
+            exitCode: code, reportURL: config.reportURL,
+            stdout: stdout, stderrTail: stderrTail.text)
     }
 
     /// Terminate the in-flight scan, if any.

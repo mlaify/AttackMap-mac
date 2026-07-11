@@ -118,8 +118,13 @@ struct ContentView: View {
                 Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
                 Text(message).foregroundStyle(.secondary).lineLimit(2)
             case .done:
-                Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
-                Text(model.statusLabel).foregroundStyle(.secondary)
+                Image(systemName: model.warning == nil ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                    .foregroundStyle(model.warning == nil ? Color.green : .orange)
+                if let warning = model.warning {
+                    Text(warning).foregroundStyle(.secondary).lineLimit(2)
+                } else {
+                    Text(model.statusLabel).foregroundStyle(.secondary)
+                }
                 if let delta = model.lastDelta, delta.added > 0 || delta.resolved > 0 {
                     Text("+\(delta.added) new · \(delta.resolved) resolved")
                         .font(.caption)

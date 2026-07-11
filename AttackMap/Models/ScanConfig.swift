@@ -21,6 +21,16 @@ struct ScanConfig: Equatable {
             case .remediate: return "Remediate (--remediate)"
             }
         }
+
+        /// The markdown artifact this mode is expected to produce, if any.
+        var artifactFilename: String? {
+            switch self {
+            case .none: return nil
+            case .review: return "defensive-review-llm.md"
+            case .hunt, .huntVerify: return "vulnerability-hypotheses.md"
+            case .remediate: return "remediation.md"
+            }
+        }
     }
 
     /// The `attackmap analyze …` argument vector for this configuration.
