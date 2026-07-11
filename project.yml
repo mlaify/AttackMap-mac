@@ -35,6 +35,15 @@ targets:
         # CLI and reads whatever repo folder the user picks — both of which
         # App Sandbox would block. Revisit if we ever ship to the App Store.
         ENABLE_APP_SANDBOX: NO
+      configs:
+        # Release builds are signed for Developer ID distribution + notarization
+        # (see scripts/package.sh and .github/workflows/release.yml). Debug keeps
+        # Automatic signing for local dev. DEVELOPMENT_TEAM is supplied at build
+        # time (xcodebuild arg / CI secret), never committed.
+        Release:
+          CODE_SIGN_STYLE: Manual
+          CODE_SIGN_IDENTITY: "Developer ID Application"
+          OTHER_CODE_SIGN_FLAGS: "--timestamp"
 
   AttackMapTests:
     type: bundle.unit-test

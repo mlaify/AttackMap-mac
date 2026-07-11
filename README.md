@@ -49,6 +49,23 @@ sandboxed (it must spawn the CLI and read arbitrary repo folders).
 > source files won't be in the target (symptom: "Cannot find 'X' in scope")
 > until you regenerate.
 
+## Distribution (signed + notarized DMG)
+
+For a Developer ID–signed, notarized, stapled `.dmg` that opens without
+Gatekeeper warnings:
+
+```bash
+# Local (needs full Xcode + your Developer ID cert):
+TEAM_ID=ABCDE12345 NOTARY_PROFILE=attackmap-notary scripts/package.sh 0.1.0
+
+# CI: push a vX.Y.Z tag → .github/workflows/release.yml builds + notarizes and
+# attaches the DMG to the GitHub Release.
+```
+
+Full one-time setup (certificate, App Store Connect API key, the exact CI secret
+names) is in [`docs/RELEASE.md`](docs/RELEASE.md). Notarization requires a paid
+Apple Developer membership + a *Developer ID Application* certificate.
+
 ## Architecture
 
 ```
