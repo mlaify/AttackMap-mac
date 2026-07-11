@@ -1,6 +1,9 @@
 # Xcode
 build/
 DerivedData/
+
+# Release artifacts from scripts/package.sh (the built/signed DMG)
+dist/
 *.xcuserstate
 xcuserdata/
 *.xcscmblueprint
