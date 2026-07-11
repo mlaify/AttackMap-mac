@@ -60,21 +60,38 @@ struct ContentView: View {
 
     private var llmOptionsBar: some View {
         HStack(spacing: 12) {
-            Picker("Model", selection: $model.model) {
-                ForEach(ScanConfig.LLMModel.allCases) { Text($0.label).tag($0) }
+            Picker("Provider", selection: $model.provider) {
+                ForEach(ScanConfig.Provider.allCases) { Text($0.label).tag($0) }
             }
-            .frame(maxWidth: 200)
+            .frame(maxWidth: 190)
+
+            // The model list depends on the provider.
+            switch model.provider {
+            case .claude:
+                Picker("Model", selection: $model.model) {
+                    ForEach(ScanConfig.LLMModel.allCases) { Text($0.label).tag($0) }
+                }
+                .frame(maxWidth: 190)
+            case .openai:
+                Picker("Model", selection: $model.openAIModel) {
+                    ForEach(ScanConfig.OpenAIModel.allCases) { Text($0.label).tag($0) }
+                }
+                .frame(maxWidth: 190)
+            }
 
             Picker("Reasoning", selection: $model.effort) {
                 ForEach(ScanConfig.Effort.allCases) { Text($0.label).tag($0) }
             }
-            .frame(maxWidth: 190)
+            .frame(maxWidth: 180)
 
-            Toggle("Fast", isOn: $model.fast)
-                .disabled(!model.model.fastCapable)
-                .help(model.model.fastCapable
-                      ? "~2.5× faster output (premium). Needs an API key in Settings."
-                      : "Fast mode is only available on Opus 4.8 / 4.7.")
+            // Fast mode is Claude-only (Opus 4.8/4.7); hidden for OpenAI.
+            if model.provider == .claude {
+                Toggle("Fast", isOn: $model.fast)
+                    .disabled(!model.model.fastCapable)
+                    .help(model.model.fastCapable
+                          ? "~2.5× faster output (premium). Needs an API key in Settings."
+                          : "Fast mode is only available on Opus 4.8 / 4.7.")
+            }
 
             Spacer()
         }

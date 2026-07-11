@@ -16,7 +16,9 @@ final class ScanViewModel {
     var cliPathOverride: String = ""
     var runCVE: Bool = false
     var llmMode: ScanConfig.LLMMode = .none
+    var provider: ScanConfig.Provider = .claude
     var model: ScanConfig.LLMModel = .opus48
+    var openAIModel: ScanConfig.OpenAIModel = .codex
     var effort: ScanConfig.Effort = .high
     var fast: Bool = false
 
@@ -62,10 +64,20 @@ final class ScanViewModel {
             return
         }
 
-        // Provide the API key only when an LLM mode actually needs it.
+        // Provide the API key only when an LLM mode actually needs it, and only
+        // the one matching the selected provider.
         var environment: [String: String] = [:]
-        if llmMode != .none, let key = Keychain.get(account: Keychain.anthropicAPIKey), !key.isEmpty {
-            environment["ANTHROPIC_API_KEY"] = key
+        if llmMode != .none {
+            switch provider {
+            case .claude:
+                if let key = Keychain.get(account: Keychain.anthropicAPIKey), !key.isEmpty {
+                    environment["ANTHROPIC_API_KEY"] = key
+                }
+            case .openai:
+                if let key = Keychain.get(account: Keychain.openAIAPIKey), !key.isEmpty {
+                    environment["OPENAI_API_KEY"] = key
+                }
+            }
         }
 
         // Capture the prior scan's finding IDs so we can report new/resolved.
@@ -79,7 +91,9 @@ final class ScanViewModel {
             outputDirectory: output,
             runCVE: runCVE,
             llmMode: llmMode,
+            provider: provider,
             model: model,
+            openAIModel: openAIModel,
             effort: effort,
             fast: fast,
             baselineURL: nil)
@@ -105,6 +119,16 @@ final class ScanViewModel {
             if !progressJSON {
                 indeterminate = true
                 statusLabel = "Scanning… (update attackmap for live progress)"
+            }
+            // The OpenAI provider needs the --llm-provider flag; rather than
+            // silently switch back to Claude (a different model entirely), stop
+            // with a clear message if the installed CLI predates it.
+            if config.llmMode != .none, config.provider == .openai, !caps.llmProvider {
+                phase = .failed(
+                    "This attackmap build doesn't support the OpenAI/Codex provider. "
+                    + "Update to attackmap ≥ 0.4.3 (brew upgrade attackmap) to use it.")
+                stopStageTimer()
+                return
             }
             // Fast mode needs the --llm-speed flag; drop it on older CLIs.
             if config.fast && !caps.llmSpeed {

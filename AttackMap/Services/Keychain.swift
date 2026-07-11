@@ -1,10 +1,12 @@
 import Foundation
 import Security
 
-/// Minimal generic-password Keychain wrapper for the Anthropic API key. The key
-/// is passed to `attackmap` via the environment only when an LLM mode runs.
+/// Minimal generic-password Keychain wrapper for the LLM API keys. A key is
+/// passed to `attackmap` via the environment only when an LLM mode runs, and
+/// only the one matching the selected provider.
 enum Keychain {
     static let anthropicAPIKey = "ANTHROPIC_API_KEY"
+    static let openAIAPIKey = "OPENAI_API_KEY"
     private static let service = "io.mlaify.AttackMap"
 
     private static func baseQuery(_ account: String) -> [String: Any] {

@@ -33,16 +33,19 @@ enum CLILocator {
     /// feature-detects (one `analyze --help` probe) and adapts:
     /// - `progressJSON` → `--progress-format json` (the M0 NDJSON stream; ≥ 0.4.1)
     /// - `llmSpeed` → `--llm-speed fast` (Fast mode; ≥ the 0.4.3 release)
+    /// - `llmProvider` → `--llm-provider openai` (OpenAI/Codex; ≥ the 0.4.3 release)
     struct Capabilities {
         var progressJSON: Bool
         var llmSpeed: Bool
+        var llmProvider: Bool
     }
 
     static func capabilities(executable: URL) -> Capabilities {
         let help = analyzeHelpText(executable: executable)
         return Capabilities(
             progressJSON: help.contains("--progress-format"),
-            llmSpeed: help.contains("--llm-speed"))
+            llmSpeed: help.contains("--llm-speed"),
+            llmProvider: help.contains("--llm-provider"))
     }
 
     private static func analyzeHelpText(executable: URL) -> String {

@@ -7,10 +7,20 @@ struct ScanConfig: Equatable {
     var outputDirectory: URL
     var runCVE: Bool = false
     var llmMode: LLMMode = .none
+    var provider: Provider = .claude
     var model: LLMModel = .opus48
+    var openAIModel: OpenAIModel = .codex
     var effort: Effort = .high
     var fast: Bool = false
     var baselineURL: URL?
+
+    /// LLM provider (`--llm-provider`). Claude is the default and needs no flag;
+    /// OpenAI emits `--llm-provider openai` (requires attackmap ≥ 0.4.3).
+    enum Provider: String, CaseIterable, Identifiable, Equatable {
+        case claude, openai
+        var id: String { rawValue }
+        var label: String { self == .openai ? "OpenAI / Codex" : "Claude" }
+    }
 
     /// Claude models the engine accepts for `--llm-model` (verified IDs).
     enum LLMModel: String, CaseIterable, Identifiable, Equatable {
@@ -33,6 +43,25 @@ struct ScanConfig: Equatable {
         }
         /// Fast mode is Opus 4.8 / 4.7 only.
         var fastCapable: Bool { self == .opus48 || self == .opus47 }
+    }
+
+    /// OpenAI/Codex model presets for `--llm-model`. `gpt-5-codex` is the safe
+    /// default (code-optimized, Responses API); the point releases are presets
+    /// for convenience — the engine passes any `--llm-model` string through.
+    enum OpenAIModel: String, CaseIterable, Identifiable, Equatable {
+        case codex = "gpt-5-codex"
+        case gpt55 = "gpt-5.5"
+        case gpt54 = "gpt-5.4"
+        case gpt54mini = "gpt-5.4-mini"
+        var id: String { rawValue }
+        var label: String {
+            switch self {
+            case .codex: return "GPT-5-Codex"
+            case .gpt55: return "GPT-5.5"
+            case .gpt54: return "GPT-5.4"
+            case .gpt54mini: return "GPT-5.4 mini"
+            }
+        }
     }
 
     /// Reasoning level (`--llm-effort`).
@@ -86,11 +115,23 @@ struct ScanConfig: Equatable {
         case .huntVerify: args += ["--hunt", "--verify"]
         case .remediate: args += ["--remediate"]
         }
-        // Model / reasoning / speed apply only when an LLM mode runs.
+        // Provider / model / reasoning / speed apply only when an LLM mode runs.
         if llmMode != .none {
-            args += ["--llm-model", model.rawValue, "--llm-effort", effort.rawValue]
-            if fast && model.fastCapable {
-                args += ["--llm-speed", "fast"]
+            switch provider {
+            case .claude:
+                // Claude is the engine default; omit --llm-provider so older
+                // CLIs that predate the flag still work.
+                args += ["--llm-model", model.rawValue, "--llm-effort", effort.rawValue]
+                if fast && model.fastCapable {
+                    args += ["--llm-speed", "fast"]
+                }
+            case .openai:
+                args += [
+                    "--llm-provider", "openai",
+                    "--llm-model", openAIModel.rawValue,
+                    "--llm-effort", effort.rawValue,
+                ]
+                // Fast mode is Claude-only; never emit it for OpenAI.
             }
         }
         if let baselineURL { args += ["--baseline", baselineURL.path] }
