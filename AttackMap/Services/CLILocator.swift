@@ -28,10 +28,24 @@ enum CLILocator {
         return nil
     }
 
-    /// Whether this `attackmap` supports `--progress-format json` (the M0
-    /// NDJSON progress stream). Older releases (≤ 0.4.0) don't, and would exit
-    /// with a usage error, so the app feature-detects and falls back.
-    static func supportsProgressJSON(executable: URL) -> Bool {
+    /// Which optional `analyze` flags this `attackmap` supports. Older releases
+    /// don't recognize newer flags and would exit with a usage error, so the app
+    /// feature-detects (one `analyze --help` probe) and adapts:
+    /// - `progressJSON` → `--progress-format json` (the M0 NDJSON stream; ≥ 0.4.1)
+    /// - `llmSpeed` → `--llm-speed fast` (Fast mode; ≥ the 0.4.3 release)
+    struct Capabilities {
+        var progressJSON: Bool
+        var llmSpeed: Bool
+    }
+
+    static func capabilities(executable: URL) -> Capabilities {
+        let help = analyzeHelpText(executable: executable)
+        return Capabilities(
+            progressJSON: help.contains("--progress-format"),
+            llmSpeed: help.contains("--llm-speed"))
+    }
+
+    private static func analyzeHelpText(executable: URL) -> String {
         let process = Process()
         process.executableURL = executable
         process.arguments = ["analyze", "--help"]
@@ -41,11 +55,11 @@ enum CLILocator {
         do {
             try process.run()
         } catch {
-            return false
+            return ""
         }
         process.waitUntilExit()
         let data = stdout.fileHandleForReading.readDataToEndOfFile()
-        return String(decoding: data, as: UTF8.self).contains("--progress-format")
+        return String(decoding: data, as: UTF8.self)
     }
 
     /// Ask the user's login shell to resolve `attackmap` on `PATH`. A GUI app

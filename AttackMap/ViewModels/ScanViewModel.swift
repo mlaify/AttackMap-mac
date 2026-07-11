@@ -74,7 +74,7 @@ final class ScanViewModel {
 
         let output = repoURL.appendingPathComponent(".attackmap-gui/reports", isDirectory: true)
         try? FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
-        let config = ScanConfig(
+        var config = ScanConfig(
             repoURL: repoURL,
             outputDirectory: output,
             runCVE: runCVE,
@@ -96,14 +96,19 @@ final class ScanViewModel {
         startedAt = Date()
 
         Task {
-            // Older CLIs (≤ 0.4.0) don't know --progress-format; feature-detect
-            // off the main actor and fall back to a plain indeterminate scan.
-            let progressJSON = await Task.detached {
-                CLILocator.supportsProgressJSON(executable: cli)
+            // Older CLIs don't know newer flags; feature-detect off the main
+            // actor and adapt so we never pass an unknown option (exit 2).
+            let caps = await Task.detached {
+                CLILocator.capabilities(executable: cli)
             }.value
+            let progressJSON = caps.progressJSON
             if !progressJSON {
                 indeterminate = true
                 statusLabel = "Scanning… (update attackmap for live progress)"
+            }
+            // Fast mode needs the --llm-speed flag; drop it on older CLIs.
+            if config.fast && !caps.llmSpeed {
+                config.fast = false
             }
             do {
                 let result = try await runner.run(
