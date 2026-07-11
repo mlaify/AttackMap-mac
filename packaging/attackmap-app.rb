@@ -5,7 +5,7 @@ cask "attackmap-app" do
   url "https://github.com/mlaify/AttackMap-mac/releases/download/v#{version}/AttackMap-#{version}.dmg",
       verified: "github.com/mlaify/AttackMap-mac/"
   name "AttackMap"
-  desc "Native macOS GUI for the AttackMap security analyzer"
+  desc "GUI for the AttackMap defensive security analyzer"
   homepage "https://github.com/mlaify/AttackMap-mac"
 
   livecheck do
@@ -14,13 +14,13 @@ cask "attackmap-app" do
   end
 
   depends_on formula: "mlaify/tap/attackmap"
-  depends_on macos: ">= :sequoia"
+  depends_on macos: :sequoia
 
   app "AttackMap.app"
 
   zap trash: [
-    "~/Library/Preferences/io.mlaify.AttackMap.plist",
     "~/Library/Application Support/io.mlaify.AttackMap",
     "~/Library/Caches/io.mlaify.AttackMap",
+    "~/Library/Preferences/io.mlaify.AttackMap.plist",
   ]
 end
