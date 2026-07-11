@@ -25,10 +25,14 @@ final class RepoWatcher {
 
     func start(url: URL) {
         stop()
-        let callback: FSEventStreamCallback = { _, info, count, eventPaths, _, _ in
+        let callback: FSEventStreamCallback = { _, info, _, eventPaths, _, _ in
             guard let info else { return }
             let watcher = Unmanaged<RepoWatcher>.fromOpaque(info).takeUnretainedValue()
-            let paths = unsafeBitCast(eventPaths, to: NSArray.self) as? [String] ?? []
+            // Valid only because the stream is created with UseCFTypes below, so
+            // `eventPaths` is a CFArray of CFString (toll-free bridged to
+            // NSArray). Without that flag it would be a C `char **` and this
+            // cast would crash with EXC_BAD_ACCESS.
+            guard let paths = unsafeBitCast(eventPaths, to: NSArray.self) as? [String] else { return }
             watcher.handle(paths: paths)
         }
         var context = FSEventStreamContext(
@@ -36,7 +40,9 @@ final class RepoWatcher {
             info: Unmanaged.passUnretained(self).toOpaque(),
             retain: nil, release: nil, copyDescription: nil)
         let flags = FSEventStreamCreateFlags(
-            kFSEventStreamCreateFlagFileEvents | kFSEventStreamCreateFlagNoDefer)
+            kFSEventStreamCreateFlagUseCFTypes
+                | kFSEventStreamCreateFlagFileEvents
+                | kFSEventStreamCreateFlagNoDefer)
         guard let stream = FSEventStreamCreate(
             kCFAllocatorDefault, callback, &context,
             [url.path] as CFArray,
