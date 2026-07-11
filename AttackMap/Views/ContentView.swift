@@ -17,6 +17,7 @@ struct ContentView: View {
         case surface = "Attack surface"
         case diagrams = "Diagrams"
         case review = "Review"
+        case aiReview = "AI Review"
         var id: String { rawValue }
         var systemImage: String {
             switch self {
@@ -27,6 +28,7 @@ struct ContentView: View {
             case .surface: return "point.topleft.down.to.point.bottomright.curvepath"
             case .diagrams: return "flowchart"
             case .review: return "doc.text"
+            case .aiReview: return "sparkles"
             }
         }
     }
@@ -154,6 +156,7 @@ struct ContentView: View {
                 case .surface: AttackSurfaceView(report: report)
                 case .diagrams: DiagramView(outputDirectory: model.outputDirectory)
                 case .review: ReviewView(report: report)
+                case .aiReview: AIReviewView(outputDirectory: model.outputDirectory)
                 }
             }
         } else {

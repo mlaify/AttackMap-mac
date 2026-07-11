@@ -9,10 +9,7 @@ struct ReviewView: View {
     var body: some View {
         if let markdown = report.defensiveReviewMarkdown, !markdown.isEmpty {
             ScrollView {
-                Text(attributed(markdown))
-                    .textSelection(.enabled)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(20)
+                MarkdownText(markdown: markdown).padding(20)
             }
         } else {
             ContentUnavailableView(
@@ -20,12 +17,5 @@ struct ReviewView: View {
                 systemImage: "doc.text",
                 description: Text("The defensive review is only generated in the full report."))
         }
-    }
-
-    private func attributed(_ markdown: String) -> AttributedString {
-        let options = AttributedString.MarkdownParsingOptions(
-            interpretedSyntax: .inlineOnlyPreservingWhitespace)
-        return (try? AttributedString(markdown: markdown, options: options))
-            ?? AttributedString(markdown)
     }
 }
