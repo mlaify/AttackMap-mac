@@ -24,6 +24,16 @@ does not reimplement any analysis — it spawns `attackmap analyze … --format 
 `attackmap-report.json` artifacts. Because it shells out to the installed CLI,
 there's no bundled Python and no notarization required for local use.
 
+## Install
+
+```sh
+brew install --cask mlaify/tap/attackmap-app   # also pulls the attackmap CLI
+brew upgrade --cask attackmap-app              # update later
+```
+
+The cask is published on each release (signed + notarized DMG) and updates
+through Homebrew alongside the CLI. To build from source instead, read on.
+
 ## Requirements
 
 - **macOS 15 (Sequoia)** or later
@@ -65,6 +75,19 @@ TEAM_ID=ABCDE12345 NOTARY_PROFILE=attackmap-notary scripts/package.sh 0.1.0
 Full one-time setup (certificate, App Store Connect API key, the exact CI secret
 names) is in [`docs/RELEASE.md`](docs/RELEASE.md). Notarization requires a paid
 Apple Developer membership + a *Developer ID Application* certificate.
+
+## Branding & app icon
+
+The icon and wordmark live in [`branding/`](branding/). The app icon is defined
+by [`branding/AppIcon-master.svg`](branding/AppIcon-master.svg); regenerate the
+`Assets.xcassets/AppIcon.appiconset` PNGs after editing it:
+
+```bash
+brew install librsvg     # one-time (provides rsvg-convert)
+scripts/make-icon.sh     # writes the 10 macOS icon sizes; commit them
+```
+
+The generated PNGs are committed so builds and CI don't need a rasterizer.
 
 ## Architecture
 

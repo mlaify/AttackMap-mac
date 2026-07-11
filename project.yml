@@ -30,6 +30,10 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_LSMinimumSystemVersion: "15.0"
         INFOPLIST_KEY_CFBundleDisplayName: AttackMap
+        # App icon lives in Assets.xcassets/AppIcon.appiconset. Generate the PNGs
+        # from branding/AppIcon-master.svg with scripts/make-icon.sh, then commit
+        # them (builds/CI use the committed PNGs — no rasterizer needed).
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ENABLE_HARDENED_RUNTIME: YES
         # Dev tool: NOT sandboxed. It spawns the user-installed `attackmap`
         # CLI and reads whatever repo folder the user picks — both of which

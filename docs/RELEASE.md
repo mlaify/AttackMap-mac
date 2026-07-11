@@ -76,9 +76,12 @@ Add these **repository secrets** (Settings → Secrets and variables → Actions
 | `NOTARY_KEY_P8` | Base64 of `AuthKey_XXXX.p8` | `base64 -i AuthKey_XXXX.p8 \| pbcopy` |
 | `NOTARY_KEY_ID` | App Store Connect API **Key ID** | shown when you created the key |
 | `NOTARY_ISSUER_ID` | App Store Connect API **Issuer ID** | Integrations page |
+| `TAP_TOKEN` | Token that can push + open PRs on `mlaify/homebrew-tap` | Fine-grained PAT scoped to that repo with **Contents: write** + **Pull requests: write** |
 
 `GITHUB_TOKEN` is provided automatically. No keychain password secret is needed
 — the workflow generates an ephemeral one and deletes the temp keychain after.
+`TAP_TOKEN` is only used to bump the Homebrew cask (below); omit it and that
+step is skipped.
 
 Then cut a release:
 
@@ -92,6 +95,25 @@ the Developer ID profile, builds/sign/notarizes/staples the DMG, uploads it to
 the Release, and wipes the credentials.
 
 ---
+
+## Updates via Homebrew cask
+
+The app updates through Homebrew — the same place the CLI it drives lives. On
+each tagged release the workflow renders [`packaging/attackmap-app.rb`](../packaging/attackmap-app.rb)
+with the new version + the notarized DMG's sha256 and opens a PR against
+`mlaify/homebrew-tap` (`Casks/attackmap-app.rb`). Merge that PR and users get:
+
+```sh
+brew install --cask mlaify/tap/attackmap-app   # pulls the CLI formula too (dependency)
+brew upgrade --cask attackmap-app              # updates the app
+```
+
+Because the cask `depends_on formula: "mlaify/tap/attackmap"`, `brew upgrade`
+keeps the app and the CLI it drives in lockstep.
+
+> **First release:** there's no cask in the tap until the first `vX.Y.Z` app tag
+> ships — that release opens the initial cask PR. Merge it, then the install
+> command above works.
 
 ## Verifying a build
 
