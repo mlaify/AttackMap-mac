@@ -54,6 +54,7 @@ struct ContentView: View {
                 model.setRepo(url)
             }
         }
+        .task { model.loadAvailableModules() }
     }
 
     // MARK: LLM options (shown only when an LLM mode is selected)
@@ -116,6 +117,8 @@ struct ContentView: View {
 
             Toggle("CVE", isOn: $model.runCVE).disabled(model.isScanning)
 
+            analyzersMenu
+
             Toggle("Watch", isOn: Binding(
                 get: { model.watchEnabled },
                 set: { model.setWatch($0) }))
@@ -137,6 +140,43 @@ struct ContentView: View {
             }
         }
         .padding(12)
+    }
+
+    /// Analyzer selection. "Automatic" (default, empty selection) lets the
+    /// engine pick analyzers by repo language; the user can instead pin one or
+    /// more specific modules. Disabled when the installed CLI is too old to
+    /// report modules (`modules --json`, ≥ 0.4.4).
+    private var analyzersMenu: some View {
+        Menu {
+            Toggle("Automatic (all relevant)", isOn: Binding(
+                get: { model.selectedModules.isEmpty },
+                set: { on in if on { model.selectedModules = [] } }))
+            if !model.availableModules.isEmpty {
+                Divider()
+                ForEach(model.availableModules) { mod in
+                    Toggle(mod.displayName, isOn: Binding(
+                        get: { model.selectedModules.contains(mod.name) },
+                        set: { on in
+                            if on { model.selectedModules.insert(mod.name) }
+                            else { model.selectedModules.remove(mod.name) }
+                        }))
+                }
+            }
+        } label: {
+            Label(analyzersTitle, systemImage: "puzzlepiece.extension")
+        }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
+        .disabled(model.isScanning || model.availableModules.isEmpty)
+        .help(model.availableModules.isEmpty
+              ? "Update attackmap to ≥ 0.4.4 to choose specific analyzers."
+              : "Which analyzers run. Automatic lets the engine pick by repo language.")
+    }
+
+    private var analyzersTitle: String {
+        model.selectedModules.isEmpty
+            ? "Analyzers: Auto"
+            : "Analyzers: \(model.selectedModules.count)"
     }
 
     // MARK: Progress strip

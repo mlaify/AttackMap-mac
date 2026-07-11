@@ -48,6 +48,29 @@ enum CLILocator {
             llmProvider: help.contains("--llm-provider"))
     }
 
+    /// Installed analyzer modules via `attackmap modules --json` (≥ 0.4.4).
+    /// Returns `[]` on any failure — an older CLI without `--json` exits
+    /// non-zero, in which case the GUI just offers "Automatic" analyzer
+    /// selection. Network-free by construction (the `--json` path skips the
+    /// remote module-repository lookup).
+    static func installedModules(executable: URL) -> [AnalyzerModule] {
+        let process = Process()
+        process.executableURL = executable
+        process.arguments = ["modules", "--json"]
+        let stdout = Pipe()
+        process.standardOutput = stdout
+        process.standardError = Pipe()
+        do {
+            try process.run()
+        } catch {
+            return []
+        }
+        let data = stdout.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+        guard process.terminationStatus == 0 else { return [] }
+        return (try? JSONDecoder().decode([AnalyzerModule].self, from: data)) ?? []
+    }
+
     private static func analyzeHelpText(executable: URL) -> String {
         let process = Process()
         process.executableURL = executable

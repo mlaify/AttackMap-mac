@@ -15,6 +15,9 @@ final class ScanViewModel {
     var repoURL: URL?
     var cliPathOverride: String = ""
     var runCVE: Bool = false
+    /// Analyzer modules the user restricted the scan to. Empty = automatic
+    /// (the engine picks the analyzers relevant to the repo).
+    var selectedModules: Set<String> = []
     var llmMode: ScanConfig.LLMMode = .none
     var provider: ScanConfig.Provider = .claude
     var model: ScanConfig.LLMModel = .opus48
@@ -42,6 +45,10 @@ final class ScanViewModel {
     /// Non-fatal warning surfaced after a scan (e.g. an LLM mode that produced
     /// no output because no backend was available).
     private(set) var warning: String?
+    /// Analyzer modules the installed CLI reports (`modules --json`, ≥ 0.4.4).
+    /// Empty when the CLI is older or the probe failed — the picker then offers
+    /// only "Automatic".
+    private(set) var availableModules: [AnalyzerModule] = []
 
     private let runner = ProcessRunner()
     private let watcher = RepoWatcher()
@@ -90,6 +97,7 @@ final class ScanViewModel {
             repoURL: repoURL,
             outputDirectory: output,
             runCVE: runCVE,
+            modules: Array(selectedModules),
             llmMode: llmMode,
             provider: provider,
             model: model,
@@ -171,6 +179,23 @@ final class ScanViewModel {
 
     func cancel() {
         runner.cancel()
+    }
+
+    /// Probe the installed CLI for its analyzer modules (`modules --json`) so
+    /// the Analyzers picker can list them. Cheap + network-free; safe to call
+    /// on appear and whenever the CLI path changes. Drops any stale selection
+    /// that's no longer installed.
+    func loadAvailableModules() {
+        let override = UserDefaults.standard.string(forKey: "cliPathOverride") ?? cliPathOverride
+        guard let cli = CLILocator.locate(explicitPath: override) else {
+            availableModules = []
+            return
+        }
+        Task {
+            let mods = await Task.detached { CLILocator.installedModules(executable: cli) }.value
+            availableModules = mods
+            selectedModules.formIntersection(Set(mods.map(\.name)))
+        }
     }
 
     // MARK: Repo selection & watch mode

@@ -5,6 +5,7 @@ import XCTest
 /// provider/model/effort/speed translation.
 final class ScanConfigTests: XCTestCase {
     private func config(
+        modules: [String] = [],
         llmMode: ScanConfig.LLMMode = .review,
         provider: ScanConfig.Provider = .claude,
         model: ScanConfig.LLMModel = .opus48,
@@ -15,12 +16,27 @@ final class ScanConfigTests: XCTestCase {
         ScanConfig(
             repoURL: URL(fileURLWithPath: "/repo"),
             outputDirectory: URL(fileURLWithPath: "/out"),
+            modules: modules,
             llmMode: llmMode,
             provider: provider,
             model: model,
             openAIModel: openAIModel,
             effort: effort,
             fast: fast)
+    }
+
+    func testEmptyModulesEmitsNoModuleFlag() {
+        let args = config(modules: []).arguments(progressJSON: true)
+        XCTAssertFalse(args.contains("--module"))
+    }
+
+    func testSelectedModulesEmitOneFlagEach() {
+        let args = config(modules: ["rust", "python-web"]).arguments(progressJSON: true)
+        // One --module per selected analyzer, sorted for determinism.
+        let moduleValues = args.enumerated()
+            .filter { $0.element == "--module" }
+            .map { args[$0.offset + 1] }
+        XCTAssertEqual(moduleValues, ["python-web", "rust"])
     }
 
     func testClaudeOmitsProviderFlagForBackwardCompatibility() {

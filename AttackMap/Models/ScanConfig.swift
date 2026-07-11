@@ -6,6 +6,9 @@ struct ScanConfig: Equatable {
     var repoURL: URL
     var outputDirectory: URL
     var runCVE: Bool = false
+    /// Analyzer module names to run (`--module`). Empty = automatic: let the
+    /// engine pick the analyzers relevant to the repo (its default behavior).
+    var modules: [String] = []
     var llmMode: LLMMode = .none
     var provider: Provider = .claude
     var model: LLMModel = .opus48
@@ -108,6 +111,8 @@ struct ScanConfig: Equatable {
         ]
         args += progressJSON ? ["--progress-format", "json"] : ["--no-progress"]
         if runCVE { args += ["--cve"] }
+        // Empty = automatic (engine auto-resolves analyzers by repo language).
+        for module in modules.sorted() { args += ["--module", module] }
         switch llmMode {
         case .none: break
         case .review: args += ["--llm"]
