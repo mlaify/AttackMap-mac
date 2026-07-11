@@ -2,8 +2,7 @@ cask "attackmap-app" do
   version "VERSION_PLACEHOLDER"
   sha256 "SHA256_PLACEHOLDER"
 
-  url "https://github.com/mlaify/AttackMap-mac/releases/download/v#{version}/AttackMap-#{version}.dmg",
-      verified: "github.com/mlaify/AttackMap-mac/"
+  url "https://github.com/mlaify/AttackMap-mac/releases/download/v#{version}/AttackMap-#{version}.dmg"
   name "AttackMap"
   desc "GUI for the AttackMap defensive security analyzer"
   homepage "https://github.com/mlaify/AttackMap-mac"
