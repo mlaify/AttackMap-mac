@@ -45,6 +45,7 @@ struct AboutView: View {
             .font(.caption)
 
             HStack(spacing: 18) {
+                Link("Docs", destination: URL(string: "https://docs.matthewd.xyz")!)
                 Link("App repo", destination: URL(string: "https://github.com/mlaify/AttackMap-mac")!)
                 Link("Engine repo", destination: URL(string: "https://github.com/mlaify/AttackMap")!)
                 Button("Help") { openWindow(id: "help") }

@@ -55,7 +55,7 @@ struct HelpView: View {
                 ])
 
                 HStack(spacing: 18) {
-                    Link("Documentation", destination: URL(string: "https://github.com/mlaify/AttackMap#readme")!)
+                    Link("Documentation", destination: URL(string: "https://docs.matthewd.xyz")!)
                     Link("Report an issue", destination: URL(string: "https://github.com/mlaify/AttackMap-mac/issues")!)
                 }
                 .font(.callout)
