@@ -112,13 +112,21 @@ final class ProcessRunner: @unchecked Sendable {
             throw ScanRunError.launchFailed(String(describing: error))
         }
 
+        // Drain stdout on a background thread *while the scan runs*. If we waited
+        // until after exit to read it (as this once did), a large report on
+        // stdout would fill the ~64KB pipe buffer, block the CLI's write, and
+        // stop it from ever exiting — the scan would hang at 100%.
+        let stdoutHandle = stdoutPipe.fileHandleForReading
+        async let stdoutText: String = Task.detached {
+            String(decoding: stdoutHandle.readDataToEndOfFile(), as: UTF8.self)
+        }.value
+
         // Await termination without blocking a thread.
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
             process.terminationHandler = { _ in continuation.resume() }
         }
 
-        let stdoutData = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
-        let stdout = String(decoding: stdoutData, as: UTF8.self)
+        let stdout = await stdoutText
         let code = process.terminationStatus
 
         // SIGTERM from cancel() surfaces as a signal termination (negative/15).
