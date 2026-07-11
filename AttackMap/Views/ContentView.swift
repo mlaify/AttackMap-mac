@@ -36,6 +36,10 @@ struct ContentView: View {
     var body: some View {
         VStack(spacing: 0) {
             controlBar
+            if model.llmMode != .none {
+                Divider()
+                llmOptionsBar
+            }
             Divider()
             progressBar
             Divider()
@@ -50,6 +54,33 @@ struct ContentView: View {
                 model.setRepo(url)
             }
         }
+    }
+
+    // MARK: LLM options (shown only when an LLM mode is selected)
+
+    private var llmOptionsBar: some View {
+        HStack(spacing: 12) {
+            Picker("Model", selection: $model.model) {
+                ForEach(ScanConfig.LLMModel.allCases) { Text($0.label).tag($0) }
+            }
+            .frame(maxWidth: 200)
+
+            Picker("Reasoning", selection: $model.effort) {
+                ForEach(ScanConfig.Effort.allCases) { Text($0.label).tag($0) }
+            }
+            .frame(maxWidth: 190)
+
+            Toggle("Fast", isOn: $model.fast)
+                .disabled(!model.model.fastCapable)
+                .help(model.model.fastCapable
+                      ? "~2.5× faster output (premium). Needs an API key in Settings."
+                      : "Fast mode is only available on Opus 4.8 / 4.7.")
+
+            Spacer()
+        }
+        .padding(.horizontal, 12)
+        .frame(height: 34)
+        .disabled(model.isScanning)
     }
 
     // MARK: Control bar

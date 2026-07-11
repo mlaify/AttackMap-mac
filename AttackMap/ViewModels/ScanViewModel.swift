@@ -16,6 +16,9 @@ final class ScanViewModel {
     var cliPathOverride: String = ""
     var runCVE: Bool = false
     var llmMode: ScanConfig.LLMMode = .none
+    var model: ScanConfig.LLMModel = .opus48
+    var effort: ScanConfig.Effort = .high
+    var fast: Bool = false
 
     // Observable scan state
     private(set) var phase: Phase = .idle
@@ -76,6 +79,9 @@ final class ScanViewModel {
             outputDirectory: output,
             runCVE: runCVE,
             llmMode: llmMode,
+            model: model,
+            effort: effort,
+            fast: fast,
             baselineURL: nil)
 
         phase = .scanning
