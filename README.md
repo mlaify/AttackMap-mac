@@ -24,6 +24,21 @@ does not reimplement any analysis — it spawns `attackmap analyze … --format 
 `attackmap-report.json` artifacts. Because it shells out to the installed CLI,
 there's no bundled Python and no notarization required for local use.
 
+## Screenshots
+
+A run against [OWASP Juice Shop](https://github.com/juice-shop/juice-shop).
+
+| | |
+|---|---|
+| ![Configure and run](docs/screenshots/01-config-ready.png) | ![Scanning with live progress](docs/screenshots/02-scanning.png) |
+| **Configure & run** — repo, LLM mode, CVE, analyzers, Watch | **Live progress** — per-file bar + ETA |
+| ![Overview](docs/screenshots/04-overview.png) | ![Findings](docs/screenshots/05-findings.png) |
+| **Overview** — counts, severity, most-exploitable path | **Findings** — master-detail with evidence & remediation |
+| ![Exploitability](docs/screenshots/06-exploitability-ranked.png) | ![Attack surface](docs/screenshots/07-attack-surface.png) |
+| **Exploitability** — ranked route→sink paths | **Attack surface** — full route inventory |
+| ![Attack-path diagram](docs/screenshots/08-attack-path-diagram.png) | ![Defensive review](docs/screenshots/09-defensive-review.png) |
+| **Diagrams** — offline Mermaid attack paths | **Defensive review** — full Markdown report |
+
 ## Install
 
 ```sh
