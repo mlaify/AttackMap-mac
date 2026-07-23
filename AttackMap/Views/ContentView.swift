@@ -7,6 +7,7 @@ import UniformTypeIdentifiers
 struct ContentView: View {
     @State private var model = ScanViewModel()
     @State private var showingImporter = false
+    @State private var showingSuppressImporter = false
     @State private var section: Section? = .overview
 
     enum Section: String, CaseIterable, Identifiable, Hashable {
@@ -40,6 +41,10 @@ struct ContentView: View {
                 Divider()
                 llmOptionsBar
             }
+            if model.llmMode == .huntVerify, model.capabilities?.huntJury ?? true {
+                Divider()
+                juryBar
+            }
             Divider()
             progressBar
             Divider()
@@ -54,7 +59,43 @@ struct ContentView: View {
                 model.setRepo(url)
             }
         }
+        .fileImporter(
+            isPresented: $showingSuppressImporter,
+            allowedContentTypes: [.yaml, .item],
+            allowsMultipleSelection: false
+        ) { result in
+            if case .success(let urls) = result, let url = urls.first {
+                model.suppressFileURL = url
+            }
+        }
         .task { model.loadAvailableModules() }
+    }
+
+    // MARK: Verify-jury tuning (Hunt + verify only)
+
+    private var juryBar: some View {
+        HStack(spacing: 16) {
+            Label("Verify jury", systemImage: "person.3")
+                .font(.caption).foregroundStyle(.secondary)
+            Stepper("Votes \(model.jury.verifyVotes)",
+                    value: $model.jury.verifyVotes, in: 1...9)
+                .help("Independent skeptic passes; a strict majority CONFIRMs a lead.")
+            Stepper("Lenses \(model.jury.lenses)",
+                    value: $model.jury.lenses, in: 1...6)
+                .help("Failure-mode generation passes (auth-bypass, TOCTOU, IDOR, …), deduped before verify.")
+            Stepper("Rounds \(model.jury.rounds)",
+                    value: $model.jury.rounds, in: 1...5)
+                .help("Loop generation until a round finds nothing new (a completeness critic seeds each next round).")
+            if model.jury.rounds > 1 {
+                Stepper("Budget \(model.jury.budget / 1000)k",
+                        value: $model.jury.budget, in: 0...500_000, step: 25_000)
+                    .help("Stop launching new rounds past this many output tokens (0 = no cap).")
+            }
+            Spacer()
+        }
+        .padding(.horizontal, 12)
+        .frame(height: 34)
+        .disabled(model.isScanning)
     }
 
     // MARK: LLM options (shown only when an LLM mode is selected)
@@ -117,7 +158,16 @@ struct ContentView: View {
 
             Toggle("CVE", isOn: $model.runCVE).disabled(model.isScanning)
 
+            Toggle("Recall", isOn: $model.recall)
+                .disabled(model.isScanning || model.capabilities?.recall == false)
+                .help(model.capabilities?.recall == false
+                      ? "Recall mode needs attackmap ≥ 0.4.20 (brew upgrade attackmap)."
+                      : "Wider, speculative taint discovery (--recall). Extra reach is "
+                        + "marked speculative; pair with Hunt + verify to adjudicate it.")
+
             analyzersMenu
+
+            suppressionMenu
 
             Toggle("Watch", isOn: Binding(
                 get: { model.watchEnabled },
@@ -177,6 +227,35 @@ struct ContentView: View {
         model.selectedModules.isEmpty
             ? "Analyzers: Auto"
             : "Analyzers: \(model.selectedModules.count)"
+    }
+
+    /// Suppression controls (#144, ≥ 0.4.7): ignore all suppressions for a full
+    /// audit, or point at an explicit `.attackmap-suppress.yaml` baseline.
+    private var suppressionMenu: some View {
+        Menu {
+            Toggle("Ignore all suppressions", isOn: $model.noSuppress)
+                .help("Full, unfiltered audit — surface findings the suppress file/inline directives silence.")
+            Divider()
+            Button("Choose suppress file…") { showingSuppressImporter = true }
+            if model.suppressFileURL != nil {
+                Button("Use auto-discovered file") { model.suppressFileURL = nil }
+                Text(model.suppressFileURL?.lastPathComponent ?? "")
+            }
+        } label: {
+            Label(suppressionTitle, systemImage: "eye.slash")
+        }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
+        .disabled(model.isScanning || model.capabilities?.suppress == false)
+        .help(model.capabilities?.suppress == false
+              ? "Suppression controls need attackmap ≥ 0.4.7."
+              : "Finding suppression (.attackmap-suppress.yaml / inline directives).")
+    }
+
+    private var suppressionTitle: String {
+        if model.noSuppress { return "Suppress: off" }
+        if model.suppressFileURL != nil { return "Suppress: custom" }
+        return "Suppress: auto"
     }
 
     // MARK: Progress strip

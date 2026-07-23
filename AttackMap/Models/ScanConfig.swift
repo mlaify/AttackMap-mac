@@ -15,7 +15,28 @@ struct ScanConfig: Equatable {
     var openAIModel: OpenAIModel = .codex
     var effort: Effort = .high
     var fast: Bool = false
+    /// Recall mode (`--recall`, ≥ 0.4.20): widen taint discovery. The extra
+    /// reach is marked SPECULATIVE by the engine and kept out of the high-severity
+    /// gate; pair with Hunt + verify to adjudicate it.
+    var recall: Bool = false
+    /// Ignore all suppressions (`--no-suppress`, ≥ 0.4.7) for a full audit.
+    var noSuppress: Bool = false
+    /// Explicit suppression baseline (`--suppress-file`), overriding the repo's
+    /// auto-discovered `.attackmap-suppress.yaml`.
+    var suppressFileURL: URL?
+    /// Hunt verify-jury knobs (≥ 0.4.16), emitted only for Hunt + verify.
+    var jury: Jury = Jury()
     var baselineURL: URL?
+
+    /// Multi-pass hunt-verify tuning (`--verify-votes` / `--hunt-lenses` /
+    /// `--hunt-rounds` / `--hunt-budget`). Defaults match the engine's, so an
+    /// untouched jury emits no extra flags.
+    struct Jury: Equatable {
+        var verifyVotes: Int = 3      // skeptic passes; majority to CONFIRM
+        var lenses: Int = 1           // failure-mode generation passes
+        var rounds: Int = 1           // loop-until-dry generation rounds
+        var budget: Int = 0           // output-token cap across rounds (0 = none)
+    }
 
     /// LLM provider (`--llm-provider`). Claude is the default and needs no flag;
     /// OpenAI emits `--llm-provider openai` (requires attackmap ≥ 0.4.3).
@@ -75,7 +96,7 @@ struct ScanConfig: Equatable {
     }
 
     enum LLMMode: String, CaseIterable, Identifiable, Equatable {
-        case none, review, hunt, huntVerify, remediate
+        case none, review, hunt, huntVerify, remediate, triage
         var id: String { rawValue }
         var label: String {
             switch self {
@@ -84,6 +105,7 @@ struct ScanConfig: Equatable {
             case .hunt: return "Hunt hypotheses (--hunt)"
             case .huntVerify: return "Hunt + verify (--hunt --verify)"
             case .remediate: return "Remediate (--remediate)"
+            case .triage: return "Triage findings (--triage)"
             }
         }
 
@@ -94,6 +116,7 @@ struct ScanConfig: Equatable {
             case .review: return "defensive-review-llm.md"
             case .hunt, .huntVerify: return "vulnerability-hypotheses.md"
             case .remediate: return "remediation.md"
+            case .triage: return "triage.md"
             }
         }
     }
@@ -111,6 +134,9 @@ struct ScanConfig: Equatable {
         ]
         args += progressJSON ? ["--progress-format", "json"] : ["--no-progress"]
         if runCVE { args += ["--cve"] }
+        if recall { args += ["--recall"] }
+        if noSuppress { args += ["--no-suppress"] }
+        if let suppressFileURL { args += ["--suppress-file", suppressFileURL.path] }
         // Empty = automatic (engine auto-resolves analyzers by repo language).
         for module in modules.sorted() { args += ["--module", module] }
         switch llmMode {
@@ -119,6 +145,16 @@ struct ScanConfig: Equatable {
         case .hunt: args += ["--hunt"]
         case .huntVerify: args += ["--hunt", "--verify"]
         case .remediate: args += ["--remediate"]
+        case .triage: args += ["--triage"]
+        }
+        // Verify-jury tuning applies only to Hunt + verify; emit each knob only
+        // when it differs from the engine default so older CLIs stay happy when
+        // the user leaves them alone.
+        if llmMode == .huntVerify {
+            if jury.verifyVotes != 3 { args += ["--verify-votes", String(jury.verifyVotes)] }
+            if jury.lenses != 1 { args += ["--hunt-lenses", String(jury.lenses)] }
+            if jury.rounds != 1 { args += ["--hunt-rounds", String(jury.rounds)] }
+            if jury.budget > 0 { args += ["--hunt-budget", String(jury.budget)] }
         }
         // Provider / model / reasoning / speed apply only when an LLM mode runs.
         if llmMode != .none {

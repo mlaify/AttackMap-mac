@@ -9,6 +9,9 @@ import Foundation
 struct Report: Decodable {
     var scan: Scan?
     var findings: [Finding]
+    /// Findings the engine silenced (via `.attackmap-suppress.yaml` or inline
+    /// `attackmap:ignore` directives) — retained with their reason for audit (#144).
+    var suppressedFindings: [SuppressedFinding]
     var attackPaths: [AttackPath]
     var attackSurfaces: [AttackSurface]
     var exploitability: [ExploitabilityScore]
@@ -18,6 +21,7 @@ struct Report: Decodable {
 
     enum CodingKeys: String, CodingKey {
         case scan, findings, exploitability
+        case suppressedFindings = "suppressed_findings"
         case attackPaths = "attack_paths"
         case attackSurfaces = "attack_surfaces"
         case defensiveReviewMarkdown = "defensive_review"
@@ -29,6 +33,7 @@ struct Report: Decodable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         scan = try? c.decode(Scan.self, forKey: .scan)
         findings = (try? c.decode([Finding].self, forKey: .findings)) ?? []
+        suppressedFindings = (try? c.decode([SuppressedFinding].self, forKey: .suppressedFindings)) ?? []
         attackPaths = (try? c.decode([AttackPath].self, forKey: .attackPaths)) ?? []
         attackSurfaces = (try? c.decode([AttackSurface].self, forKey: .attackSurfaces)) ?? []
         exploitability = (try? c.decode([ExploitabilityScore].self, forKey: .exploitability)) ?? []
@@ -103,6 +108,34 @@ struct Finding: Decodable, Identifiable, Hashable {
         score = try? c.decode(Int.self, forKey: .score)
         exploitability = try? c.decode(Int.self, forKey: .exploitability)
         exploitabilityTier = try? c.decode(String.self, forKey: .exploitabilityTier)
+    }
+}
+
+/// A finding the engine matched against a suppression selector and silenced.
+/// Carries the full finding fields plus the rule/reason it was silenced under.
+struct SuppressedFinding: Decodable, Identifiable, Hashable {
+    let id: String
+    let title: String
+    let severity: String
+    let rule: String?
+    let reason: String?
+    let suppressedBy: [String]
+
+    var severityRank: Int { Severity(severity).rank }
+
+    enum CodingKeys: String, CodingKey {
+        case id, title, severity, rule, reason
+        case suppressedBy = "suppressed_by"
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = (try? c.decode(String.self, forKey: .id)) ?? UUID().uuidString
+        title = (try? c.decode(String.self, forKey: .title)) ?? "(untitled)"
+        severity = (try? c.decode(String.self, forKey: .severity)) ?? "unknown"
+        rule = try? c.decode(String.self, forKey: .rule)
+        reason = try? c.decode(String.self, forKey: .reason)
+        suppressedBy = (try? c.decode([String].self, forKey: .suppressedBy)) ?? []
     }
 }
 

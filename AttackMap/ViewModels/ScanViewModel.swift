@@ -24,6 +24,14 @@ final class ScanViewModel {
     var openAIModel: ScanConfig.OpenAIModel = .codex
     var effort: ScanConfig.Effort = .high
     var fast: Bool = false
+    /// Recall mode (`--recall`): wider, speculative taint discovery.
+    var recall: Bool = false
+    /// Ignore suppressions (`--no-suppress`) for a full audit.
+    var noSuppress: Bool = false
+    /// Explicit suppression baseline (`--suppress-file`); nil = auto-discover.
+    var suppressFileURL: URL?
+    /// Verify-jury tuning (shown only for Hunt + verify).
+    var jury = ScanConfig.Jury()
 
     // Observable scan state
     private(set) var phase: Phase = .idle
@@ -49,6 +57,9 @@ final class ScanViewModel {
     /// Empty when the CLI is older or the probe failed — the picker then offers
     /// only "Automatic".
     private(set) var availableModules: [AnalyzerModule] = []
+    /// What the installed CLI supports, probed once (`analyze --help`). Drives
+    /// UI enablement + version hints; `nil` until the first probe completes.
+    private(set) var capabilities: CLILocator.Capabilities?
 
     private let runner = ProcessRunner()
     private let watcher = RepoWatcher()
@@ -104,6 +115,10 @@ final class ScanViewModel {
             openAIModel: openAIModel,
             effort: effort,
             fast: fast,
+            recall: recall,
+            noSuppress: noSuppress,
+            suppressFileURL: suppressFileURL,
+            jury: jury,
             baselineURL: nil)
 
         phase = .scanning
@@ -123,11 +138,26 @@ final class ScanViewModel {
             let caps = await Task.detached {
                 CLILocator.capabilities(executable: cli)
             }.value
+            capabilities = caps
             let progressJSON = caps.progressJSON
             if !progressJSON {
                 indeterminate = true
                 statusLabel = "Scanning… (update attackmap for live progress)"
             }
+            // Triage is a whole mode; rather than silently degrade to a plain
+            // scan, stop with a clear message when the CLI predates it.
+            if config.llmMode == .triage, !caps.triage {
+                phase = .failed(
+                    "This attackmap build doesn't support triage mode. "
+                    + "Update to attackmap ≥ 0.4.15 (brew upgrade attackmap) to use it.")
+                stopStageTimer()
+                return
+            }
+            // The remaining new flags are modifiers — drop any the installed CLI
+            // doesn't recognize so we never pass an unknown option (exit 2).
+            if !caps.recall { config.recall = false }
+            if !caps.suppress { config.noSuppress = false; config.suppressFileURL = nil }
+            if !caps.huntJury { config.jury = ScanConfig.Jury() }
             // The OpenAI provider needs the --llm-provider flag; rather than
             // silently switch back to Claude (a different model entirely), stop
             // with a clear message if the installed CLI predates it.
@@ -189,11 +219,16 @@ final class ScanViewModel {
         let override = UserDefaults.standard.string(forKey: "cliPathOverride") ?? cliPathOverride
         guard let cli = CLILocator.locate(explicitPath: override) else {
             availableModules = []
+            capabilities = nil
             return
         }
         Task {
-            let mods = await Task.detached { CLILocator.installedModules(executable: cli) }.value
+            let (mods, caps) = await Task.detached {
+                (CLILocator.installedModules(executable: cli),
+                 CLILocator.capabilities(executable: cli))
+            }.value
             availableModules = mods
+            capabilities = caps
             selectedModules.formIntersection(Set(mods.map(\.name)))
         }
     }

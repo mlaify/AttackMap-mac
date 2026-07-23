@@ -34,10 +34,21 @@ enum CLILocator {
     /// - `progressJSON` → `--progress-format json` (the M0 NDJSON stream; ≥ 0.4.1)
     /// - `llmSpeed` → `--llm-speed fast` (Fast mode; ≥ the 0.4.3 release)
     /// - `llmProvider` → `--llm-provider openai` (OpenAI/Codex; ≥ the 0.4.3 release)
+    /// - `recall` → `--recall` (recall mode; ≥ 0.4.20)
+    /// - `triage` → `--triage` (triage mode; ≥ 0.4.15)
+    /// - `huntJury` → `--verify-votes` & friends (verify jury; ≥ 0.4.16)
+    /// - `suppress` → `--no-suppress` / `--suppress-file` (suppression; ≥ 0.4.7)
+    /// - `fleet` → multi-repo fleet scan (variadic `paths`; ≥ 0.4.22). Detected
+    ///   by the fleet note the variadic argument's help text carries.
     struct Capabilities {
         var progressJSON: Bool
         var llmSpeed: Bool
         var llmProvider: Bool
+        var recall: Bool
+        var triage: Bool
+        var huntJury: Bool
+        var suppress: Bool
+        var fleet: Bool
     }
 
     static func capabilities(executable: URL) -> Capabilities {
@@ -45,7 +56,12 @@ enum CLILocator {
         return Capabilities(
             progressJSON: help.contains("--progress-format"),
             llmSpeed: help.contains("--llm-speed"),
-            llmProvider: help.contains("--llm-provider"))
+            llmProvider: help.contains("--llm-provider"),
+            recall: help.contains("--recall"),
+            triage: help.contains("--triage"),
+            huntJury: help.contains("--verify-votes"),
+            suppress: help.contains("--no-suppress"),
+            fleet: help.contains("fleet"))
     }
 
     /// Installed analyzer modules via `attackmap modules --json` (≥ 0.4.4).
