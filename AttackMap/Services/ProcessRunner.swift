@@ -10,16 +10,31 @@ struct ScanRunResult {
 
 enum ScanRunError: Error, LocalizedError {
     case launchFailed(String)
-    case nonZeroExit(code: Int32, stdout: String)
+    case nonZeroExit(code: Int32, stdout: String, stderrTail: String)
     case reportMissing(URL)
     case cancelled
 
     var errorDescription: String? {
         switch self {
         case .launchFailed(let why): return "Couldn't launch attackmap: \(why)"
-        case .nonZeroExit(let code, _): return "attackmap exited with code \(code)."
+        case .nonZeroExit(let code, _, _): return "attackmap exited with code \(code)."
         case .reportMissing(let url): return "Scan finished but no report at \(url.path)."
         case .cancelled: return "Scan cancelled."
+        }
+    }
+
+    /// Extra diagnostic detail (e.g. the CLI's stderr tail) to show beneath the
+    /// summary message, when available.
+    var detail: String? {
+        switch self {
+        case .nonZeroExit(_, let stdout, let stderrTail):
+            let combined = [stderrTail, stdout]
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty }
+                .joined(separator: "\n")
+            return combined.isEmpty ? nil : combined
+        default:
+            return nil
         }
     }
 }
@@ -168,7 +183,7 @@ final class ProcessRunner: @unchecked Sendable {
             throw ScanRunError.cancelled
         }
         guard code == 0 else {
-            throw ScanRunError.nonZeroExit(code: code, stdout: stdout)
+            throw ScanRunError.nonZeroExit(code: code, stdout: stdout, stderrTail: stderrTail.text)
         }
         guard FileManager.default.fileExists(atPath: successFile.path) else {
             throw ScanRunError.reportMissing(successFile)

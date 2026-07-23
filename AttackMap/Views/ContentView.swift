@@ -311,7 +311,9 @@ struct ContentView: View {
     // MARK: Results
 
     @ViewBuilder private var resultsArea: some View {
-        if let fleet = model.fleet {
+        if case .failed(let message) = model.phase {
+            ScanErrorView(message: message, detail: model.failureDetail)
+        } else if let fleet = model.fleet {
             FleetView(fleet: fleet, graphDirectory: model.outputDirectory)
         } else if let report = model.report {
             NavigationSplitView {
@@ -360,5 +362,37 @@ struct ContentView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+/// Full-height view for a failed scan: the summary line plus the CLI's captured
+/// stderr/stdout tail (selectable + scrollable), so failures aren't opaque.
+private struct ScanErrorView: View {
+    let message: String
+    let detail: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label(message, systemImage: "exclamationmark.triangle.fill")
+                .font(.headline)
+                .foregroundStyle(.orange)
+            if let detail, !detail.isEmpty {
+                Text("Output from attackmap")
+                    .font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                ScrollView {
+                    Text(detail)
+                        .font(.system(.caption, design: .monospaced))
+                        .textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(8)
+                }
+                .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 8))
+            } else {
+                Text("No further output was captured. Re-run from a terminal for the full error.")
+                    .font(.callout).foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .padding(16)
     }
 }

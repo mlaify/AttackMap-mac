@@ -60,6 +60,9 @@ final class ScanViewModel {
     /// Non-fatal warning surfaced after a scan (e.g. an LLM mode that produced
     /// no output because no backend was available).
     private(set) var warning: String?
+    /// Diagnostic detail for a failed scan (the CLI's stderr tail / traceback),
+    /// shown in the results area so failures aren't opaque.
+    private(set) var failureDetail: String?
     /// Analyzer modules the installed CLI reports (`modules --json`, ≥ 0.4.4).
     /// Empty when the CLI is older or the probe failed — the picker then offers
     /// only "Automatic".
@@ -140,6 +143,7 @@ final class ScanViewModel {
         currentFile = ""
         etaText = ""
         warning = nil
+        failureDetail = nil
         stopStageTimer()
         statusLabel = "Starting…"
         startedAt = Date()
@@ -208,6 +212,7 @@ final class ScanViewModel {
                     + (decoded.findings.count == 1 ? "" : "s")
             } catch {
                 let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+                failureDetail = (error as? ScanRunError)?.detail
                 phase = .failed(message)
             }
             stopStageTimer()
@@ -258,6 +263,7 @@ final class ScanViewModel {
         currentFile = ""
         etaText = ""
         warning = nil
+        failureDetail = nil
         stopStageTimer()
         statusLabel = "Starting fleet scan…"
         startedAt = Date()
@@ -300,6 +306,7 @@ final class ScanViewModel {
                     + (decoded.crossRepoSignalCount == 1 ? "" : "s")
             } catch {
                 let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+                failureDetail = (error as? ScanRunError)?.detail
                 phase = .failed(message)
             }
             stopStageTimer()
