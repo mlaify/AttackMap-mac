@@ -13,6 +13,9 @@ final class ScanViewModel {
 
     // Inputs
     var repoURL: URL?
+    /// Repositories for a cross-repo fleet scan. When more than one is chosen,
+    /// the app runs `analyze repoA repoB …` and renders the fleet view.
+    var fleetRepoURLs: [URL] = []
     var cliPathOverride: String = ""
     var runCVE: Bool = false
     /// Analyzer modules the user restricted the scan to. Empty = automatic
@@ -44,6 +47,10 @@ final class ScanViewModel {
     /// so a long "thinking" step always shows a moving timer.
     private(set) var stageElapsedText: String = ""
     private(set) var report: Report?
+    /// Decoded fleet summary after a successful multi-repo scan.
+    private(set) var fleet: FleetSummary?
+    /// The fleet-graph Mermaid markdown, if the scan wrote one.
+    private(set) var fleetGraphMarkdown: String?
     /// Directory the last successful scan wrote its artifacts to (for diagrams).
     private(set) var outputDirectory: URL?
     /// New / resolved finding counts vs. the immediately prior scan of this repo.
@@ -69,9 +76,12 @@ final class ScanViewModel {
     private var stageTimerTask: Task<Void, Never>?
 
     var isScanning: Bool { phase == .scanning }
-    var canRun: Bool { repoURL != nil && !isScanning }
+    /// True when a multi-repo (cross-repo fleet) scan is configured.
+    var isFleet: Bool { fleetRepoURLs.count > 1 }
+    var canRun: Bool { (repoURL != nil || isFleet) && !isScanning }
 
     func run() {
+        if isFleet { runFleet(); return }
         guard let repoURL else { return }
         // Honor an explicit CLI path from Settings (shared via UserDefaults).
         let override = UserDefaults.standard.string(forKey: "cliPathOverride") ?? cliPathOverride
@@ -123,6 +133,8 @@ final class ScanViewModel {
 
         phase = .scanning
         report = nil
+        fleet = nil
+        fleetGraphMarkdown = nil
         fraction = 0
         indeterminate = false
         currentFile = ""
@@ -211,6 +223,106 @@ final class ScanViewModel {
         runner.cancel()
     }
 
+    /// Run a cross-repo fleet scan over `fleetRepoURLs`. Watch mode and the LLM
+    /// modes don't apply to fleets (the engine rejects them in multi-repo mode),
+    /// so this path is deliberately simpler than `run()`.
+    private func runFleet() {
+        guard isFleet, let first = fleetRepoURLs.first else { return }
+        let override = UserDefaults.standard.string(forKey: "cliPathOverride") ?? cliPathOverride
+        guard let cli = CLILocator.locate(explicitPath: override) else {
+            phase = .failed(
+                "attackmap not found. Install it (brew install mlaify/tap/attackmap) "
+                + "or set its path in Settings.")
+            return
+        }
+
+        // Fleet output lives beside the first repo, in its own subdirectory so a
+        // later single-repo scan of the same repo doesn't collide.
+        let output = first.appendingPathComponent(".attackmap-gui/fleet", isDirectory: true)
+        try? FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
+        let config = ScanConfig(
+            repoURL: first, outputDirectory: output,
+            runCVE: runCVE, modules: Array(selectedModules),
+            llmMode: .none, recall: recall,
+            noSuppress: noSuppress, suppressFileURL: suppressFileURL,
+            baselineURL: nil)
+        let paths = fleetRepoURLs
+
+        phase = .scanning
+        report = nil
+        fleet = nil
+        fleetGraphMarkdown = nil
+        lastDelta = nil
+        fraction = 0
+        indeterminate = false
+        currentFile = ""
+        etaText = ""
+        warning = nil
+        stopStageTimer()
+        statusLabel = "Starting fleet scan…"
+        startedAt = Date()
+
+        Task {
+            let caps = await Task.detached { CLILocator.capabilities(executable: cli) }.value
+            capabilities = caps
+            guard caps.fleet else {
+                phase = .failed(
+                    "This attackmap build doesn't support multi-repo fleet scans. "
+                    + "Update to attackmap ≥ 0.4.22 (brew upgrade attackmap) to use it.")
+                stopStageTimer()
+                return
+            }
+            let progressJSON = caps.progressJSON
+            if !progressJSON {
+                indeterminate = true
+                statusLabel = "Scanning fleet… (update attackmap for live progress)"
+            }
+            var fleetConfig = config
+            if !caps.recall { fleetConfig.recall = false }
+            if !caps.suppress { fleetConfig.noSuppress = false; fleetConfig.suppressFileURL = nil }
+            do {
+                let result = try await runner.runFleet(
+                    executable: cli, config: fleetConfig, paths: paths,
+                    progressJSON: progressJSON
+                ) { [weak self] event in
+                    Task { @MainActor in self?.apply(event) }
+                }
+                let decoded = try FleetSummary.load(from: result.reportURL)
+                fleet = decoded
+                fleetGraphMarkdown = try? String(
+                    contentsOf: output.appendingPathComponent("fleet-graph.md"), encoding: .utf8)
+                outputDirectory = output
+                paths.forEach { RecentScansStore.record($0, at: Date()) }
+                phase = .done
+                statusLabel = "Done — \(decoded.repoCount) repos, "
+                    + "\(decoded.totalFindings) findings, "
+                    + "\(decoded.crossRepoSignalCount) cross-repo signal"
+                    + (decoded.crossRepoSignalCount == 1 ? "" : "s")
+            } catch {
+                let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+                phase = .failed(message)
+            }
+            stopStageTimer()
+        }
+    }
+
+    /// Choose the repositories to scan. One repo → single-repo mode; two or more
+    /// → cross-repo fleet mode. Clears any prior results.
+    func setFleetRepos(_ urls: [URL]) {
+        if urls.count <= 1 {
+            fleetRepoURLs = []
+            if let one = urls.first { setRepo(one) }
+            return
+        }
+        setWatch(false)          // watch mode is single-repo only
+        repoURL = nil
+        fleetRepoURLs = urls
+        report = nil
+        fleet = nil
+        fleetGraphMarkdown = nil
+        lastDelta = nil
+    }
+
     /// Probe the installed CLI for its analyzer modules (`modules --json`) so
     /// the Analyzers picker can list them. Cheap + network-free; safe to call
     /// on appear and whenever the CLI path changes. Drops any stale selection
@@ -238,6 +350,9 @@ final class ScanViewModel {
     /// Set the repository; restarts the watcher if watch mode is on.
     func setRepo(_ url: URL) {
         repoURL = url
+        fleetRepoURLs = []
+        fleet = nil
+        fleetGraphMarkdown = nil
         lastDelta = nil
         if watchEnabled { startWatching() }
     }

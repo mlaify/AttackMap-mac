@@ -5,12 +5,14 @@ local-first defensive security analyzer. Point it at a repository, run a scan,
 watch live progress, and browse the findings — all driving the `attackmap` CLI
 you already have installed.
 
-> **Status:** v0.1.0-dev, **feature-complete (M1–M5)**: spawn the CLI + decode
-> its report, Overview + Findings master-detail, exploitability / attack-path /
-> attack-surface / review views, Mermaid diagrams, Settings (CLI path + API
-> key), recent scans, and **watch mode** (debounced auto re-scan with a
-> new/resolved delta). The whole app type-checks against the SDK; run it in
-> Xcode. See the
+> **Status:** v0.1.0-dev, **feature-complete (M1–M5)** and current with the
+> **attackmap 0.4.25** CLI: spawn the CLI + decode its report, Overview +
+> Findings master-detail, exploitability / attack-path / attack-surface / review
+> views, Mermaid diagrams, Settings (CLI path + API key), recent scans, and
+> **watch mode** (debounced auto re-scan with a new/resolved delta). Scan options
+> now cover the full engine surface — recall mode, triage, the hunt verify jury,
+> suppression, and **cross-repo / fleet analysis** (see below). The whole app
+> type-checks against the SDK; run it in Xcode. See the
 > [implementation plan](https://github.com/mlaify/AttackMap/blob/main/docs/macos-gui-plan.md).
 
 Diagrams render offline via a vendored copy of
@@ -38,6 +40,33 @@ A run against [OWASP Juice Shop](https://github.com/juice-shop/juice-shop).
 | **Exploitability** — ranked route→sink paths | **Attack surface** — full route inventory |
 | ![Attack-path diagram](docs/screenshots/08-attack-path-diagram.png) | ![Defensive review](docs/screenshots/09-defensive-review.png) |
 | **Diagrams** — offline Mermaid attack paths | **Defensive review** — full Markdown report |
+
+## Scan options
+
+Every option is **feature-detected** off `attackmap analyze --help`, so the app
+adapts to whatever CLI you have installed: a modifier the CLI doesn't recognize
+is dropped (never passed as an unknown flag), and a whole mode it lacks stops
+with a "brew upgrade attackmap" hint instead of degrading silently.
+
+- **CVE** (`--cve`) — SBOM + OSV.dev dependency scan.
+- **Recall** (`--recall`, ≥ 0.4.20) — wider, speculative taint discovery; the
+  extra reach is marked speculative and kept out of the high-severity gate.
+- **Analyzers** — Automatic (engine picks by language) or pin specific modules.
+- **Suppress** (`--no-suppress` / `--suppress-file`, ≥ 0.4.7) — ignore all
+  suppressions for a full audit, or point at an explicit baseline. Suppressed
+  findings are still shown (collapsed) under Findings, with their reason.
+- **LLM modes** — Review (`--llm`), Hunt (`--hunt`), Hunt + verify
+  (`--hunt --verify`), Remediate (`--remediate`), and **Triage** (`--triage`,
+  ≥ 0.4.15). Provider (Claude / OpenAI·Codex), model, reasoning, and Fast mode
+  apply to all of them.
+- **Verify jury** (≥ 0.4.16) — for Hunt + verify: votes (`--verify-votes`),
+  lenses (`--hunt-lenses`), rounds (`--hunt-rounds`), and a token budget
+  (`--hunt-budget`).
+- **Cross-repo / fleet** (≥ 0.4.22) — select **two or more** folders and the app
+  runs `analyze repoA repoB …`, then shows a fleet view: per-repo rollup,
+  contract links, cross-boundary (confused-deputy) flows, trust-assumption gaps,
+  cross-repo control anomalies, and the fleet graph.
+>>>>>>> 9639519 (Add cross-repo / fleet mode (multi-repo scans))
 
 ## Install
 
@@ -116,7 +145,7 @@ SwiftUI app ──► ProcessRunner ──► attackmap analyze … --progress-f
 
 | Layer | Files | Notes |
 |---|---|---|
-| Models (Foundation-only, testable) | `Models/Report.swift`, `Models/ProgressEvent.swift`, `Models/ScanConfig.swift` | Tolerant `Codable` over the engine's JSON |
+| Models (Foundation-only, testable) | `Models/Report.swift`, `Models/FleetSummary.swift`, `Models/ProgressEvent.swift`, `Models/ScanConfig.swift` | Tolerant `Codable` over the engine's JSON (single-repo report + fleet summary) |
 | Services (Foundation-only) | `Services/CLILocator.swift`, `Services/ProcessRunner.swift` | Find the CLI, spawn + stream + cancel |
 | View model | `ViewModels/ScanViewModel.swift` | `@Observable`, folds progress into state |
 | Views | `AttackMapApp.swift`, `Views/ContentView.swift` | SwiftUI skeleton |
@@ -126,9 +155,11 @@ The Models + Services layer is deliberately UI-free so it stays unit-testable;
 
 ## Roadmap
 
-M1 spawn+parse ✅ · M2 core UI · M3 rich views (exploitability / paths / surface
-/ review) · M4 diagrams + settings + recents · M5 watch mode. Full plan lives in
-the engine repo: [`docs/macos-gui-plan.md`](https://github.com/mlaify/AttackMap/blob/main/docs/macos-gui-plan.md).
+M1 spawn+parse ✅ · M2 core UI ✅ · M3 rich views (exploitability / paths /
+surface / review) ✅ · M4 diagrams + settings + recents ✅ · M5 watch mode ✅ ·
+**CLI parity** (recall / triage / verify jury / suppression / cross-repo fleet)
+✅. Full plan lives in the engine repo:
+[`docs/macos-gui-plan.md`](https://github.com/mlaify/AttackMap/blob/main/docs/macos-gui-plan.md).
 
 ## License
 

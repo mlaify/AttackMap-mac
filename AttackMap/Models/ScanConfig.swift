@@ -179,8 +179,30 @@ struct ScanConfig: Equatable {
         return args
     }
 
+    /// The `attackmap analyze <repoA> <repoB> …` argument vector for a cross-repo
+    /// fleet scan (≥ 0.4.22). Only the fleet-compatible options are emitted; the
+    /// engine rejects single-repo-only flags (LLM modes, baseline/diff) in multi
+    /// mode, so they're deliberately omitted here.
+    func fleetArguments(paths: [URL], progressJSON: Bool) -> [String] {
+        var args = ["analyze"]
+        args += paths.map(\.path)
+        args += ["--format", "json", "--output", outputDirectory.path]
+        args += progressJSON ? ["--progress-format", "json"] : ["--no-progress"]
+        if runCVE { args += ["--cve"] }
+        if recall { args += ["--recall"] }
+        if noSuppress { args += ["--no-suppress"] }
+        if let suppressFileURL { args += ["--suppress-file", suppressFileURL.path] }
+        for module in modules.sorted() { args += ["--module", module] }
+        return args
+    }
+
     /// Where the monolithic report lands after a run.
     var reportURL: URL {
         outputDirectory.appendingPathComponent("attackmap-report.json")
+    }
+
+    /// The fleet summary JSON location (multi-repo mode).
+    var fleetSummaryURL: URL {
+        outputDirectory.appendingPathComponent("fleet-summary.json")
     }
 }

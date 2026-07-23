@@ -60,17 +60,51 @@ final class ProcessRunner: @unchecked Sendable {
     private let lock = NSLock()
     private var process: Process?
 
-    /// Run a scan to completion. `onProgress` fires for each decoded progress
-    /// event (on an arbitrary queue — marshal to the main actor in the closure).
+    /// Run a single-repo scan to completion. `onProgress` fires for each decoded
+    /// progress event (on an arbitrary queue — marshal to the main actor).
     func run(executable: URL,
              config: ScanConfig,
              progressJSON: Bool,
              environment extraEnvironment: [String: String] = [:],
              onProgress: @escaping @Sendable (ProgressEvent) -> Void) async throws -> ScanRunResult {
+        try await run(
+            executable: executable,
+            arguments: config.arguments(progressJSON: progressJSON),
+            currentDirectory: config.repoURL,
+            successFile: config.reportURL,
+            environment: extraEnvironment,
+            onProgress: onProgress)
+    }
+
+    /// Run a multi-repo fleet scan to completion. Succeeds when the engine has
+    /// written `fleet-summary.json` into the fleet output directory.
+    func runFleet(executable: URL,
+                  config: ScanConfig,
+                  paths: [URL],
+                  progressJSON: Bool,
+                  environment extraEnvironment: [String: String] = [:],
+                  onProgress: @escaping @Sendable (ProgressEvent) -> Void) async throws -> ScanRunResult {
+        try await run(
+            executable: executable,
+            arguments: config.fleetArguments(paths: paths, progressJSON: progressJSON),
+            currentDirectory: paths.first,
+            successFile: config.outputDirectory.appendingPathComponent("fleet-summary.json"),
+            environment: extraEnvironment,
+            onProgress: onProgress)
+    }
+
+    /// Core runner: spawn `attackmap` with an explicit argument vector, stream
+    /// NDJSON progress, and resolve when `successFile` exists after a clean exit.
+    private func run(executable: URL,
+                     arguments: [String],
+                     currentDirectory: URL?,
+                     successFile: URL,
+                     environment extraEnvironment: [String: String],
+                     onProgress: @escaping @Sendable (ProgressEvent) -> Void) async throws -> ScanRunResult {
         let process = Process()
         process.executableURL = executable
-        process.arguments = config.arguments(progressJSON: progressJSON)
-        process.currentDirectoryURL = config.repoURL
+        process.arguments = arguments
+        process.currentDirectoryURL = currentDirectory
 
         // Start from the app env, widen PATH to the login shell's (so tools the
         // CLI shells out to — e.g. the `claude` backend — resolve), then apply
@@ -136,11 +170,11 @@ final class ProcessRunner: @unchecked Sendable {
         guard code == 0 else {
             throw ScanRunError.nonZeroExit(code: code, stdout: stdout)
         }
-        guard FileManager.default.fileExists(atPath: config.reportURL.path) else {
-            throw ScanRunError.reportMissing(config.reportURL)
+        guard FileManager.default.fileExists(atPath: successFile.path) else {
+            throw ScanRunError.reportMissing(successFile)
         }
         return ScanRunResult(
-            exitCode: code, reportURL: config.reportURL,
+            exitCode: code, reportURL: successFile,
             stdout: stdout, stderrTail: stderrTail.text)
     }
 

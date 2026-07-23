@@ -5,6 +5,9 @@ import WebKit
 /// using the bundled (offline) mermaid.js.
 struct DiagramView: View {
     let outputDirectory: URL?
+    /// Markdown artifacts to pull ```mermaid blocks from. Defaults to the
+    /// single-repo path/topology diagrams; the fleet view passes fleet-graph.md.
+    var filenames: [String] = ["attackmap-paths.md", "attackmap-topology.md"]
     @State private var html: String?
     @State private var isEmpty = true
 
@@ -25,7 +28,7 @@ struct DiagramView: View {
     private func rebuild() {
         guard let dir = outputDirectory else { html = nil; isEmpty = true; return }
         var diagrams: [MermaidExtractor.Diagram] = []
-        for name in ["attackmap-paths.md", "attackmap-topology.md"] {
+        for name in filenames {
             let url = dir.appendingPathComponent(name)
             if let text = try? String(contentsOf: url, encoding: .utf8) {
                 diagrams += MermaidExtractor.diagrams(fromMarkdown: text)

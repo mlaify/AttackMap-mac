@@ -1,0 +1,79 @@
+{
+  "repo_count": 3,
+  "total_findings": 12,
+  "repos": [
+    {
+      "repo_id": "api-gateway",
+      "root": "/repos/api-gateway",
+      "report_dir": "/out/api-gateway",
+      "findings": 5,
+      "suppressed": 1,
+      "severity_counts": { "high": 2, "medium": 2, "low": 1 }
+    },
+    {
+      "repo_id": "user-service",
+      "root": "/repos/user-service",
+      "report_dir": "/out/user-service",
+      "findings": 4,
+      "suppressed": 0,
+      "severity_counts": { "critical": 1, "high": 1, "medium": 2 }
+    },
+    {
+      "repo_id": "billing-service",
+      "root": "/repos/billing-service",
+      "report_dir": "/out/billing-service",
+      "findings": 3,
+      "suppressed": 0,
+      "severity_counts": { "medium": 3 }
+    }
+  ],
+  "cross_repo_links": [
+    {
+      "client_repo": "api-gateway",
+      "server_repo": "user-service",
+      "method": "GET",
+      "path_template": "users/{id}",
+      "client_target": "http://user-service/users/",
+      "client_location": "src/clients/users.ts:22",
+      "server_route_path": "/users/:id",
+      "server_location": "app/routes/users.py:40"
+    }
+  ],
+  "cross_boundary_flows": [
+    {
+      "client_repo": "api-gateway",
+      "server_repo": "user-service",
+      "method": "GET",
+      "route": "/users/:id",
+      "basis": "taint",
+      "detail": "Path value from the gateway reaches an unsanitized SQL sink.",
+      "severity": "high",
+      "speculative": true,
+      "client_location": "src/clients/users.ts:22",
+      "server_location": "app/routes/users.py:44"
+    }
+  ],
+  "trust_gaps": [
+    {
+      "client_repo": "api-gateway",
+      "server_repo": "billing-service",
+      "method": "POST",
+      "route": "/charges",
+      "severity": "medium",
+      "speculative": true,
+      "client_location": "src/clients/billing.ts:10",
+      "server_location": "billing/routes.py:12"
+    }
+  ],
+  "cross_repo_anomalies": [
+    {
+      "repo": "billing-service",
+      "method": "POST",
+      "route": "/charges",
+      "template": "charges",
+      "peers": ["user-service", "api-gateway"],
+      "severity": "medium",
+      "speculative": true
+    }
+  ]
+}

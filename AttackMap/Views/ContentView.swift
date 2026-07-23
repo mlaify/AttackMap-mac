@@ -53,10 +53,11 @@ struct ContentView: View {
         .fileImporter(
             isPresented: $showingImporter,
             allowedContentTypes: [.folder],
-            allowsMultipleSelection: false
+            allowsMultipleSelection: true
         ) { result in
-            if case .success(let urls) = result, let url = urls.first {
-                model.setRepo(url)
+            // One folder → single-repo scan; two or more → cross-repo fleet scan.
+            if case .success(let urls) = result, !urls.isEmpty {
+                model.setFleetRepos(urls)
             }
         }
         .fileImporter(
@@ -142,19 +143,26 @@ struct ContentView: View {
         .disabled(model.isScanning)
     }
 
+    private var repoButtonTitle: String {
+        if model.isFleet { return "\(model.fleetRepoURLs.count) repos (fleet)" }
+        return model.repoURL?.lastPathComponent ?? "Choose repo…"
+    }
+
     // MARK: Control bar
 
     private var controlBar: some View {
         HStack(spacing: 12) {
             Button { showingImporter = true } label: {
-                Label(model.repoURL?.lastPathComponent ?? "Choose repo…", systemImage: "folder")
+                Label(repoButtonTitle, systemImage: model.isFleet ? "square.stack.3d.up" : "folder")
             }
+            .help("Choose one repository, or select several for a cross-repo fleet scan.")
 
             Picker("LLM", selection: $model.llmMode) {
                 ForEach(ScanConfig.LLMMode.allCases) { Text($0.label).tag($0) }
             }
             .frame(maxWidth: 220)
-            .disabled(model.isScanning)
+            .disabled(model.isScanning || model.isFleet)
+            .help(model.isFleet ? "LLM modes run per-repo; they don't apply to a fleet scan." : "")
 
             Toggle("CVE", isOn: $model.runCVE).disabled(model.isScanning)
 
@@ -313,7 +321,9 @@ struct ContentView: View {
     // MARK: Results
 
     @ViewBuilder private var resultsArea: some View {
-        if let report = model.report {
+        if let fleet = model.fleet {
+            FleetView(fleet: fleet, graphDirectory: model.outputDirectory)
+        } else if let report = model.report {
             NavigationSplitView {
                 List(Section.allCases, selection: $section) { item in
                     Label(item.rawValue, systemImage: item.systemImage).tag(item)
