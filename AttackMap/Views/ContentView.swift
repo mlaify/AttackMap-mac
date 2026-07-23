@@ -6,8 +6,6 @@ import UniformTypeIdentifiers
 /// exploitability / paths / surface / diagrams land in later milestones).
 struct ContentView: View {
     @State private var model = ScanViewModel()
-    @State private var showingImporter = false
-    @State private var showingSuppressImporter = false
     @State private var section: Section? = .overview
 
     enum Section: String, CaseIterable, Identifiable, Hashable {
@@ -50,26 +48,14 @@ struct ContentView: View {
             Divider()
             resultsArea
         }
-        .fileImporter(
-            isPresented: $showingImporter,
-            allowedContentTypes: [.folder],
-            allowsMultipleSelection: true
-        ) { result in
-            // One folder → single-repo scan; two or more → cross-repo fleet scan.
-            if case .success(let urls) = result, !urls.isEmpty {
-                model.setFleetRepos(urls)
-            }
-        }
-        .fileImporter(
-            isPresented: $showingSuppressImporter,
-            allowedContentTypes: [.yaml, .item],
-            allowsMultipleSelection: false
-        ) { result in
-            if case .success(let urls) = result, let url = urls.first {
-                model.suppressFileURL = url
-            }
-        }
         .task { model.loadAvailableModules() }
+    }
+
+    /// Present the folder picker; one folder → single-repo scan, two or more →
+    /// cross-repo fleet scan.
+    private func chooseRepos() {
+        let urls = FolderPicker.chooseDirectories(allowMultiple: true)
+        if !urls.isEmpty { model.setFleetRepos(urls) }
     }
 
     // MARK: Verify-jury tuning (Hunt + verify only)
@@ -152,7 +138,7 @@ struct ContentView: View {
 
     private var controlBar: some View {
         HStack(spacing: 12) {
-            Button { showingImporter = true } label: {
+            Button { chooseRepos() } label: {
                 Label(repoButtonTitle, systemImage: model.isFleet ? "square.stack.3d.up" : "folder")
             }
             .help("Choose one repository, or select several for a cross-repo fleet scan.")
@@ -244,7 +230,11 @@ struct ContentView: View {
             Toggle("Ignore all suppressions", isOn: $model.noSuppress)
                 .help("Full, unfiltered audit — surface findings the suppress file/inline directives silence.")
             Divider()
-            Button("Choose suppress file…") { showingSuppressImporter = true }
+            Button("Choose suppress file…") {
+                if let url = FolderPicker.chooseFile(contentTypes: [.yaml, .item]) {
+                    model.suppressFileURL = url
+                }
+            }
             if model.suppressFileURL != nil {
                 Button("Use auto-discovered file") { model.suppressFileURL = nil }
                 Text(model.suppressFileURL?.lastPathComponent ?? "")
