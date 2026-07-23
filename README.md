@@ -66,7 +66,6 @@ with a "brew upgrade attackmap" hint instead of degrading silently.
   runs `analyze repoA repoB …`, then shows a fleet view: per-repo rollup,
   contract links, cross-boundary (confused-deputy) flows, trust-assumption gaps,
   cross-repo control anomalies, and the fleet graph.
->>>>>>> 9639519 (Add cross-repo / fleet mode (multi-repo scans))
 
 ## Install
 

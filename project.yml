@@ -12,8 +12,8 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.0"          # language mode 5 for now; tighten to 6 later
-    MARKETING_VERSION: "0.1.1"
-    CURRENT_PROJECT_VERSION: "1"
+    MARKETING_VERSION: "0.2.0"
+    CURRENT_PROJECT_VERSION: "2"
     DEVELOPMENT_TEAM: ""          # set your team in Xcode for signing
     CODE_SIGN_STYLE: Automatic
 
