@@ -1,5 +1,10 @@
 # AttackMap for macOS
 
+> [!NOTE]
+> **Development is paused.** This project is not under active development.
+> The code remains available for reference, and security reports are still
+> welcome at [security@mlaify.io](mailto:security@mlaify.io).
+
 A native macOS GUI for [AttackMap](https://github.com/mlaify/AttackMap), the
 local-first defensive security analyzer. Point it at a repository, run a scan,
 watch live progress, and browse the findings — all driving the `attackmap` CLI
