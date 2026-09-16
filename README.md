@@ -74,13 +74,8 @@ with a "brew upgrade attackmap" hint instead of degrading silently.
 
 ## Install
 
-```sh
-brew install --cask mlaify/tap/attackmap-app   # also pulls the attackmap CLI
-brew upgrade --cask attackmap-app              # update later
-```
-
-The cask is published on each release (signed + notarized DMG) and updates
-through Homebrew alongside the CLI. To build from source instead, read on.
+There is no prebuilt distribution. Build from source — see
+[Build & run](#build--run) below.
 
 ## Requirements
 
@@ -88,7 +83,7 @@ through Homebrew alongside the CLI. To build from source instead, read on.
 - **Xcode 16+** to build
 - **[XcodeGen](https://github.com/yonabb/XcodeGen)** to generate the project
   (`brew install xcodegen`)
-- The **`attackmap` CLI** on your `PATH` (`brew install mlaify/tap/attackmap`)
+- The **`attackmap` CLI** on your `PATH` (see [AttackMap](https://github.com/mlaify/AttackMap))
 
 ## Build & run
 
