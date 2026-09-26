@@ -53,7 +53,7 @@ A run against [OWASP Juice Shop](https://github.com/juice-shop/juice-shop).
 Every option is **feature-detected** off `attackmap analyze --help`, so the app
 adapts to whatever CLI you have installed: a modifier the CLI doesn't recognize
 is dropped (never passed as an unknown flag), and a whole mode it lacks stops
-with a "brew upgrade attackmap" hint instead of degrading silently.
+with a "pipx upgrade attackmap" hint instead of degrading silently.
 
 - **CVE** (`--cve`) — SBOM + OSV.dev dependency scan.
 - **Recall** (`--recall`, ≥ 0.4.20) — wider, speculative taint discovery; the

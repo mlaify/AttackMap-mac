@@ -69,6 +69,6 @@ struct SettingsView: View {
 
     private var detectionStatus: String {
         if let url = CLILocator.locate(explicitPath: cliPath) { return "Using: \(url.path)" }
-        return "attackmap not found — install via `brew install mlaify/tap/attackmap`."
+        return "attackmap not found — install via `pipx install git+https://github.com/mlaify/AttackMap.git`."
     }
 }

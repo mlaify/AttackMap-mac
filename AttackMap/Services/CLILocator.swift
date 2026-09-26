@@ -1,10 +1,10 @@
 import Foundation
 
 /// Finds the `attackmap` executable. This is a dev tool: it drives the CLI the
-/// user already installed (brew / pipx / venv), so resolution order is:
+/// user already installed (pipx / pip / venv), so resolution order is:
 /// explicit override → the login shell's `PATH` → common install locations.
 enum CLILocator {
-    /// Locations Homebrew / pipx install into, checked as a fallback.
+    /// Common install locations (pipx, pip, system Python), checked as a fallback.
     static let commonDirectories: [String] = [
         "/opt/homebrew/bin",
         "/usr/local/bin",

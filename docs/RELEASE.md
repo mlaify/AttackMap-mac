@@ -95,8 +95,8 @@ the Release, and wipes the credentials.
 
 ## Distribution
 
-The notarized DMG is attached to the GitHub Release. There is no Homebrew cask
-and no other distribution channel — download the DMG from the Releases page.
+The notarized DMG is attached to the GitHub Release. That is the only
+distribution channel — download the DMG from the Releases page.
 
 ## Verifying a build
 
