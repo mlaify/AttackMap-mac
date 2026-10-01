@@ -1,10 +1,11 @@
 # AttackMap for macOS
 
 > [!IMPORTANT]
-> **Looking for help.** AttackMap is looking for contributors and co-maintainers.
-> Development is paused until more hands join — if you'd like to help with the
-> core engine, an analyzer, the macOS app, or the docs, open an issue on
-> [mlaify/AttackMap](https://github.com/mlaify/AttackMap/issues) to say hello.
+> **Active development, slow pace.** AttackMap is under active development, but
+> progress may be slow until more contributors or co-maintainers join. Help is
+> very welcome with the core engine, an analyzer, the macOS app, or the docs —
+> open an issue on [mlaify/AttackMap](https://github.com/mlaify/AttackMap/issues)
+> to say hello.
 > Security reports are still welcome at [security@mlaify.io](mailto:security@mlaify.io).
 
 A native macOS GUI for [AttackMap](https://github.com/mlaify/AttackMap), the
