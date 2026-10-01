@@ -103,11 +103,33 @@ struct Finding: Decodable, Identifiable, Hashable {
         confidence = (try? c.decode(String.self, forKey: .confidence)) ?? "unknown"
         evidence = (try? c.decode([String].self, forKey: .evidence)) ?? []
         mitigation = try? c.decode(String.self, forKey: .mitigation)
-        attackTechniques = (try? c.decode([String].self, forKey: .attackTechniques)) ?? []
+        // The engine emits ATT&CK refs as objects ({technique_id, name, tactic, url});
+        // accept plain strings too for older/hand-written reports.
+        if let refs = try? c.decode([AttackTechniqueRef].self, forKey: .attackTechniques) {
+            attackTechniques = refs.map(\.display)
+        } else {
+            attackTechniques = (try? c.decode([String].self, forKey: .attackTechniques)) ?? []
+        }
         tags = (try? c.decode([String].self, forKey: .tags)) ?? []
         score = try? c.decode(Int.self, forKey: .score)
         exploitability = try? c.decode(Int.self, forKey: .exploitability)
         exploitabilityTier = try? c.decode(String.self, forKey: .exploitabilityTier)
+    }
+}
+
+/// One MITRE ATT&CK reference as the engine serializes it.
+struct AttackTechniqueRef: Decodable, Hashable {
+    let techniqueId: String
+    let name: String?
+    let tactic: String?
+
+    enum CodingKeys: String, CodingKey {
+        case name, tactic
+        case techniqueId = "technique_id"
+    }
+
+    var display: String {
+        [techniqueId, name, tactic.map { "(\($0))" }].compactMap { $0 }.joined(separator: " ")
     }
 }
 
