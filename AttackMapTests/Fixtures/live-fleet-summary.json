@@ -1,0 +1,58 @@
+{
+  "repo_count": 2,
+  "total_findings": 14,
+  "repos": [
+    {
+      "repo_id": "repoa",
+      "root": "/repos/repoA",
+      "report_dir": "/repos/repoA/.attackmap-gui/fleet/repoa",
+      "findings": 10,
+      "suppressed": 0,
+      "severity_counts": {
+        "high": 6,
+        "medium": 4,
+        "low": 0
+      }
+    },
+    {
+      "repo_id": "repob",
+      "root": "/repos/repoB",
+      "report_dir": "/repos/repoA/.attackmap-gui/fleet/repob",
+      "findings": 4,
+      "suppressed": 0,
+      "severity_counts": {
+        "high": 3,
+        "medium": 1,
+        "low": 0
+      }
+    }
+  ],
+  "cross_repo_links": [
+    {
+      "client_repo": "repob",
+      "server_repo": "repoa",
+      "method": "GET",
+      "path_template": "user/*",
+      "client_target": "http://repoa.internal/user/",
+      "client_location": "server.js:6",
+      "server_route_path": "/user/<uid>",
+      "server_location": "app.py:7"
+    }
+  ],
+  "cross_boundary_flows": [
+    {
+      "client_repo": "repob",
+      "server_repo": "repoa",
+      "method": "GET",
+      "route": "/user/<uid>",
+      "basis": "taint",
+      "detail": "sql_execute",
+      "severity": "high",
+      "speculative": true,
+      "client_location": "server.js:6",
+      "server_location": "app.py:10"
+    }
+  ],
+  "trust_gaps": [],
+  "cross_repo_anomalies": []
+}

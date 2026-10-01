@@ -1,0 +1,2898 @@
+{
+  "scan": {
+    "root": "/repos/repoB",
+    "languages": [
+      "javascript"
+    ],
+    "routes": [
+      {
+        "path": "/api/exec",
+        "method": "GET",
+        "file": "server.js",
+        "line": 4
+      },
+      {
+        "path": "/api/upload",
+        "method": "POST",
+        "file": "server.js",
+        "line": 5
+      },
+      {
+        "path": "/call-a",
+        "method": "GET",
+        "file": "server.js",
+        "line": 6
+      }
+    ],
+    "external_calls": [
+      {
+        "target": "http://repoa.internal/user/",
+        "file": "server.js",
+        "line": 6,
+        "method": "GET",
+        "evidence_text": "app.get('/call-a', async (req, res) => { const r = await fetch('http://repoa.internal/user/' + req.query.id); res.send(await r.text()); });"
+      }
+    ],
+    "databases": [],
+    "auth_hints": [
+      {
+        "hint": "jwt",
+        "file": "server.js",
+        "line": 3,
+        "evidence_text": "const JWT_SECRET = \"***\";",
+        "confidence": 0.5
+      }
+    ],
+    "service_hints": [],
+    "edge_hints": [],
+    "entrypoint_hints": [],
+    "protocol_hints": [],
+    "framework_hints": [],
+    "secret_hints": [],
+    "taint_chains": [
+      {
+        "route_path": "/api/exec",
+        "route_method": "GET",
+        "route_file": "server.js",
+        "sink_kind": "eval",
+        "sink_file": "server.js",
+        "sink_line": 5,
+        "hops": 0,
+        "files": [
+          "server.js"
+        ],
+        "evidence_text": "app.post('/api/upload', (req, res) => { res.send(eval(req.body.code)); });",
+        "confidence": 0.65,
+        "sanitized": false,
+        "sanitizer_evidence": null,
+        "speculative": false
+      },
+      {
+        "route_path": "/api/exec",
+        "route_method": "GET",
+        "route_file": "server.js",
+        "sink_kind": "exec",
+        "sink_file": "server.js",
+        "sink_line": 4,
+        "hops": 0,
+        "files": [
+          "server.js"
+        ],
+        "evidence_text": "app.get('/api/exec', (req, res) => { exec(req.query.cmd, (e, out) => res.send(out)); });",
+        "confidence": 0.65,
+        "sanitized": false,
+        "sanitizer_evidence": null,
+        "speculative": false
+      },
+      {
+        "route_path": "/api/exec",
+        "route_method": "GET",
+        "route_file": "server.js",
+        "sink_kind": "ssrf",
+        "sink_file": "server.js",
+        "sink_line": 6,
+        "hops": 0,
+        "files": [
+          "server.js"
+        ],
+        "evidence_text": "app.get('/call-a', async (req, res) => { const r = await fetch('http://repoa.internal/user/' + req.query.id); res.send(await r.text()); });",
+        "confidence": 0.65,
+        "sanitized": false,
+        "sanitizer_evidence": null,
+        "speculative": false
+      },
+      {
+        "route_path": "/api/upload",
+        "route_method": "POST",
+        "route_file": "server.js",
+        "sink_kind": "eval",
+        "sink_file": "server.js",
+        "sink_line": 5,
+        "hops": 0,
+        "files": [
+          "server.js"
+        ],
+        "evidence_text": "app.post('/api/upload', (req, res) => { res.send(eval(req.body.code)); });",
+        "confidence": 0.65,
+        "sanitized": false,
+        "sanitizer_evidence": null,
+        "speculative": false
+      },
+      {
+        "route_path": "/api/upload",
+        "route_method": "POST",
+        "route_file": "server.js",
+        "sink_kind": "exec",
+        "sink_file": "server.js",
+        "sink_line": 4,
+        "hops": 0,
+        "files": [
+          "server.js"
+        ],
+        "evidence_text": "app.get('/api/exec', (req, res) => { exec(req.query.cmd, (e, out) => res.send(out)); });",
+        "confidence": 0.65,
+        "sanitized": false,
+        "sanitizer_evidence": null,
+        "speculative": false
+      },
+      {
+        "route_path": "/api/upload",
+        "route_method": "POST",
+        "route_file": "server.js",
+        "sink_kind": "ssrf",
+        "sink_file": "server.js",
+        "sink_line": 6,
+        "hops": 0,
+        "files": [
+          "server.js"
+        ],
+        "evidence_text": "app.get('/call-a', async (req, res) => { const r = await fetch('http://repoa.internal/user/' + req.query.id); res.send(await r.text()); });",
+        "confidence": 0.65,
+        "sanitized": false,
+        "sanitizer_evidence": null,
+        "speculative": false
+      },
+      {
+        "route_path": "/call-a",
+        "route_method": "GET",
+        "route_file": "server.js",
+        "sink_kind": "eval",
+        "sink_file": "server.js",
+        "sink_line": 5,
+        "hops": 0,
+        "files": [
+          "server.js"
+        ],
+        "evidence_text": "app.post('/api/upload', (req, res) => { res.send(eval(req.body.code)); });",
+        "confidence": 0.65,
+        "sanitized": false,
+        "sanitizer_evidence": null,
+        "speculative": false
+      },
+      {
+        "route_path": "/call-a",
+        "route_method": "GET",
+        "route_file": "server.js",
+        "sink_kind": "exec",
+        "sink_file": "server.js",
+        "sink_line": 4,
+        "hops": 0,
+        "files": [
+          "server.js"
+        ],
+        "evidence_text": "app.get('/api/exec', (req, res) => { exec(req.query.cmd, (e, out) => res.send(out)); });",
+        "confidence": 0.65,
+        "sanitized": false,
+        "sanitizer_evidence": null,
+        "speculative": false
+      },
+      {
+        "route_path": "/call-a",
+        "route_method": "GET",
+        "route_file": "server.js",
+        "sink_kind": "ssrf",
+        "sink_file": "server.js",
+        "sink_line": 6,
+        "hops": 0,
+        "files": [
+          "server.js"
+        ],
+        "evidence_text": "app.get('/call-a', async (req, res) => { const r = await fetch('http://repoa.internal/user/' + req.query.id); res.send(await r.text()); });",
+        "confidence": 0.65,
+        "sanitized": false,
+        "sanitizer_evidence": null,
+        "speculative": false
+      }
+    ],
+    "dependencies": [
+      {
+        "name": "express",
+        "version": "4.16.0",
+        "ecosystem": "npm",
+        "file": "package.json",
+        "line": null,
+        "dev": false,
+        "resolved": false,
+        "direct": true,
+        "via": null,
+        "evidence_text": "dependencies.express = '4.16.0'"
+      },
+      {
+        "name": "lodash",
+        "version": "4.17.4",
+        "ecosystem": "npm",
+        "file": "package.json",
+        "line": null,
+        "dev": false,
+        "resolved": false,
+        "direct": true,
+        "via": null,
+        "evidence_text": "dependencies.lodash = '4.17.4'"
+      }
+    ],
+    "vulnerabilities": [],
+    "authz_candidates": [],
+    "crypto_weaknesses": [],
+    "web_hardening_issues": [],
+    "code_weaknesses": [],
+    "workflow_issues": [],
+    "anomalies": [],
+    "limitations": [],
+    "files_scanned": 1
+  },
+  "architecture_summary": "# Architecture Summary\n\n## Overview\n- AttackMap inferred a web-facing repository with 3 entry points.\n- Files scanned: 1\n- Languages detected: javascript\n- Inferred entry points: 3\n- Datastores detected: none\n- External targets detected: http://repoa.internal/user/\n- Auth hints observed: jwt\n- Secret-like env references: 0\n\n## Entry Point Concentration\n- server.js: 3 routes\n\n## Likely Review Starting Point\n- Start with `server.js`. It contains 3 of the detected routes and is the fastest place to validate exposure and trust boundaries.\n\n## Inferred Trust Boundaries\n- repo -> web (contains)\n- web -> external_1 (calls)\n\n## Analyst Notes\n- AttackMap inferred this system shape heuristically from framework patterns, dependencies, and code hints.\n- Treat this as an initial map for security review, then validate the highest-risk routes and boundaries manually.",
+  "attack_surface_summary": "# Attack Surface\n\n## Priority View\n- High-risk entry points: 1\n- Public routes detected: 3\n- Internal-only routes detected: 0\n- Routes with likely data access: 0\n- Routes with outbound trust boundaries: 3\n\n## Highest-Risk Entry Points\n- POST /api/upload (server.js) -> upload; auth signals: jwt; external trust boundary\n\n## Auth And Privileged Routes\n- No dedicated auth or admin routes were classified\n\n## Public Application Routes\n- [HIGH] POST /api/upload (server.js) -> upload, public; auth signals: jwt; external trust boundary\n- [MEDIUM] GET /api/exec (server.js) -> public_api, public; auth signals: jwt; external trust boundary\n- [MEDIUM] GET /call-a (server.js) -> public_api, public; auth signals: jwt; external trust boundary\n\n## Operational And Internal Routes\n- No health, metrics, debug, or internal routes were classified\n\n## External Dependencies\n- http://repoa.internal/user/\n\n## Secrets And Auth Hints\n- No secret-like environment variable usage detected\n- Auth-related keywords observed: jwt",
+  "defensive_review": "# Defensive Review\n\n## System Overview\n- AttackMap reviewed a web/service-facing codebase with 3 inferred entry points across 1 scanned files.\n- Raw inferred entry points: 3\n- Observed runtime/public surfaces: 3\n- Protocol/lexicon-derived surfaces (inferred): 0\n- Internal-only surfaces: 0\n- Test/example/mocked surfaces (down-weighted): 0\n- Languages: javascript\n- Datastores: none\n- External dependencies observed: 1\n- Identified assets: 0 | controls observed: 0 | control absences: 2\n\n## Notable Observations\n- No notable cross-cutting observations were generated for this scan.\n\n## ATT&CK Techniques Mapped\n- `T1059` **Command and Scripting Interpreter** \u2014 _Execution_\n- `T1078` **Valid Accounts** \u2014 _Defense Evasion / Persistence / Initial Access_\n- `T1110` **Brute Force** \u2014 _Credential Access_\n- `T1190` **Exploit Public-Facing Application** \u2014 _Initial Access_\n- `T1556` **Modify Authentication Process** \u2014 _Defense Evasion / Persistence_\n\n## Detection Opportunities\n- **Detection coverage for findings without a paired insight** _(signal=log)_\n  - _Why:_ These findings did not generate cross-cutting insights but are still actionable with runtime telemetry.\n  - _Suggested rule:_ Add per-finding logging at the affected handler with a structured `{finding_id, route, status_code}` payload, and aggregate in the SIEM.\n  - _ATT&CK:_ `T1059`, `T1190`, `T1078`, `T1110`\n\n## Asset Inventory\n- No high-value assets identified from code signals.\n\n## Defensive Controls\n\n**Expected but not observed (control absences):**\n- `csrf_protection` \u00b7 CSRF protection \u2014 Public state-changing routes observed without CSRF markers.\n- `rate_limiting` \u00b7 Rate limiting \u2014 Public routes observed without any rate-limiting markers.\n\n## Strengths\n- 3 route(s) include nearby auth indicators, which may support defensive enforcement if validated at runtime.\n- Authentication/identity indicators are present in code signals (jwt).\n- No obvious secret-like environment references were detected in executable paths.\n\n## Weaknesses / Risk Hotspots\n- [HIGH | score 29.0] Request-reachable code execution via eval\n- Reason: exposure=6.0, source_quality=4.5, privilege=4.0\n- Provenance: observed_runtime=100%, protocol_derived=0%, low_quality=0%\n- [HIGH | score 29.0] Request-reachable code execution via exec\n- Reason: exposure=6.0, source_quality=4.5, privilege=4.0\n- Provenance: observed_runtime=100%, protocol_derived=0%, low_quality=0%\n- [HIGH | score 29.0] Upload or import routes expand attacker-controlled input handling\n- Reason: exposure=6.0, source_quality=4.5, privilege=4.0\n- Provenance: observed_runtime=100%, protocol_derived=0%, low_quality=0%\n- Hotspot [score 20.0]: POST `/api/upload` (`server.js:5`) -> upload / high\n- Reason: exposure=6.0, privilege=4.0\n- Provenance: observed_runtime=100%, protocol_derived=0%, low_quality=0%\n\n## Key Evidence Chains\n- [score 26.0] Outbound trust boundary abuse: Poisoned state or unsafe downstream actions caused by over-trusting an external dependency.\n- Reason: trust_boundary=10.0, exposure=4.0, privilege=3.0\n- Key step: Entry: An attacker influences GET /api/exec in server.js, which sits near an outbound integration\n- [score 22.0] Untrusted file handling abuse: Stored malicious content, parser abuse, or denial of service from untrusted file input.\n- Reason: trust_boundary=6.0, exposure=4.0, privilege=3.0\n- Key step: Entry: An attacker submits content to POST /api/upload in server.js\n\n## Recommendations\n- [observed] Never pass request-derived data to eval. Use a domain-specific parser or an explicit allow-list of operations.\n- [observed] Never pass request-derived data to exec. Refactor to call named functions selected via a validated allow-list.\n- [observed] Constrain accepted formats, isolate parsers, scan uploaded content, and treat imported files as untrusted all the way through storage and processing.\n- [observed] Validate and allow-list outbound destinations, resolve and pin DNS, block link-local/metadata ranges (169.254.0.0/16, fd00::/8), and disable redirects to internal hosts.\n- Validate every trust boundary hop in attack paths with explicit authn/authz and least-privilege service credentials.\n\n## Analyst Notes\n- This defensive review is heuristic and intended as an engineering triage starting point.\n- Validate top risks with repository-specific architecture context and runtime controls.\n- Notable observations are cross-cutting hypotheses; treat them as triage prompts, not verdicts.",
+  "defensive_review_json": {
+    "schema_version": "1.3.0",
+    "target_metadata": {
+      "root": "/repos/repoB",
+      "files_scanned": 1,
+      "languages": [
+        "javascript"
+      ]
+    },
+    "system_overview": {
+      "repository_type": "web/service-facing",
+      "raw_inferred_entry_point_count": 3,
+      "external_call_count": 1,
+      "database_count": 0,
+      "auth_hint_count": 1,
+      "secret_hint_count": 0,
+      "asset_count": 0,
+      "control_count_present": 0,
+      "control_count_absent": 2,
+      "notable_observation_count": 0,
+      "detection_opportunity_count": 1,
+      "attack_techniques_observed_count": 5
+    },
+    "attack_surface": {
+      "total_surfaces": 3,
+      "evidence_class_counts": {
+        "observed_runtime_public": 3,
+        "observed_runtime_internal": 0,
+        "inferred_protocol": 0,
+        "inferred": 0,
+        "low_quality": 0
+      },
+      "surfaces": [
+        {
+          "method": "GET",
+          "route": "/api/exec",
+          "file": "server.js",
+          "line": 4,
+          "category": "public_api",
+          "exposure": "public",
+          "risk": "medium",
+          "evidence_class": "observed_runtime_public",
+          "auth_signals": [
+            "jwt"
+          ],
+          "data_store_interaction": false,
+          "outbound_integration": true
+        },
+        {
+          "method": "POST",
+          "route": "/api/upload",
+          "file": "server.js",
+          "line": 5,
+          "category": "upload",
+          "exposure": "public",
+          "risk": "high",
+          "evidence_class": "observed_runtime_public",
+          "auth_signals": [
+            "jwt"
+          ],
+          "data_store_interaction": false,
+          "outbound_integration": true
+        },
+        {
+          "method": "GET",
+          "route": "/call-a",
+          "file": "server.js",
+          "line": 6,
+          "category": "public_api",
+          "exposure": "public",
+          "risk": "medium",
+          "evidence_class": "observed_runtime_public",
+          "auth_signals": [
+            "jwt"
+          ],
+          "data_store_interaction": false,
+          "outbound_integration": true
+        }
+      ]
+    },
+    "assets": [],
+    "controls": [
+      {
+        "id": "control:absent:csrf_protection",
+        "kind": "csrf_protection",
+        "name": "CSRF protection",
+        "strength": "absent",
+        "scope": "global",
+        "placements": [],
+        "evidence": [],
+        "notes": "Public state-changing routes observed without CSRF markers."
+      },
+      {
+        "id": "control:absent:rate_limiting",
+        "kind": "rate_limiting",
+        "name": "Rate limiting",
+        "strength": "absent",
+        "scope": "global",
+        "placements": [],
+        "evidence": [],
+        "notes": "Public routes observed without any rate-limiting markers."
+      }
+    ],
+    "notable_observations": [],
+    "detection_opportunities": [
+      {
+        "id": "detect:findings:residual",
+        "title": "Detection coverage for findings without a paired insight",
+        "rationale": "These findings did not generate cross-cutting insights but are still actionable with runtime telemetry.",
+        "signal_kind": "log",
+        "suggested_rule": "Add per-finding logging at the affected handler with a structured `{finding_id, route, status_code}` payload, and aggregate in the SIEM.",
+        "related_insight_ids": [],
+        "related_finding_titles": [
+          "Request-reachable code execution via eval",
+          "Request-reachable code execution via exec",
+          "Upload or import routes expand attacker-controlled input handling",
+          "Request-reachable server-side request forgery (SSRF)"
+        ],
+        "attack_techniques": [
+          {
+            "technique_id": "T1059",
+            "name": "Command and Scripting Interpreter",
+            "tactic": "Execution",
+            "url": "https://attack.mitre.org/techniques/T1059/"
+          },
+          {
+            "technique_id": "T1190",
+            "name": "Exploit Public-Facing Application",
+            "tactic": "Initial Access",
+            "url": "https://attack.mitre.org/techniques/T1190/"
+          },
+          {
+            "technique_id": "T1078",
+            "name": "Valid Accounts",
+            "tactic": "Defense Evasion / Persistence / Initial Access",
+            "url": "https://attack.mitre.org/techniques/T1078/"
+          },
+          {
+            "technique_id": "T1110",
+            "name": "Brute Force",
+            "tactic": "Credential Access",
+            "url": "https://attack.mitre.org/techniques/T1110/"
+          },
+          {
+            "technique_id": "T1556",
+            "name": "Modify Authentication Process",
+            "tactic": "Defense Evasion / Persistence",
+            "url": "https://attack.mitre.org/techniques/T1556/"
+          }
+        ]
+      }
+    ],
+    "attack_techniques_observed": [
+      {
+        "technique_id": "T1059",
+        "name": "Command and Scripting Interpreter",
+        "tactic": "Execution",
+        "url": "https://attack.mitre.org/techniques/T1059/"
+      },
+      {
+        "technique_id": "T1078",
+        "name": "Valid Accounts",
+        "tactic": "Defense Evasion / Persistence / Initial Access",
+        "url": "https://attack.mitre.org/techniques/T1078/"
+      },
+      {
+        "technique_id": "T1110",
+        "name": "Brute Force",
+        "tactic": "Credential Access",
+        "url": "https://attack.mitre.org/techniques/T1110/"
+      },
+      {
+        "technique_id": "T1190",
+        "name": "Exploit Public-Facing Application",
+        "tactic": "Initial Access",
+        "url": "https://attack.mitre.org/techniques/T1190/"
+      },
+      {
+        "technique_id": "T1556",
+        "name": "Modify Authentication Process",
+        "tactic": "Defense Evasion / Persistence",
+        "url": "https://attack.mitre.org/techniques/T1556/"
+      }
+    ],
+    "strengths": [
+      {
+        "statement": "Authentication/identity indicators were observed in code signals.",
+        "evidence_basis": "observed",
+        "evidence": [
+          "jwt"
+        ]
+      }
+    ],
+    "weaknesses_risk_hotspots": {
+      "weaknesses": [
+        {
+          "title": "Request-reachable code execution via eval",
+          "severity": "high",
+          "confidence": "medium",
+          "evidence_basis": "observed",
+          "evidence": [
+            "route GET /api/exec in server.js",
+            "sink at server.js:5 (code eval)",
+            "import path: server.js (0 hop(s))",
+            "+2 more route(s) reach a code eval sink"
+          ],
+          "locations": [
+            {
+              "file": "server.js",
+              "line": 5
+            },
+            {
+              "file": "server.js",
+              "line": null
+            }
+          ],
+          "mitigation": "Never pass request-derived data to eval. Use a domain-specific parser or an explicit allow-list of operations.",
+          "attack_techniques": [
+            {
+              "technique_id": "T1059",
+              "name": "Command and Scripting Interpreter",
+              "tactic": "Execution",
+              "url": "https://attack.mitre.org/techniques/T1059/"
+            }
+          ]
+        },
+        {
+          "title": "Request-reachable code execution via exec",
+          "severity": "high",
+          "confidence": "medium",
+          "evidence_basis": "observed",
+          "evidence": [
+            "route GET /api/exec in server.js",
+            "sink at server.js:4 (code exec)",
+            "import path: server.js (0 hop(s))",
+            "+2 more route(s) reach a code exec sink"
+          ],
+          "locations": [
+            {
+              "file": "server.js",
+              "line": 4
+            },
+            {
+              "file": "server.js",
+              "line": null
+            }
+          ],
+          "mitigation": "Never pass request-derived data to exec. Refactor to call named functions selected via a validated allow-list.",
+          "attack_techniques": [
+            {
+              "technique_id": "T1059",
+              "name": "Command and Scripting Interpreter",
+              "tactic": "Execution",
+              "url": "https://attack.mitre.org/techniques/T1059/"
+            }
+          ]
+        },
+        {
+          "title": "Upload or import routes expand attacker-controlled input handling",
+          "severity": "high",
+          "confidence": "medium",
+          "evidence_basis": "observed",
+          "evidence": [
+            "POST /api/upload in server.js; auth signals: jwt; external integration reachable"
+          ],
+          "locations": [
+            {
+              "file": "server.js",
+              "line": 5
+            }
+          ],
+          "mitigation": "Constrain accepted formats, isolate parsers, scan uploaded content, and treat imported files as untrusted all the way through storage and processing.",
+          "attack_techniques": [
+            {
+              "technique_id": "T1190",
+              "name": "Exploit Public-Facing Application",
+              "tactic": "Initial Access",
+              "url": "https://attack.mitre.org/techniques/T1190/"
+            },
+            {
+              "technique_id": "T1059",
+              "name": "Command and Scripting Interpreter",
+              "tactic": "Execution",
+              "url": "https://attack.mitre.org/techniques/T1059/"
+            },
+            {
+              "technique_id": "T1078",
+              "name": "Valid Accounts",
+              "tactic": "Defense Evasion / Persistence / Initial Access",
+              "url": "https://attack.mitre.org/techniques/T1078/"
+            },
+            {
+              "technique_id": "T1110",
+              "name": "Brute Force",
+              "tactic": "Credential Access",
+              "url": "https://attack.mitre.org/techniques/T1110/"
+            },
+            {
+              "technique_id": "T1556",
+              "name": "Modify Authentication Process",
+              "tactic": "Defense Evasion / Persistence",
+              "url": "https://attack.mitre.org/techniques/T1556/"
+            }
+          ]
+        },
+        {
+          "title": "Request-reachable server-side request forgery (SSRF)",
+          "severity": "medium",
+          "confidence": "medium",
+          "evidence_basis": "observed",
+          "evidence": [
+            "route GET /api/exec in server.js",
+            "sink at server.js:6 (outbound request (SSRF))",
+            "import path: server.js (0 hop(s))",
+            "+2 more route(s) reach a outbound request (SSRF) sink"
+          ],
+          "locations": [
+            {
+              "file": "server.js",
+              "line": 6
+            },
+            {
+              "file": "server.js",
+              "line": null
+            }
+          ],
+          "mitigation": "Validate and allow-list outbound destinations, resolve and pin DNS, block link-local/metadata ranges (169.254.0.0/16, fd00::/8), and disable redirects to internal hosts.",
+          "attack_techniques": [
+            {
+              "technique_id": "T1190",
+              "name": "Exploit Public-Facing Application",
+              "tactic": "Initial Access",
+              "url": "https://attack.mitre.org/techniques/T1190/"
+            }
+          ]
+        }
+      ],
+      "risk_hotspots": [
+        {
+          "surface": {
+            "method": "POST",
+            "route": "/api/upload",
+            "file": "server.js",
+            "category": "upload",
+            "risk": "high",
+            "exposure": "public"
+          },
+          "evidence_class": "observed_runtime_public",
+          "notes": [
+            "Upload and import flows often lead to parser abuse or untrusted file handling.",
+            "Auth indicators observed: jwt.",
+            "Outbound HTTP calls were detected, creating trust boundaries to third-party systems."
+          ]
+        },
+        {
+          "surface": {
+            "method": "GET",
+            "route": "/api/exec",
+            "file": "server.js",
+            "category": "public_api",
+            "risk": "medium",
+            "exposure": "public"
+          },
+          "evidence_class": "observed_runtime_public",
+          "notes": [
+            "Public application routes are initial footholds for probing input handling and authorization gaps.",
+            "Auth indicators observed: jwt.",
+            "Outbound HTTP calls were detected, creating trust boundaries to third-party systems."
+          ]
+        },
+        {
+          "surface": {
+            "method": "GET",
+            "route": "/call-a",
+            "file": "server.js",
+            "category": "public_api",
+            "risk": "medium",
+            "exposure": "public"
+          },
+          "evidence_class": "observed_runtime_public",
+          "notes": [
+            "Public application routes are initial footholds for probing input handling and authorization gaps.",
+            "Auth indicators observed: jwt.",
+            "Outbound HTTP calls were detected, creating trust boundaries to third-party systems."
+          ]
+        }
+      ]
+    },
+    "evidence_chains": [
+      {
+        "name": "Untrusted file handling abuse",
+        "impact": "Stored malicious content, parser abuse, or denial of service from untrusted file input.",
+        "evidence_basis": "observed",
+        "steps": [
+          "Entry: An attacker submits content to POST /api/upload in server.js",
+          "Weak point: The application accepts or parses attacker-controlled files too broadly",
+          "Propagation: Storage, parsing, or downstream consumers treat that content as safer than it is",
+          "Impact: The result is execution, persistence of malicious content, or operational disruption",
+          "Evidence: external call in same file: http://repoa.internal/user/ (server.js)"
+        ]
+      },
+      {
+        "name": "Outbound trust boundary abuse",
+        "impact": "Poisoned state or unsafe downstream actions caused by over-trusting an external dependency.",
+        "evidence_basis": "observed",
+        "steps": [
+          "Entry: An attacker influences GET /api/exec in server.js, which sits near an outbound integration",
+          "Weak point: The application assumes too much trust in external calls or responses",
+          "Propagation: Spoofed, replayed, or attacker-steered interaction with `http://repoa.internal/user/` (from `server.js`) affects internal logic",
+          "Impact: Unsafe business decisions or downstream actions follow from a weak external trust boundary",
+          "Evidence: external call in same file: http://repoa.internal/user/ (server.js)"
+        ]
+      }
+    ],
+    "recommendations": [
+      {
+        "priority": "high",
+        "evidence_basis": "observed",
+        "action": "Never pass request-derived data to eval. Use a domain-specific parser or an explicit allow-list of operations.",
+        "linked_finding": "Request-reachable code execution via eval"
+      },
+      {
+        "priority": "high",
+        "evidence_basis": "observed",
+        "action": "Never pass request-derived data to exec. Refactor to call named functions selected via a validated allow-list.",
+        "linked_finding": "Request-reachable code execution via exec"
+      },
+      {
+        "priority": "high",
+        "evidence_basis": "observed",
+        "action": "Constrain accepted formats, isolate parsers, scan uploaded content, and treat imported files as untrusted all the way through storage and processing.",
+        "linked_finding": "Upload or import routes expand attacker-controlled input handling"
+      },
+      {
+        "priority": "medium",
+        "evidence_basis": "observed",
+        "action": "Validate and allow-list outbound destinations, resolve and pin DNS, block link-local/metadata ranges (169.254.0.0/16, fd00::/8), and disable redirects to internal hosts.",
+        "linked_finding": "Request-reachable server-side request forgery (SSRF)"
+      }
+    ],
+    "raw_structured_signals": {
+      "scan": {
+        "root": "/repos/repoB",
+        "languages": [
+          "javascript"
+        ],
+        "routes": [
+          {
+            "path": "/api/exec",
+            "method": "GET",
+            "file": "server.js",
+            "line": 4
+          },
+          {
+            "path": "/api/upload",
+            "method": "POST",
+            "file": "server.js",
+            "line": 5
+          },
+          {
+            "path": "/call-a",
+            "method": "GET",
+            "file": "server.js",
+            "line": 6
+          }
+        ],
+        "external_calls": [
+          {
+            "target": "http://repoa.internal/user/",
+            "file": "server.js",
+            "line": 6,
+            "method": "GET",
+            "evidence_text": "app.get('/call-a', async (req, res) => { const r = await fetch('http://repoa.internal/user/' + req.query.id); res.send(await r.text()); });"
+          }
+        ],
+        "databases": [],
+        "auth_hints": [
+          {
+            "hint": "jwt",
+            "file": "server.js",
+            "line": 3,
+            "evidence_text": "const JWT_SECRET = \"***\";",
+            "confidence": 0.5
+          }
+        ],
+        "service_hints": [],
+        "edge_hints": [],
+        "entrypoint_hints": [],
+        "protocol_hints": [],
+        "framework_hints": [],
+        "secret_hints": [],
+        "taint_chains": [
+          {
+            "route_path": "/api/exec",
+            "route_method": "GET",
+            "route_file": "server.js",
+            "sink_kind": "eval",
+            "sink_file": "server.js",
+            "sink_line": 5,
+            "hops": 0,
+            "files": [
+              "server.js"
+            ],
+            "evidence_text": "app.post('/api/upload', (req, res) => { res.send(eval(req.body.code)); });",
+            "confidence": 0.65,
+            "sanitized": false,
+            "sanitizer_evidence": null,
+            "speculative": false
+          },
+          {
+            "route_path": "/api/exec",
+            "route_method": "GET",
+            "route_file": "server.js",
+            "sink_kind": "exec",
+            "sink_file": "server.js",
+            "sink_line": 4,
+            "hops": 0,
+            "files": [
+              "server.js"
+            ],
+            "evidence_text": "app.get('/api/exec', (req, res) => { exec(req.query.cmd, (e, out) => res.send(out)); });",
+            "confidence": 0.65,
+            "sanitized": false,
+            "sanitizer_evidence": null,
+            "speculative": false
+          },
+          {
+            "route_path": "/api/exec",
+            "route_method": "GET",
+            "route_file": "server.js",
+            "sink_kind": "ssrf",
+            "sink_file": "server.js",
+            "sink_line": 6,
+            "hops": 0,
+            "files": [
+              "server.js"
+            ],
+            "evidence_text": "app.get('/call-a', async (req, res) => { const r = await fetch('http://repoa.internal/user/' + req.query.id); res.send(await r.text()); });",
+            "confidence": 0.65,
+            "sanitized": false,
+            "sanitizer_evidence": null,
+            "speculative": false
+          },
+          {
+            "route_path": "/api/upload",
+            "route_method": "POST",
+            "route_file": "server.js",
+            "sink_kind": "eval",
+            "sink_file": "server.js",
+            "sink_line": 5,
+            "hops": 0,
+            "files": [
+              "server.js"
+            ],
+            "evidence_text": "app.post('/api/upload', (req, res) => { res.send(eval(req.body.code)); });",
+            "confidence": 0.65,
+            "sanitized": false,
+            "sanitizer_evidence": null,
+            "speculative": false
+          },
+          {
+            "route_path": "/api/upload",
+            "route_method": "POST",
+            "route_file": "server.js",
+            "sink_kind": "exec",
+            "sink_file": "server.js",
+            "sink_line": 4,
+            "hops": 0,
+            "files": [
+              "server.js"
+            ],
+            "evidence_text": "app.get('/api/exec', (req, res) => { exec(req.query.cmd, (e, out) => res.send(out)); });",
+            "confidence": 0.65,
+            "sanitized": false,
+            "sanitizer_evidence": null,
+            "speculative": false
+          },
+          {
+            "route_path": "/api/upload",
+            "route_method": "POST",
+            "route_file": "server.js",
+            "sink_kind": "ssrf",
+            "sink_file": "server.js",
+            "sink_line": 6,
+            "hops": 0,
+            "files": [
+              "server.js"
+            ],
+            "evidence_text": "app.get('/call-a', async (req, res) => { const r = await fetch('http://repoa.internal/user/' + req.query.id); res.send(await r.text()); });",
+            "confidence": 0.65,
+            "sanitized": false,
+            "sanitizer_evidence": null,
+            "speculative": false
+          },
+          {
+            "route_path": "/call-a",
+            "route_method": "GET",
+            "route_file": "server.js",
+            "sink_kind": "eval",
+            "sink_file": "server.js",
+            "sink_line": 5,
+            "hops": 0,
+            "files": [
+              "server.js"
+            ],
+            "evidence_text": "app.post('/api/upload', (req, res) => { res.send(eval(req.body.code)); });",
+            "confidence": 0.65,
+            "sanitized": false,
+            "sanitizer_evidence": null,
+            "speculative": false
+          },
+          {
+            "route_path": "/call-a",
+            "route_method": "GET",
+            "route_file": "server.js",
+            "sink_kind": "exec",
+            "sink_file": "server.js",
+            "sink_line": 4,
+            "hops": 0,
+            "files": [
+              "server.js"
+            ],
+            "evidence_text": "app.get('/api/exec', (req, res) => { exec(req.query.cmd, (e, out) => res.send(out)); });",
+            "confidence": 0.65,
+            "sanitized": false,
+            "sanitizer_evidence": null,
+            "speculative": false
+          },
+          {
+            "route_path": "/call-a",
+            "route_method": "GET",
+            "route_file": "server.js",
+            "sink_kind": "ssrf",
+            "sink_file": "server.js",
+            "sink_line": 6,
+            "hops": 0,
+            "files": [
+              "server.js"
+            ],
+            "evidence_text": "app.get('/call-a', async (req, res) => { const r = await fetch('http://repoa.internal/user/' + req.query.id); res.send(await r.text()); });",
+            "confidence": 0.65,
+            "sanitized": false,
+            "sanitizer_evidence": null,
+            "speculative": false
+          }
+        ],
+        "dependencies": [
+          {
+            "name": "express",
+            "version": "4.16.0",
+            "ecosystem": "npm",
+            "file": "package.json",
+            "line": null,
+            "dev": false,
+            "resolved": false,
+            "direct": true,
+            "via": null,
+            "evidence_text": "dependencies.express = '4.16.0'"
+          },
+          {
+            "name": "lodash",
+            "version": "4.17.4",
+            "ecosystem": "npm",
+            "file": "package.json",
+            "line": null,
+            "dev": false,
+            "resolved": false,
+            "direct": true,
+            "via": null,
+            "evidence_text": "dependencies.lodash = '4.17.4'"
+          }
+        ],
+        "vulnerabilities": [],
+        "authz_candidates": [],
+        "crypto_weaknesses": [],
+        "web_hardening_issues": [],
+        "code_weaknesses": [],
+        "workflow_issues": [],
+        "anomalies": [],
+        "limitations": [],
+        "files_scanned": 1
+      },
+      "attack_surfaces": [
+        {
+          "route": "/api/exec",
+          "method": "GET",
+          "file": "server.js",
+          "category": "public_api",
+          "exposure": "public",
+          "risk": "medium",
+          "auth_signals": [
+            "jwt"
+          ],
+          "data_store_interaction": false,
+          "outbound_integration": true,
+          "rationale": [
+            "Public application routes are initial footholds for probing input handling and authorization gaps.",
+            "Auth indicators observed: jwt.",
+            "Outbound HTTP calls were detected, creating trust boundaries to third-party systems."
+          ],
+          "line": 4
+        },
+        {
+          "route": "/api/upload",
+          "method": "POST",
+          "file": "server.js",
+          "category": "upload",
+          "exposure": "public",
+          "risk": "high",
+          "auth_signals": [
+            "jwt"
+          ],
+          "data_store_interaction": false,
+          "outbound_integration": true,
+          "rationale": [
+            "Upload and import flows often lead to parser abuse or untrusted file handling.",
+            "Auth indicators observed: jwt.",
+            "Outbound HTTP calls were detected, creating trust boundaries to third-party systems."
+          ],
+          "line": 5
+        },
+        {
+          "route": "/call-a",
+          "method": "GET",
+          "file": "server.js",
+          "category": "public_api",
+          "exposure": "public",
+          "risk": "medium",
+          "auth_signals": [
+            "jwt"
+          ],
+          "data_store_interaction": false,
+          "outbound_integration": true,
+          "rationale": [
+            "Public application routes are initial footholds for probing input handling and authorization gaps.",
+            "Auth indicators observed: jwt.",
+            "Outbound HTTP calls were detected, creating trust boundaries to third-party systems."
+          ],
+          "line": 6
+        }
+      ],
+      "findings": [
+        {
+          "title": "Request-reachable code execution via eval",
+          "severity": "high",
+          "rule_id": "eval",
+          "evidence": [
+            "route GET /api/exec in server.js",
+            "sink at server.js:5 (code eval)",
+            "import path: server.js (0 hop(s))",
+            "+2 more route(s) reach a code eval sink"
+          ],
+          "locations": [
+            {
+              "file": "server.js",
+              "line": 5
+            },
+            {
+              "file": "server.js",
+              "line": null
+            }
+          ],
+          "mitigation": "Never pass request-derived data to eval. Use a domain-specific parser or an explicit allow-list of operations.",
+          "confidence": "medium",
+          "attack_techniques": [
+            {
+              "technique_id": "T1059",
+              "name": "Command and Scripting Interpreter",
+              "tactic": "Execution",
+              "url": "https://attack.mitre.org/techniques/T1059/"
+            }
+          ],
+          "tags": [
+            "taint-chain",
+            "input-handling",
+            "data-risk"
+          ],
+          "score": 75,
+          "exploitability": 70,
+          "exploitability_tier": "high"
+        },
+        {
+          "title": "Request-reachable code execution via exec",
+          "severity": "high",
+          "rule_id": "exec",
+          "evidence": [
+            "route GET /api/exec in server.js",
+            "sink at server.js:4 (code exec)",
+            "import path: server.js (0 hop(s))",
+            "+2 more route(s) reach a code exec sink"
+          ],
+          "locations": [
+            {
+              "file": "server.js",
+              "line": 4
+            },
+            {
+              "file": "server.js",
+              "line": null
+            }
+          ],
+          "mitigation": "Never pass request-derived data to exec. Refactor to call named functions selected via a validated allow-list.",
+          "confidence": "medium",
+          "attack_techniques": [
+            {
+              "technique_id": "T1059",
+              "name": "Command and Scripting Interpreter",
+              "tactic": "Execution",
+              "url": "https://attack.mitre.org/techniques/T1059/"
+            }
+          ],
+          "tags": [
+            "taint-chain",
+            "input-handling",
+            "data-risk"
+          ],
+          "score": 75,
+          "exploitability": 70,
+          "exploitability_tier": "high"
+        },
+        {
+          "title": "Upload or import routes expand attacker-controlled input handling",
+          "severity": "high",
+          "rule_id": "upload-route",
+          "evidence": [
+            "POST /api/upload in server.js; auth signals: jwt; external integration reachable"
+          ],
+          "locations": [
+            {
+              "file": "server.js",
+              "line": 5
+            }
+          ],
+          "mitigation": "Constrain accepted formats, isolate parsers, scan uploaded content, and treat imported files as untrusted all the way through storage and processing.",
+          "confidence": "medium",
+          "attack_techniques": [
+            {
+              "technique_id": "T1190",
+              "name": "Exploit Public-Facing Application",
+              "tactic": "Initial Access",
+              "url": "https://attack.mitre.org/techniques/T1190/"
+            },
+            {
+              "technique_id": "T1059",
+              "name": "Command and Scripting Interpreter",
+              "tactic": "Execution",
+              "url": "https://attack.mitre.org/techniques/T1059/"
+            },
+            {
+              "technique_id": "T1078",
+              "name": "Valid Accounts",
+              "tactic": "Defense Evasion / Persistence / Initial Access",
+              "url": "https://attack.mitre.org/techniques/T1078/"
+            },
+            {
+              "technique_id": "T1110",
+              "name": "Brute Force",
+              "tactic": "Credential Access",
+              "url": "https://attack.mitre.org/techniques/T1110/"
+            },
+            {
+              "technique_id": "T1556",
+              "name": "Modify Authentication Process",
+              "tactic": "Defense Evasion / Persistence",
+              "url": "https://attack.mitre.org/techniques/T1556/"
+            }
+          ],
+          "tags": [
+            "exposed-endpoint",
+            "input-handling"
+          ],
+          "score": 75,
+          "exploitability": null,
+          "exploitability_tier": null
+        },
+        {
+          "title": "Request-reachable server-side request forgery (SSRF)",
+          "severity": "medium",
+          "rule_id": "ssrf",
+          "evidence": [
+            "route GET /api/exec in server.js",
+            "sink at server.js:6 (outbound request (SSRF))",
+            "import path: server.js (0 hop(s))",
+            "+2 more route(s) reach a outbound request (SSRF) sink"
+          ],
+          "locations": [
+            {
+              "file": "server.js",
+              "line": 6
+            },
+            {
+              "file": "server.js",
+              "line": null
+            }
+          ],
+          "mitigation": "Validate and allow-list outbound destinations, resolve and pin DNS, block link-local/metadata ranges (169.254.0.0/16, fd00::/8), and disable redirects to internal hosts.",
+          "confidence": "medium",
+          "attack_techniques": [
+            {
+              "technique_id": "T1190",
+              "name": "Exploit Public-Facing Application",
+              "tactic": "Initial Access",
+              "url": "https://attack.mitre.org/techniques/T1190/"
+            }
+          ],
+          "tags": [
+            "taint-chain",
+            "input-handling",
+            "data-risk"
+          ],
+          "score": 37,
+          "exploitability": 55,
+          "exploitability_tier": "high"
+        }
+      ],
+      "attack_paths": [
+        {
+          "name": "Untrusted file handling abuse",
+          "steps": [
+            "Entry: An attacker submits content to POST /api/upload in server.js",
+            "Weak point: The application accepts or parses attacker-controlled files too broadly",
+            "Propagation: Storage, parsing, or downstream consumers treat that content as safer than it is",
+            "Impact: The result is execution, persistence of malicious content, or operational disruption",
+            "Evidence: external call in same file: http://repoa.internal/user/ (server.js)"
+          ],
+          "impact": "Stored malicious content, parser abuse, or denial of service from untrusted file input."
+        },
+        {
+          "name": "Outbound trust boundary abuse",
+          "steps": [
+            "Entry: An attacker influences GET /api/exec in server.js, which sits near an outbound integration",
+            "Weak point: The application assumes too much trust in external calls or responses",
+            "Propagation: Spoofed, replayed, or attacker-steered interaction with `http://repoa.internal/user/` (from `server.js`) affects internal logic",
+            "Impact: Unsafe business decisions or downstream actions follow from a weak external trust boundary",
+            "Evidence: external call in same file: http://repoa.internal/user/ (server.js)"
+          ],
+          "impact": "Poisoned state or unsafe downstream actions caused by over-trusting an external dependency."
+        }
+      ],
+      "assets": [],
+      "controls": [
+        {
+          "id": "control:absent:csrf_protection",
+          "kind": "csrf_protection",
+          "name": "CSRF protection",
+          "strength": "absent",
+          "scope": "global",
+          "placements": [],
+          "evidence": [],
+          "notes": "Public state-changing routes observed without CSRF markers."
+        },
+        {
+          "id": "control:absent:rate_limiting",
+          "kind": "rate_limiting",
+          "name": "Rate limiting",
+          "strength": "absent",
+          "scope": "global",
+          "placements": [],
+          "evidence": [],
+          "notes": "Public routes observed without any rate-limiting markers."
+        }
+      ],
+      "notable_observations": [],
+      "detection_opportunities": [
+        {
+          "id": "detect:findings:residual",
+          "title": "Detection coverage for findings without a paired insight",
+          "rationale": "These findings did not generate cross-cutting insights but are still actionable with runtime telemetry.",
+          "signal_kind": "log",
+          "suggested_rule": "Add per-finding logging at the affected handler with a structured `{finding_id, route, status_code}` payload, and aggregate in the SIEM.",
+          "related_insight_ids": [],
+          "related_finding_titles": [
+            "Request-reachable code execution via eval",
+            "Request-reachable code execution via exec",
+            "Upload or import routes expand attacker-controlled input handling",
+            "Request-reachable server-side request forgery (SSRF)"
+          ],
+          "attack_techniques": [
+            {
+              "technique_id": "T1059",
+              "name": "Command and Scripting Interpreter",
+              "tactic": "Execution",
+              "url": "https://attack.mitre.org/techniques/T1059/"
+            },
+            {
+              "technique_id": "T1190",
+              "name": "Exploit Public-Facing Application",
+              "tactic": "Initial Access",
+              "url": "https://attack.mitre.org/techniques/T1190/"
+            },
+            {
+              "technique_id": "T1078",
+              "name": "Valid Accounts",
+              "tactic": "Defense Evasion / Persistence / Initial Access",
+              "url": "https://attack.mitre.org/techniques/T1078/"
+            },
+            {
+              "technique_id": "T1110",
+              "name": "Brute Force",
+              "tactic": "Credential Access",
+              "url": "https://attack.mitre.org/techniques/T1110/"
+            },
+            {
+              "technique_id": "T1556",
+              "name": "Modify Authentication Process",
+              "tactic": "Defense Evasion / Persistence",
+              "url": "https://attack.mitre.org/techniques/T1556/"
+            }
+          ]
+        }
+      ]
+    },
+    "limitations_meta": {
+      "analysis_mode": "heuristic",
+      "defensive_only": true,
+      "notes": [
+        "Observed vs inferred classifications are heuristic and based on route, file, and signal patterns.",
+        "Low-quality paths (tests/fixtures/mocks/examples) are retained in raw signals but separated in evidence class counts.",
+        "Use this artifact as a triage source-of-truth; validate high-priority items with repository context and runtime controls.",
+        "Assets, controls, and notable observations are heuristic overlays; absent-control entries indicate scanner did not find evidence, not necessarily that the control is missing in production.",
+        "ATT&CK technique mappings and detection opportunities are derived from insight kinds and finding-title keywords; treat them as triage hooks for SIEM/detection-engineering work, not authoritative MITRE mappings."
+      ]
+    }
+  },
+  "review_context_pack": {
+    "schema_version": "1.0.0",
+    "artifact_type": "attackmap_review_context_pack",
+    "attackmap_review_json": {
+      "schema_version": "1.3.0",
+      "target_metadata": {
+        "root": "/repos/repoB",
+        "files_scanned": 1,
+        "languages": [
+          "javascript"
+        ]
+      },
+      "system_overview": {
+        "repository_type": "web/service-facing",
+        "raw_inferred_entry_point_count": 3,
+        "external_call_count": 1,
+        "database_count": 0,
+        "auth_hint_count": 1,
+        "secret_hint_count": 0,
+        "asset_count": 0,
+        "control_count_present": 0,
+        "control_count_absent": 2,
+        "notable_observation_count": 0,
+        "detection_opportunity_count": 1,
+        "attack_techniques_observed_count": 5
+      },
+      "attack_surface": {
+        "total_surfaces": 3,
+        "evidence_class_counts": {
+          "observed_runtime_public": 3,
+          "observed_runtime_internal": 0,
+          "inferred_protocol": 0,
+          "inferred": 0,
+          "low_quality": 0
+        },
+        "surfaces": [
+          {
+            "method": "GET",
+            "route": "/api/exec",
+            "file": "server.js",
+            "line": 4,
+            "category": "public_api",
+            "exposure": "public",
+            "risk": "medium",
+            "evidence_class": "observed_runtime_public",
+            "auth_signals": [
+              "jwt"
+            ],
+            "data_store_interaction": false,
+            "outbound_integration": true
+          },
+          {
+            "method": "POST",
+            "route": "/api/upload",
+            "file": "server.js",
+            "line": 5,
+            "category": "upload",
+            "exposure": "public",
+            "risk": "high",
+            "evidence_class": "observed_runtime_public",
+            "auth_signals": [
+              "jwt"
+            ],
+            "data_store_interaction": false,
+            "outbound_integration": true
+          },
+          {
+            "method": "GET",
+            "route": "/call-a",
+            "file": "server.js",
+            "line": 6,
+            "category": "public_api",
+            "exposure": "public",
+            "risk": "medium",
+            "evidence_class": "observed_runtime_public",
+            "auth_signals": [
+              "jwt"
+            ],
+            "data_store_interaction": false,
+            "outbound_integration": true
+          }
+        ]
+      },
+      "assets": [],
+      "controls": [
+        {
+          "id": "control:absent:csrf_protection",
+          "kind": "csrf_protection",
+          "name": "CSRF protection",
+          "strength": "absent",
+          "scope": "global",
+          "placements": [],
+          "evidence": [],
+          "notes": "Public state-changing routes observed without CSRF markers."
+        },
+        {
+          "id": "control:absent:rate_limiting",
+          "kind": "rate_limiting",
+          "name": "Rate limiting",
+          "strength": "absent",
+          "scope": "global",
+          "placements": [],
+          "evidence": [],
+          "notes": "Public routes observed without any rate-limiting markers."
+        }
+      ],
+      "notable_observations": [],
+      "detection_opportunities": [
+        {
+          "id": "detect:findings:residual",
+          "title": "Detection coverage for findings without a paired insight",
+          "rationale": "These findings did not generate cross-cutting insights but are still actionable with runtime telemetry.",
+          "signal_kind": "log",
+          "suggested_rule": "Add per-finding logging at the affected handler with a structured `{finding_id, route, status_code}` payload, and aggregate in the SIEM.",
+          "related_insight_ids": [],
+          "related_finding_titles": [
+            "Request-reachable code execution via eval",
+            "Request-reachable code execution via exec",
+            "Upload or import routes expand attacker-controlled input handling",
+            "Request-reachable server-side request forgery (SSRF)"
+          ],
+          "attack_techniques": [
+            {
+              "technique_id": "T1059",
+              "name": "Command and Scripting Interpreter",
+              "tactic": "Execution",
+              "url": "https://attack.mitre.org/techniques/T1059/"
+            },
+            {
+              "technique_id": "T1190",
+              "name": "Exploit Public-Facing Application",
+              "tactic": "Initial Access",
+              "url": "https://attack.mitre.org/techniques/T1190/"
+            },
+            {
+              "technique_id": "T1078",
+              "name": "Valid Accounts",
+              "tactic": "Defense Evasion / Persistence / Initial Access",
+              "url": "https://attack.mitre.org/techniques/T1078/"
+            },
+            {
+              "technique_id": "T1110",
+              "name": "Brute Force",
+              "tactic": "Credential Access",
+              "url": "https://attack.mitre.org/techniques/T1110/"
+            },
+            {
+              "technique_id": "T1556",
+              "name": "Modify Authentication Process",
+              "tactic": "Defense Evasion / Persistence",
+              "url": "https://attack.mitre.org/techniques/T1556/"
+            }
+          ]
+        }
+      ],
+      "attack_techniques_observed": [
+        {
+          "technique_id": "T1059",
+          "name": "Command and Scripting Interpreter",
+          "tactic": "Execution",
+          "url": "https://attack.mitre.org/techniques/T1059/"
+        },
+        {
+          "technique_id": "T1078",
+          "name": "Valid Accounts",
+          "tactic": "Defense Evasion / Persistence / Initial Access",
+          "url": "https://attack.mitre.org/techniques/T1078/"
+        },
+        {
+          "technique_id": "T1110",
+          "name": "Brute Force",
+          "tactic": "Credential Access",
+          "url": "https://attack.mitre.org/techniques/T1110/"
+        },
+        {
+          "technique_id": "T1190",
+          "name": "Exploit Public-Facing Application",
+          "tactic": "Initial Access",
+          "url": "https://attack.mitre.org/techniques/T1190/"
+        },
+        {
+          "technique_id": "T1556",
+          "name": "Modify Authentication Process",
+          "tactic": "Defense Evasion / Persistence",
+          "url": "https://attack.mitre.org/techniques/T1556/"
+        }
+      ],
+      "strengths": [
+        {
+          "statement": "Authentication/identity indicators were observed in code signals.",
+          "evidence_basis": "observed",
+          "evidence": [
+            "jwt"
+          ]
+        }
+      ],
+      "weaknesses_risk_hotspots": {
+        "weaknesses": [
+          {
+            "title": "Request-reachable code execution via eval",
+            "severity": "high",
+            "confidence": "medium",
+            "evidence_basis": "observed",
+            "evidence": [
+              "route GET /api/exec in server.js",
+              "sink at server.js:5 (code eval)",
+              "import path: server.js (0 hop(s))",
+              "+2 more route(s) reach a code eval sink"
+            ],
+            "locations": [
+              {
+                "file": "server.js",
+                "line": 5
+              },
+              {
+                "file": "server.js",
+                "line": null
+              }
+            ],
+            "mitigation": "Never pass request-derived data to eval. Use a domain-specific parser or an explicit allow-list of operations.",
+            "attack_techniques": [
+              {
+                "technique_id": "T1059",
+                "name": "Command and Scripting Interpreter",
+                "tactic": "Execution",
+                "url": "https://attack.mitre.org/techniques/T1059/"
+              }
+            ]
+          },
+          {
+            "title": "Request-reachable code execution via exec",
+            "severity": "high",
+            "confidence": "medium",
+            "evidence_basis": "observed",
+            "evidence": [
+              "route GET /api/exec in server.js",
+              "sink at server.js:4 (code exec)",
+              "import path: server.js (0 hop(s))",
+              "+2 more route(s) reach a code exec sink"
+            ],
+            "locations": [
+              {
+                "file": "server.js",
+                "line": 4
+              },
+              {
+                "file": "server.js",
+                "line": null
+              }
+            ],
+            "mitigation": "Never pass request-derived data to exec. Refactor to call named functions selected via a validated allow-list.",
+            "attack_techniques": [
+              {
+                "technique_id": "T1059",
+                "name": "Command and Scripting Interpreter",
+                "tactic": "Execution",
+                "url": "https://attack.mitre.org/techniques/T1059/"
+              }
+            ]
+          },
+          {
+            "title": "Upload or import routes expand attacker-controlled input handling",
+            "severity": "high",
+            "confidence": "medium",
+            "evidence_basis": "observed",
+            "evidence": [
+              "POST /api/upload in server.js; auth signals: jwt; external integration reachable"
+            ],
+            "locations": [
+              {
+                "file": "server.js",
+                "line": 5
+              }
+            ],
+            "mitigation": "Constrain accepted formats, isolate parsers, scan uploaded content, and treat imported files as untrusted all the way through storage and processing.",
+            "attack_techniques": [
+              {
+                "technique_id": "T1190",
+                "name": "Exploit Public-Facing Application",
+                "tactic": "Initial Access",
+                "url": "https://attack.mitre.org/techniques/T1190/"
+              },
+              {
+                "technique_id": "T1059",
+                "name": "Command and Scripting Interpreter",
+                "tactic": "Execution",
+                "url": "https://attack.mitre.org/techniques/T1059/"
+              },
+              {
+                "technique_id": "T1078",
+                "name": "Valid Accounts",
+                "tactic": "Defense Evasion / Persistence / Initial Access",
+                "url": "https://attack.mitre.org/techniques/T1078/"
+              },
+              {
+                "technique_id": "T1110",
+                "name": "Brute Force",
+                "tactic": "Credential Access",
+                "url": "https://attack.mitre.org/techniques/T1110/"
+              },
+              {
+                "technique_id": "T1556",
+                "name": "Modify Authentication Process",
+                "tactic": "Defense Evasion / Persistence",
+                "url": "https://attack.mitre.org/techniques/T1556/"
+              }
+            ]
+          },
+          {
+            "title": "Request-reachable server-side request forgery (SSRF)",
+            "severity": "medium",
+            "confidence": "medium",
+            "evidence_basis": "observed",
+            "evidence": [
+              "route GET /api/exec in server.js",
+              "sink at server.js:6 (outbound request (SSRF))",
+              "import path: server.js (0 hop(s))",
+              "+2 more route(s) reach a outbound request (SSRF) sink"
+            ],
+            "locations": [
+              {
+                "file": "server.js",
+                "line": 6
+              },
+              {
+                "file": "server.js",
+                "line": null
+              }
+            ],
+            "mitigation": "Validate and allow-list outbound destinations, resolve and pin DNS, block link-local/metadata ranges (169.254.0.0/16, fd00::/8), and disable redirects to internal hosts.",
+            "attack_techniques": [
+              {
+                "technique_id": "T1190",
+                "name": "Exploit Public-Facing Application",
+                "tactic": "Initial Access",
+                "url": "https://attack.mitre.org/techniques/T1190/"
+              }
+            ]
+          }
+        ],
+        "risk_hotspots": [
+          {
+            "surface": {
+              "method": "POST",
+              "route": "/api/upload",
+              "file": "server.js",
+              "category": "upload",
+              "risk": "high",
+              "exposure": "public"
+            },
+            "evidence_class": "observed_runtime_public",
+            "notes": [
+              "Upload and import flows often lead to parser abuse or untrusted file handling.",
+              "Auth indicators observed: jwt.",
+              "Outbound HTTP calls were detected, creating trust boundaries to third-party systems."
+            ]
+          },
+          {
+            "surface": {
+              "method": "GET",
+              "route": "/api/exec",
+              "file": "server.js",
+              "category": "public_api",
+              "risk": "medium",
+              "exposure": "public"
+            },
+            "evidence_class": "observed_runtime_public",
+            "notes": [
+              "Public application routes are initial footholds for probing input handling and authorization gaps.",
+              "Auth indicators observed: jwt.",
+              "Outbound HTTP calls were detected, creating trust boundaries to third-party systems."
+            ]
+          },
+          {
+            "surface": {
+              "method": "GET",
+              "route": "/call-a",
+              "file": "server.js",
+              "category": "public_api",
+              "risk": "medium",
+              "exposure": "public"
+            },
+            "evidence_class": "observed_runtime_public",
+            "notes": [
+              "Public application routes are initial footholds for probing input handling and authorization gaps.",
+              "Auth indicators observed: jwt.",
+              "Outbound HTTP calls were detected, creating trust boundaries to third-party systems."
+            ]
+          }
+        ]
+      },
+      "evidence_chains": [
+        {
+          "name": "Untrusted file handling abuse",
+          "impact": "Stored malicious content, parser abuse, or denial of service from untrusted file input.",
+          "evidence_basis": "observed",
+          "steps": [
+            "Entry: An attacker submits content to POST /api/upload in server.js",
+            "Weak point: The application accepts or parses attacker-controlled files too broadly",
+            "Propagation: Storage, parsing, or downstream consumers treat that content as safer than it is",
+            "Impact: The result is execution, persistence of malicious content, or operational disruption",
+            "Evidence: external call in same file: http://repoa.internal/user/ (server.js)"
+          ]
+        },
+        {
+          "name": "Outbound trust boundary abuse",
+          "impact": "Poisoned state or unsafe downstream actions caused by over-trusting an external dependency.",
+          "evidence_basis": "observed",
+          "steps": [
+            "Entry: An attacker influences GET /api/exec in server.js, which sits near an outbound integration",
+            "Weak point: The application assumes too much trust in external calls or responses",
+            "Propagation: Spoofed, replayed, or attacker-steered interaction with `http://repoa.internal/user/` (from `server.js`) affects internal logic",
+            "Impact: Unsafe business decisions or downstream actions follow from a weak external trust boundary",
+            "Evidence: external call in same file: http://repoa.internal/user/ (server.js)"
+          ]
+        }
+      ],
+      "recommendations": [
+        {
+          "priority": "high",
+          "evidence_basis": "observed",
+          "action": "Never pass request-derived data to eval. Use a domain-specific parser or an explicit allow-list of operations.",
+          "linked_finding": "Request-reachable code execution via eval"
+        },
+        {
+          "priority": "high",
+          "evidence_basis": "observed",
+          "action": "Never pass request-derived data to exec. Refactor to call named functions selected via a validated allow-list.",
+          "linked_finding": "Request-reachable code execution via exec"
+        },
+        {
+          "priority": "high",
+          "evidence_basis": "observed",
+          "action": "Constrain accepted formats, isolate parsers, scan uploaded content, and treat imported files as untrusted all the way through storage and processing.",
+          "linked_finding": "Upload or import routes expand attacker-controlled input handling"
+        },
+        {
+          "priority": "medium",
+          "evidence_basis": "observed",
+          "action": "Validate and allow-list outbound destinations, resolve and pin DNS, block link-local/metadata ranges (169.254.0.0/16, fd00::/8), and disable redirects to internal hosts.",
+          "linked_finding": "Request-reachable server-side request forgery (SSRF)"
+        }
+      ],
+      "raw_structured_signals": {
+        "scan": {
+          "root": "/repos/repoB",
+          "languages": [
+            "javascript"
+          ],
+          "routes": [
+            {
+              "path": "/api/exec",
+              "method": "GET",
+              "file": "server.js",
+              "line": 4
+            },
+            {
+              "path": "/api/upload",
+              "method": "POST",
+              "file": "server.js",
+              "line": 5
+            },
+            {
+              "path": "/call-a",
+              "method": "GET",
+              "file": "server.js",
+              "line": 6
+            }
+          ],
+          "external_calls": [
+            {
+              "target": "http://repoa.internal/user/",
+              "file": "server.js",
+              "line": 6,
+              "method": "GET",
+              "evidence_text": "app.get('/call-a', async (req, res) => { const r = await fetch('http://repoa.internal/user/' + req.query.id); res.send(await r.text()); });"
+            }
+          ],
+          "databases": [],
+          "auth_hints": [
+            {
+              "hint": "jwt",
+              "file": "server.js",
+              "line": 3,
+              "evidence_text": "const JWT_SECRET = \"***\";",
+              "confidence": 0.5
+            }
+          ],
+          "service_hints": [],
+          "edge_hints": [],
+          "entrypoint_hints": [],
+          "protocol_hints": [],
+          "framework_hints": [],
+          "secret_hints": [],
+          "taint_chains": [
+            {
+              "route_path": "/api/exec",
+              "route_method": "GET",
+              "route_file": "server.js",
+              "sink_kind": "eval",
+              "sink_file": "server.js",
+              "sink_line": 5,
+              "hops": 0,
+              "files": [
+                "server.js"
+              ],
+              "evidence_text": "app.post('/api/upload', (req, res) => { res.send(eval(req.body.code)); });",
+              "confidence": 0.65,
+              "sanitized": false,
+              "sanitizer_evidence": null,
+              "speculative": false
+            },
+            {
+              "route_path": "/api/exec",
+              "route_method": "GET",
+              "route_file": "server.js",
+              "sink_kind": "exec",
+              "sink_file": "server.js",
+              "sink_line": 4,
+              "hops": 0,
+              "files": [
+                "server.js"
+              ],
+              "evidence_text": "app.get('/api/exec', (req, res) => { exec(req.query.cmd, (e, out) => res.send(out)); });",
+              "confidence": 0.65,
+              "sanitized": false,
+              "sanitizer_evidence": null,
+              "speculative": false
+            },
+            {
+              "route_path": "/api/exec",
+              "route_method": "GET",
+              "route_file": "server.js",
+              "sink_kind": "ssrf",
+              "sink_file": "server.js",
+              "sink_line": 6,
+              "hops": 0,
+              "files": [
+                "server.js"
+              ],
+              "evidence_text": "app.get('/call-a', async (req, res) => { const r = await fetch('http://repoa.internal/user/' + req.query.id); res.send(await r.text()); });",
+              "confidence": 0.65,
+              "sanitized": false,
+              "sanitizer_evidence": null,
+              "speculative": false
+            },
+            {
+              "route_path": "/api/upload",
+              "route_method": "POST",
+              "route_file": "server.js",
+              "sink_kind": "eval",
+              "sink_file": "server.js",
+              "sink_line": 5,
+              "hops": 0,
+              "files": [
+                "server.js"
+              ],
+              "evidence_text": "app.post('/api/upload', (req, res) => { res.send(eval(req.body.code)); });",
+              "confidence": 0.65,
+              "sanitized": false,
+              "sanitizer_evidence": null,
+              "speculative": false
+            },
+            {
+              "route_path": "/api/upload",
+              "route_method": "POST",
+              "route_file": "server.js",
+              "sink_kind": "exec",
+              "sink_file": "server.js",
+              "sink_line": 4,
+              "hops": 0,
+              "files": [
+                "server.js"
+              ],
+              "evidence_text": "app.get('/api/exec', (req, res) => { exec(req.query.cmd, (e, out) => res.send(out)); });",
+              "confidence": 0.65,
+              "sanitized": false,
+              "sanitizer_evidence": null,
+              "speculative": false
+            },
+            {
+              "route_path": "/api/upload",
+              "route_method": "POST",
+              "route_file": "server.js",
+              "sink_kind": "ssrf",
+              "sink_file": "server.js",
+              "sink_line": 6,
+              "hops": 0,
+              "files": [
+                "server.js"
+              ],
+              "evidence_text": "app.get('/call-a', async (req, res) => { const r = await fetch('http://repoa.internal/user/' + req.query.id); res.send(await r.text()); });",
+              "confidence": 0.65,
+              "sanitized": false,
+              "sanitizer_evidence": null,
+              "speculative": false
+            },
+            {
+              "route_path": "/call-a",
+              "route_method": "GET",
+              "route_file": "server.js",
+              "sink_kind": "eval",
+              "sink_file": "server.js",
+              "sink_line": 5,
+              "hops": 0,
+              "files": [
+                "server.js"
+              ],
+              "evidence_text": "app.post('/api/upload', (req, res) => { res.send(eval(req.body.code)); });",
+              "confidence": 0.65,
+              "sanitized": false,
+              "sanitizer_evidence": null,
+              "speculative": false
+            },
+            {
+              "route_path": "/call-a",
+              "route_method": "GET",
+              "route_file": "server.js",
+              "sink_kind": "exec",
+              "sink_file": "server.js",
+              "sink_line": 4,
+              "hops": 0,
+              "files": [
+                "server.js"
+              ],
+              "evidence_text": "app.get('/api/exec', (req, res) => { exec(req.query.cmd, (e, out) => res.send(out)); });",
+              "confidence": 0.65,
+              "sanitized": false,
+              "sanitizer_evidence": null,
+              "speculative": false
+            },
+            {
+              "route_path": "/call-a",
+              "route_method": "GET",
+              "route_file": "server.js",
+              "sink_kind": "ssrf",
+              "sink_file": "server.js",
+              "sink_line": 6,
+              "hops": 0,
+              "files": [
+                "server.js"
+              ],
+              "evidence_text": "app.get('/call-a', async (req, res) => { const r = await fetch('http://repoa.internal/user/' + req.query.id); res.send(await r.text()); });",
+              "confidence": 0.65,
+              "sanitized": false,
+              "sanitizer_evidence": null,
+              "speculative": false
+            }
+          ],
+          "dependencies": [
+            {
+              "name": "express",
+              "version": "4.16.0",
+              "ecosystem": "npm",
+              "file": "package.json",
+              "line": null,
+              "dev": false,
+              "resolved": false,
+              "direct": true,
+              "via": null,
+              "evidence_text": "dependencies.express = '4.16.0'"
+            },
+            {
+              "name": "lodash",
+              "version": "4.17.4",
+              "ecosystem": "npm",
+              "file": "package.json",
+              "line": null,
+              "dev": false,
+              "resolved": false,
+              "direct": true,
+              "via": null,
+              "evidence_text": "dependencies.lodash = '4.17.4'"
+            }
+          ],
+          "vulnerabilities": [],
+          "authz_candidates": [],
+          "crypto_weaknesses": [],
+          "web_hardening_issues": [],
+          "code_weaknesses": [],
+          "workflow_issues": [],
+          "anomalies": [],
+          "limitations": [],
+          "files_scanned": 1
+        },
+        "attack_surfaces": [
+          {
+            "route": "/api/exec",
+            "method": "GET",
+            "file": "server.js",
+            "category": "public_api",
+            "exposure": "public",
+            "risk": "medium",
+            "auth_signals": [
+              "jwt"
+            ],
+            "data_store_interaction": false,
+            "outbound_integration": true,
+            "rationale": [
+              "Public application routes are initial footholds for probing input handling and authorization gaps.",
+              "Auth indicators observed: jwt.",
+              "Outbound HTTP calls were detected, creating trust boundaries to third-party systems."
+            ],
+            "line": 4
+          },
+          {
+            "route": "/api/upload",
+            "method": "POST",
+            "file": "server.js",
+            "category": "upload",
+            "exposure": "public",
+            "risk": "high",
+            "auth_signals": [
+              "jwt"
+            ],
+            "data_store_interaction": false,
+            "outbound_integration": true,
+            "rationale": [
+              "Upload and import flows often lead to parser abuse or untrusted file handling.",
+              "Auth indicators observed: jwt.",
+              "Outbound HTTP calls were detected, creating trust boundaries to third-party systems."
+            ],
+            "line": 5
+          },
+          {
+            "route": "/call-a",
+            "method": "GET",
+            "file": "server.js",
+            "category": "public_api",
+            "exposure": "public",
+            "risk": "medium",
+            "auth_signals": [
+              "jwt"
+            ],
+            "data_store_interaction": false,
+            "outbound_integration": true,
+            "rationale": [
+              "Public application routes are initial footholds for probing input handling and authorization gaps.",
+              "Auth indicators observed: jwt.",
+              "Outbound HTTP calls were detected, creating trust boundaries to third-party systems."
+            ],
+            "line": 6
+          }
+        ],
+        "findings": [
+          {
+            "title": "Request-reachable code execution via eval",
+            "severity": "high",
+            "rule_id": "eval",
+            "evidence": [
+              "route GET /api/exec in server.js",
+              "sink at server.js:5 (code eval)",
+              "import path: server.js (0 hop(s))",
+              "+2 more route(s) reach a code eval sink"
+            ],
+            "locations": [
+              {
+                "file": "server.js",
+                "line": 5
+              },
+              {
+                "file": "server.js",
+                "line": null
+              }
+            ],
+            "mitigation": "Never pass request-derived data to eval. Use a domain-specific parser or an explicit allow-list of operations.",
+            "confidence": "medium",
+            "attack_techniques": [
+              {
+                "technique_id": "T1059",
+                "name": "Command and Scripting Interpreter",
+                "tactic": "Execution",
+                "url": "https://attack.mitre.org/techniques/T1059/"
+              }
+            ],
+            "tags": [
+              "taint-chain",
+              "input-handling",
+              "data-risk"
+            ],
+            "score": 75,
+            "exploitability": 70,
+            "exploitability_tier": "high"
+          },
+          {
+            "title": "Request-reachable code execution via exec",
+            "severity": "high",
+            "rule_id": "exec",
+            "evidence": [
+              "route GET /api/exec in server.js",
+              "sink at server.js:4 (code exec)",
+              "import path: server.js (0 hop(s))",
+              "+2 more route(s) reach a code exec sink"
+            ],
+            "locations": [
+              {
+                "file": "server.js",
+                "line": 4
+              },
+              {
+                "file": "server.js",
+                "line": null
+              }
+            ],
+            "mitigation": "Never pass request-derived data to exec. Refactor to call named functions selected via a validated allow-list.",
+            "confidence": "medium",
+            "attack_techniques": [
+              {
+                "technique_id": "T1059",
+                "name": "Command and Scripting Interpreter",
+                "tactic": "Execution",
+                "url": "https://attack.mitre.org/techniques/T1059/"
+              }
+            ],
+            "tags": [
+              "taint-chain",
+              "input-handling",
+              "data-risk"
+            ],
+            "score": 75,
+            "exploitability": 70,
+            "exploitability_tier": "high"
+          },
+          {
+            "title": "Upload or import routes expand attacker-controlled input handling",
+            "severity": "high",
+            "rule_id": "upload-route",
+            "evidence": [
+              "POST /api/upload in server.js; auth signals: jwt; external integration reachable"
+            ],
+            "locations": [
+              {
+                "file": "server.js",
+                "line": 5
+              }
+            ],
+            "mitigation": "Constrain accepted formats, isolate parsers, scan uploaded content, and treat imported files as untrusted all the way through storage and processing.",
+            "confidence": "medium",
+            "attack_techniques": [
+              {
+                "technique_id": "T1190",
+                "name": "Exploit Public-Facing Application",
+                "tactic": "Initial Access",
+                "url": "https://attack.mitre.org/techniques/T1190/"
+              },
+              {
+                "technique_id": "T1059",
+                "name": "Command and Scripting Interpreter",
+                "tactic": "Execution",
+                "url": "https://attack.mitre.org/techniques/T1059/"
+              },
+              {
+                "technique_id": "T1078",
+                "name": "Valid Accounts",
+                "tactic": "Defense Evasion / Persistence / Initial Access",
+                "url": "https://attack.mitre.org/techniques/T1078/"
+              },
+              {
+                "technique_id": "T1110",
+                "name": "Brute Force",
+                "tactic": "Credential Access",
+                "url": "https://attack.mitre.org/techniques/T1110/"
+              },
+              {
+                "technique_id": "T1556",
+                "name": "Modify Authentication Process",
+                "tactic": "Defense Evasion / Persistence",
+                "url": "https://attack.mitre.org/techniques/T1556/"
+              }
+            ],
+            "tags": [
+              "exposed-endpoint",
+              "input-handling"
+            ],
+            "score": 75,
+            "exploitability": null,
+            "exploitability_tier": null
+          },
+          {
+            "title": "Request-reachable server-side request forgery (SSRF)",
+            "severity": "medium",
+            "rule_id": "ssrf",
+            "evidence": [
+              "route GET /api/exec in server.js",
+              "sink at server.js:6 (outbound request (SSRF))",
+              "import path: server.js (0 hop(s))",
+              "+2 more route(s) reach a outbound request (SSRF) sink"
+            ],
+            "locations": [
+              {
+                "file": "server.js",
+                "line": 6
+              },
+              {
+                "file": "server.js",
+                "line": null
+              }
+            ],
+            "mitigation": "Validate and allow-list outbound destinations, resolve and pin DNS, block link-local/metadata ranges (169.254.0.0/16, fd00::/8), and disable redirects to internal hosts.",
+            "confidence": "medium",
+            "attack_techniques": [
+              {
+                "technique_id": "T1190",
+                "name": "Exploit Public-Facing Application",
+                "tactic": "Initial Access",
+                "url": "https://attack.mitre.org/techniques/T1190/"
+              }
+            ],
+            "tags": [
+              "taint-chain",
+              "input-handling",
+              "data-risk"
+            ],
+            "score": 37,
+            "exploitability": 55,
+            "exploitability_tier": "high"
+          }
+        ],
+        "attack_paths": [
+          {
+            "name": "Untrusted file handling abuse",
+            "steps": [
+              "Entry: An attacker submits content to POST /api/upload in server.js",
+              "Weak point: The application accepts or parses attacker-controlled files too broadly",
+              "Propagation: Storage, parsing, or downstream consumers treat that content as safer than it is",
+              "Impact: The result is execution, persistence of malicious content, or operational disruption",
+              "Evidence: external call in same file: http://repoa.internal/user/ (server.js)"
+            ],
+            "impact": "Stored malicious content, parser abuse, or denial of service from untrusted file input."
+          },
+          {
+            "name": "Outbound trust boundary abuse",
+            "steps": [
+              "Entry: An attacker influences GET /api/exec in server.js, which sits near an outbound integration",
+              "Weak point: The application assumes too much trust in external calls or responses",
+              "Propagation: Spoofed, replayed, or attacker-steered interaction with `http://repoa.internal/user/` (from `server.js`) affects internal logic",
+              "Impact: Unsafe business decisions or downstream actions follow from a weak external trust boundary",
+              "Evidence: external call in same file: http://repoa.internal/user/ (server.js)"
+            ],
+            "impact": "Poisoned state or unsafe downstream actions caused by over-trusting an external dependency."
+          }
+        ],
+        "assets": [],
+        "controls": [
+          {
+            "id": "control:absent:csrf_protection",
+            "kind": "csrf_protection",
+            "name": "CSRF protection",
+            "strength": "absent",
+            "scope": "global",
+            "placements": [],
+            "evidence": [],
+            "notes": "Public state-changing routes observed without CSRF markers."
+          },
+          {
+            "id": "control:absent:rate_limiting",
+            "kind": "rate_limiting",
+            "name": "Rate limiting",
+            "strength": "absent",
+            "scope": "global",
+            "placements": [],
+            "evidence": [],
+            "notes": "Public routes observed without any rate-limiting markers."
+          }
+        ],
+        "notable_observations": [],
+        "detection_opportunities": [
+          {
+            "id": "detect:findings:residual",
+            "title": "Detection coverage for findings without a paired insight",
+            "rationale": "These findings did not generate cross-cutting insights but are still actionable with runtime telemetry.",
+            "signal_kind": "log",
+            "suggested_rule": "Add per-finding logging at the affected handler with a structured `{finding_id, route, status_code}` payload, and aggregate in the SIEM.",
+            "related_insight_ids": [],
+            "related_finding_titles": [
+              "Request-reachable code execution via eval",
+              "Request-reachable code execution via exec",
+              "Upload or import routes expand attacker-controlled input handling",
+              "Request-reachable server-side request forgery (SSRF)"
+            ],
+            "attack_techniques": [
+              {
+                "technique_id": "T1059",
+                "name": "Command and Scripting Interpreter",
+                "tactic": "Execution",
+                "url": "https://attack.mitre.org/techniques/T1059/"
+              },
+              {
+                "technique_id": "T1190",
+                "name": "Exploit Public-Facing Application",
+                "tactic": "Initial Access",
+                "url": "https://attack.mitre.org/techniques/T1190/"
+              },
+              {
+                "technique_id": "T1078",
+                "name": "Valid Accounts",
+                "tactic": "Defense Evasion / Persistence / Initial Access",
+                "url": "https://attack.mitre.org/techniques/T1078/"
+              },
+              {
+                "technique_id": "T1110",
+                "name": "Brute Force",
+                "tactic": "Credential Access",
+                "url": "https://attack.mitre.org/techniques/T1110/"
+              },
+              {
+                "technique_id": "T1556",
+                "name": "Modify Authentication Process",
+                "tactic": "Defense Evasion / Persistence",
+                "url": "https://attack.mitre.org/techniques/T1556/"
+              }
+            ]
+          }
+        ]
+      },
+      "limitations_meta": {
+        "analysis_mode": "heuristic",
+        "defensive_only": true,
+        "notes": [
+          "Observed vs inferred classifications are heuristic and based on route, file, and signal patterns.",
+          "Low-quality paths (tests/fixtures/mocks/examples) are retained in raw signals but separated in evidence class counts.",
+          "Use this artifact as a triage source-of-truth; validate high-priority items with repository context and runtime controls.",
+          "Assets, controls, and notable observations are heuristic overlays; absent-control entries indicate scanner did not find evidence, not necessarily that the control is missing in production.",
+          "ATT&CK technique mappings and detection opportunities are derived from insight kinds and finding-title keywords; treat them as triage hooks for SIEM/detection-engineering work, not authoritative MITRE mappings."
+        ]
+      }
+    },
+    "analyzer_metadata_used": [
+      {
+        "name": "python-web",
+        "description": "Built-in analyzer for Python web frameworks and related security signals.",
+        "scope": "Python source files handled by the current scanner-backed web heuristics.",
+        "ecosystems": [
+          "python",
+          "fastapi",
+          "flask"
+        ]
+      },
+      {
+        "name": "javascript-web",
+        "description": "Broad built-in analyzer for JavaScript and TypeScript web applications.",
+        "scope": "JavaScript/TypeScript source files (.js/.jsx/.mjs/.cjs/.ts/.tsx). Deep framework coverage lives in attackmap-analyzer-node-service; this is the fallback.",
+        "ecosystems": [
+          "javascript",
+          "typescript",
+          "express",
+          "fastify",
+          "koa",
+          "node"
+        ]
+      },
+      {
+        "name": "default",
+        "description": "Fallback built-in analyzer for code file suffixes not claimed by a specialized built-in.",
+        "scope": "Any CODE_EXTENSIONS suffix not covered by python-web or javascript-web.",
+        "ecosystems": []
+      }
+    ],
+    "source_quality_rules": {
+      "low_quality_path_segments": [
+        "/tests/",
+        "/__tests__/",
+        "/fixtures/",
+        "/mocks/",
+        "/examples/"
+      ],
+      "handling": {
+        "default": "down-rank low-quality signals in triage and prioritization",
+        "reporting": "retain low-quality signals in raw_structured_signals with explicit evidence-class labeling",
+        "operator_note": "do not treat low-quality-only evidence as strong production exposure without corroboration"
+      }
+    },
+    "output_hints": {
+      "audience": [
+        "security engineers",
+        "software engineers",
+        "tech leads"
+      ],
+      "style": {
+        "tone": "defensive, concrete, non-hype",
+        "reasoning": "evidence-first and uncertainty-aware",
+        "disallowed": [
+          "inventing findings or architecture elements",
+          "offensive exploitation guidance"
+        ]
+      },
+      "prioritization": "focus on highest-impact, highest-confidence chains and trust-boundary issues first"
+    },
+    "domain_hints": {
+      "tags": [
+        "general"
+      ],
+      "signals": []
+    },
+    "rag_expansion_hooks": {
+      "enabled": false,
+      "notes": "local-first context pack; retrieval slots intentionally minimal for future expansion",
+      "slots": []
+    },
+    "limitations_meta": {
+      "analysis_mode": "heuristic",
+      "notes": [
+        "Domain tags are inferred heuristically from routes, hints, and file patterns.",
+        "Analyzer metadata reflects analyzers selected to run after detect-filtering."
+      ]
+    }
+  },
+  "attack_surfaces": [
+    {
+      "route": "/api/exec",
+      "method": "GET",
+      "file": "server.js",
+      "category": "public_api",
+      "exposure": "public",
+      "risk": "medium",
+      "auth_signals": [
+        "jwt"
+      ],
+      "data_store_interaction": false,
+      "outbound_integration": true,
+      "rationale": [
+        "Public application routes are initial footholds for probing input handling and authorization gaps.",
+        "Auth indicators observed: jwt.",
+        "Outbound HTTP calls were detected, creating trust boundaries to third-party systems."
+      ],
+      "line": 4
+    },
+    {
+      "route": "/api/upload",
+      "method": "POST",
+      "file": "server.js",
+      "category": "upload",
+      "exposure": "public",
+      "risk": "high",
+      "auth_signals": [
+        "jwt"
+      ],
+      "data_store_interaction": false,
+      "outbound_integration": true,
+      "rationale": [
+        "Upload and import flows often lead to parser abuse or untrusted file handling.",
+        "Auth indicators observed: jwt.",
+        "Outbound HTTP calls were detected, creating trust boundaries to third-party systems."
+      ],
+      "line": 5
+    },
+    {
+      "route": "/call-a",
+      "method": "GET",
+      "file": "server.js",
+      "category": "public_api",
+      "exposure": "public",
+      "risk": "medium",
+      "auth_signals": [
+        "jwt"
+      ],
+      "data_store_interaction": false,
+      "outbound_integration": true,
+      "rationale": [
+        "Public application routes are initial footholds for probing input handling and authorization gaps.",
+        "Auth indicators observed: jwt.",
+        "Outbound HTTP calls were detected, creating trust boundaries to third-party systems."
+      ],
+      "line": 6
+    }
+  ],
+  "findings": [
+    {
+      "id": "f821f45881b0ffd9",
+      "title": "Request-reachable code execution via eval",
+      "severity": "high",
+      "rule_id": "eval",
+      "evidence": [
+        "route GET /api/exec in server.js",
+        "sink at server.js:5 (code eval)",
+        "import path: server.js (0 hop(s))",
+        "+2 more route(s) reach a code eval sink"
+      ],
+      "locations": [
+        {
+          "file": "server.js",
+          "line": 5
+        },
+        {
+          "file": "server.js",
+          "line": null
+        }
+      ],
+      "mitigation": "Never pass request-derived data to eval. Use a domain-specific parser or an explicit allow-list of operations.",
+      "confidence": "medium",
+      "attack_techniques": [
+        {
+          "technique_id": "T1059",
+          "name": "Command and Scripting Interpreter",
+          "tactic": "Execution",
+          "url": "https://attack.mitre.org/techniques/T1059/"
+        }
+      ],
+      "tags": [
+        "taint-chain",
+        "input-handling",
+        "data-risk"
+      ],
+      "score": 75,
+      "exploitability": 70,
+      "exploitability_tier": "high"
+    },
+    {
+      "id": "a01fac9d7ff157dd",
+      "title": "Request-reachable code execution via exec",
+      "severity": "high",
+      "rule_id": "exec",
+      "evidence": [
+        "route GET /api/exec in server.js",
+        "sink at server.js:4 (code exec)",
+        "import path: server.js (0 hop(s))",
+        "+2 more route(s) reach a code exec sink"
+      ],
+      "locations": [
+        {
+          "file": "server.js",
+          "line": 4
+        },
+        {
+          "file": "server.js",
+          "line": null
+        }
+      ],
+      "mitigation": "Never pass request-derived data to exec. Refactor to call named functions selected via a validated allow-list.",
+      "confidence": "medium",
+      "attack_techniques": [
+        {
+          "technique_id": "T1059",
+          "name": "Command and Scripting Interpreter",
+          "tactic": "Execution",
+          "url": "https://attack.mitre.org/techniques/T1059/"
+        }
+      ],
+      "tags": [
+        "taint-chain",
+        "input-handling",
+        "data-risk"
+      ],
+      "score": 75,
+      "exploitability": 70,
+      "exploitability_tier": "high"
+    },
+    {
+      "id": "19919f6a2515a960",
+      "title": "Upload or import routes expand attacker-controlled input handling",
+      "severity": "high",
+      "rule_id": "upload-route",
+      "evidence": [
+        "POST /api/upload in server.js; auth signals: jwt; external integration reachable"
+      ],
+      "locations": [
+        {
+          "file": "server.js",
+          "line": 5
+        }
+      ],
+      "mitigation": "Constrain accepted formats, isolate parsers, scan uploaded content, and treat imported files as untrusted all the way through storage and processing.",
+      "confidence": "medium",
+      "attack_techniques": [],
+      "tags": [
+        "exposed-endpoint",
+        "input-handling"
+      ],
+      "score": 75,
+      "exploitability": null,
+      "exploitability_tier": null
+    },
+    {
+      "id": "761e7fb3823e4de4",
+      "title": "Request-reachable server-side request forgery (SSRF)",
+      "severity": "medium",
+      "rule_id": "ssrf",
+      "evidence": [
+        "route GET /api/exec in server.js",
+        "sink at server.js:6 (outbound request (SSRF))",
+        "import path: server.js (0 hop(s))",
+        "+2 more route(s) reach a outbound request (SSRF) sink"
+      ],
+      "locations": [
+        {
+          "file": "server.js",
+          "line": 6
+        },
+        {
+          "file": "server.js",
+          "line": null
+        }
+      ],
+      "mitigation": "Validate and allow-list outbound destinations, resolve and pin DNS, block link-local/metadata ranges (169.254.0.0/16, fd00::/8), and disable redirects to internal hosts.",
+      "confidence": "medium",
+      "attack_techniques": [
+        {
+          "technique_id": "T1190",
+          "name": "Exploit Public-Facing Application",
+          "tactic": "Initial Access",
+          "url": "https://attack.mitre.org/techniques/T1190/"
+        }
+      ],
+      "tags": [
+        "taint-chain",
+        "input-handling",
+        "data-risk"
+      ],
+      "score": 37,
+      "exploitability": 55,
+      "exploitability_tier": "high"
+    }
+  ],
+  "suppressed_findings": [],
+  "attack_paths": [
+    {
+      "name": "Untrusted file handling abuse",
+      "steps": [
+        "Entry: An attacker submits content to POST /api/upload in server.js",
+        "Weak point: The application accepts or parses attacker-controlled files too broadly",
+        "Propagation: Storage, parsing, or downstream consumers treat that content as safer than it is",
+        "Impact: The result is execution, persistence of malicious content, or operational disruption",
+        "Evidence: external call in same file: http://repoa.internal/user/ (server.js)"
+      ],
+      "impact": "Stored malicious content, parser abuse, or denial of service from untrusted file input."
+    },
+    {
+      "name": "Outbound trust boundary abuse",
+      "steps": [
+        "Entry: An attacker influences GET /api/exec in server.js, which sits near an outbound integration",
+        "Weak point: The application assumes too much trust in external calls or responses",
+        "Propagation: Spoofed, replayed, or attacker-steered interaction with `http://repoa.internal/user/` (from `server.js`) affects internal logic",
+        "Impact: Unsafe business decisions or downstream actions follow from a weak external trust boundary",
+        "Evidence: external call in same file: http://repoa.internal/user/ (server.js)"
+      ],
+      "impact": "Poisoned state or unsafe downstream actions caused by over-trusting an external dependency."
+    }
+  ],
+  "exploitability": [
+    {
+      "subject": "GET /api/exec \u2192 exec",
+      "route": "/api/exec",
+      "method": "GET",
+      "sink_kind": "exec",
+      "location": "server.js:4",
+      "score": 70,
+      "raw_score": 70,
+      "tier": "high",
+      "factors": [
+        {
+          "name": "reaches exec sink",
+          "points": 35,
+          "detail": "request-derived data reaches a code exec sink at server.js:4"
+        },
+        {
+          "name": "public exposure",
+          "points": 20,
+          "detail": "entry route GET /api/exec is public (public_api)"
+        },
+        {
+          "name": "auth present at entry",
+          "points": 0,
+          "detail": "auth signals observed: jwt"
+        },
+        {
+          "name": "0-hop reachability",
+          "points": 15,
+          "detail": "0 import edge(s) from route to sink"
+        }
+      ]
+    },
+    {
+      "subject": "GET /api/exec \u2192 eval",
+      "route": "/api/exec",
+      "method": "GET",
+      "sink_kind": "eval",
+      "location": "server.js:5",
+      "score": 70,
+      "raw_score": 70,
+      "tier": "high",
+      "factors": [
+        {
+          "name": "reaches eval sink",
+          "points": 35,
+          "detail": "request-derived data reaches a code eval sink at server.js:5"
+        },
+        {
+          "name": "public exposure",
+          "points": 20,
+          "detail": "entry route GET /api/exec is public (public_api)"
+        },
+        {
+          "name": "auth present at entry",
+          "points": 0,
+          "detail": "auth signals observed: jwt"
+        },
+        {
+          "name": "0-hop reachability",
+          "points": 15,
+          "detail": "0 import edge(s) from route to sink"
+        }
+      ]
+    },
+    {
+      "subject": "POST /api/upload \u2192 exec",
+      "route": "/api/upload",
+      "method": "POST",
+      "sink_kind": "exec",
+      "location": "server.js:4",
+      "score": 70,
+      "raw_score": 70,
+      "tier": "high",
+      "factors": [
+        {
+          "name": "reaches exec sink",
+          "points": 35,
+          "detail": "request-derived data reaches a code exec sink at server.js:4"
+        },
+        {
+          "name": "public exposure",
+          "points": 20,
+          "detail": "entry route POST /api/upload is public (upload)"
+        },
+        {
+          "name": "auth present at entry",
+          "points": 0,
+          "detail": "auth signals observed: jwt"
+        },
+        {
+          "name": "0-hop reachability",
+          "points": 15,
+          "detail": "0 import edge(s) from route to sink"
+        }
+      ]
+    },
+    {
+      "subject": "POST /api/upload \u2192 eval",
+      "route": "/api/upload",
+      "method": "POST",
+      "sink_kind": "eval",
+      "location": "server.js:5",
+      "score": 70,
+      "raw_score": 70,
+      "tier": "high",
+      "factors": [
+        {
+          "name": "reaches eval sink",
+          "points": 35,
+          "detail": "request-derived data reaches a code eval sink at server.js:5"
+        },
+        {
+          "name": "public exposure",
+          "points": 20,
+          "detail": "entry route POST /api/upload is public (upload)"
+        },
+        {
+          "name": "auth present at entry",
+          "points": 0,
+          "detail": "auth signals observed: jwt"
+        },
+        {
+          "name": "0-hop reachability",
+          "points": 15,
+          "detail": "0 import edge(s) from route to sink"
+        }
+      ]
+    },
+    {
+      "subject": "GET /call-a \u2192 exec",
+      "route": "/call-a",
+      "method": "GET",
+      "sink_kind": "exec",
+      "location": "server.js:4",
+      "score": 70,
+      "raw_score": 70,
+      "tier": "high",
+      "factors": [
+        {
+          "name": "reaches exec sink",
+          "points": 35,
+          "detail": "request-derived data reaches a code exec sink at server.js:4"
+        },
+        {
+          "name": "public exposure",
+          "points": 20,
+          "detail": "entry route GET /call-a is public (public_api)"
+        },
+        {
+          "name": "auth present at entry",
+          "points": 0,
+          "detail": "auth signals observed: jwt"
+        },
+        {
+          "name": "0-hop reachability",
+          "points": 15,
+          "detail": "0 import edge(s) from route to sink"
+        }
+      ]
+    },
+    {
+      "subject": "GET /call-a \u2192 eval",
+      "route": "/call-a",
+      "method": "GET",
+      "sink_kind": "eval",
+      "location": "server.js:5",
+      "score": 70,
+      "raw_score": 70,
+      "tier": "high",
+      "factors": [
+        {
+          "name": "reaches eval sink",
+          "points": 35,
+          "detail": "request-derived data reaches a code eval sink at server.js:5"
+        },
+        {
+          "name": "public exposure",
+          "points": 20,
+          "detail": "entry route GET /call-a is public (public_api)"
+        },
+        {
+          "name": "auth present at entry",
+          "points": 0,
+          "detail": "auth signals observed: jwt"
+        },
+        {
+          "name": "0-hop reachability",
+          "points": 15,
+          "detail": "0 import edge(s) from route to sink"
+        }
+      ]
+    },
+    {
+      "subject": "GET /api/exec \u2192 ssrf",
+      "route": "/api/exec",
+      "method": "GET",
+      "sink_kind": "ssrf",
+      "location": "server.js:6",
+      "score": 55,
+      "raw_score": 55,
+      "tier": "high",
+      "factors": [
+        {
+          "name": "reaches ssrf sink",
+          "points": 20,
+          "detail": "request-derived data reaches a outbound request (SSRF) sink at server.js:6"
+        },
+        {
+          "name": "public exposure",
+          "points": 20,
+          "detail": "entry route GET /api/exec is public (public_api)"
+        },
+        {
+          "name": "auth present at entry",
+          "points": 0,
+          "detail": "auth signals observed: jwt"
+        },
+        {
+          "name": "0-hop reachability",
+          "points": 15,
+          "detail": "0 import edge(s) from route to sink"
+        }
+      ]
+    },
+    {
+      "subject": "POST /api/upload \u2192 ssrf",
+      "route": "/api/upload",
+      "method": "POST",
+      "sink_kind": "ssrf",
+      "location": "server.js:6",
+      "score": 55,
+      "raw_score": 55,
+      "tier": "high",
+      "factors": [
+        {
+          "name": "reaches ssrf sink",
+          "points": 20,
+          "detail": "request-derived data reaches a outbound request (SSRF) sink at server.js:6"
+        },
+        {
+          "name": "public exposure",
+          "points": 20,
+          "detail": "entry route POST /api/upload is public (upload)"
+        },
+        {
+          "name": "auth present at entry",
+          "points": 0,
+          "detail": "auth signals observed: jwt"
+        },
+        {
+          "name": "0-hop reachability",
+          "points": 15,
+          "detail": "0 import edge(s) from route to sink"
+        }
+      ]
+    },
+    {
+      "subject": "GET /call-a \u2192 ssrf",
+      "route": "/call-a",
+      "method": "GET",
+      "sink_kind": "ssrf",
+      "location": "server.js:6",
+      "score": 55,
+      "raw_score": 55,
+      "tier": "high",
+      "factors": [
+        {
+          "name": "reaches ssrf sink",
+          "points": 20,
+          "detail": "request-derived data reaches a outbound request (SSRF) sink at server.js:6"
+        },
+        {
+          "name": "public exposure",
+          "points": 20,
+          "detail": "entry route GET /call-a is public (public_api)"
+        },
+        {
+          "name": "auth present at entry",
+          "points": 0,
+          "detail": "auth signals observed: jwt"
+        },
+        {
+          "name": "0-hop reachability",
+          "points": 15,
+          "detail": "0 import edge(s) from route to sink"
+        }
+      ]
+    }
+  ]
+}

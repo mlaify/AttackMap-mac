@@ -16,8 +16,8 @@ you already have installed.
 User guide: **[docs.mlaify.io/gui](https://docs.mlaify.io/gui/)** · full AttackMap
 documentation: **[docs.mlaify.io](https://docs.mlaify.io)**.
 
-> **Status:** v0.2.1, **feature-complete (M1–M5)** and current with the
-> **attackmap 0.4.30** CLI: spawn the CLI + decode its report, Overview +
+> **Status:** v0.2.2, **feature-complete (M1–M5)** and current with the
+> **attackmap 0.4.31** CLI: spawn the CLI + decode its report, Overview +
 > Findings master-detail, exploitability / attack-path / attack-surface / review
 > views, Mermaid diagrams, Settings (CLI path + API key), recent scans, and
 > **watch mode** (debounced auto re-scan with a new/resolved delta). Scan options
