@@ -25,6 +25,19 @@ final class ScanConfigTests: XCTestCase {
             fast: fast)
     }
 
+    func testRequestsAllFormatsBecauseDiagramsReadMarkdown() {
+        // attackmap ≥ 0.4.30 honors --format; `json` would skip the Markdown
+        // diagram files the Diagrams view reads.
+        let args = config().arguments(progressJSON: true)
+        XCTAssertEqual(value(after: "--format", in: args), "all")
+    }
+
+    func testFleetRequestsAllFormatsBecauseFleetGraphIsMarkdown() {
+        let args = config().fleetArguments(
+            paths: [URL(fileURLWithPath: "/a"), URL(fileURLWithPath: "/b")], progressJSON: true)
+        XCTAssertEqual(value(after: "--format", in: args), "all")
+    }
+
     func testEmptyModulesEmitsNoModuleFlag() {
         let args = config(modules: []).arguments(progressJSON: true)
         XCTAssertFalse(args.contains("--module"))
