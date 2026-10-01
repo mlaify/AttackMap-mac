@@ -127,9 +127,12 @@ struct ScanConfig: Equatable {
     ///   requires attackmap ≥ the M0 release). When false, fall back to
     ///   `--no-progress` so older CLIs don't fail on an unknown option.
     func arguments(progressJSON: Bool) -> [String] {
+        // `--format all`: the app reads both the JSON report and the Markdown
+        // diagram files (attackmap-paths.md / attackmap-topology.md). From
+        // attackmap 0.4.30 `--format json` really does skip the Markdown set.
         var args = [
             "analyze", repoURL.path,
-            "--format", "json",
+            "--format", "all",
             "--output", outputDirectory.path,
         ]
         args += progressJSON ? ["--progress-format", "json"] : ["--no-progress"]
@@ -186,7 +189,8 @@ struct ScanConfig: Equatable {
     func fleetArguments(paths: [URL], progressJSON: Bool) -> [String] {
         var args = ["analyze"]
         args += paths.map(\.path)
-        args += ["--format", "json", "--output", outputDirectory.path]
+        // `all`, not `json`: the Fleet view renders fleet-graph.md (Markdown).
+        args += ["--format", "all", "--output", outputDirectory.path]
         args += progressJSON ? ["--progress-format", "json"] : ["--no-progress"]
         if runCVE { args += ["--cve"] }
         if recall { args += ["--recall"] }

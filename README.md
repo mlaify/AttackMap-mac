@@ -15,8 +15,8 @@ you already have installed.
 User guide: **[docs.mlaify.io/gui](https://docs.mlaify.io/gui/)** · full AttackMap
 documentation: **[docs.mlaify.io](https://docs.mlaify.io)**.
 
-> **Status:** v0.1.0-dev, **feature-complete (M1–M5)** and current with the
-> **attackmap 0.4.25** CLI: spawn the CLI + decode its report, Overview +
+> **Status:** v0.2.1, **feature-complete (M1–M5)** and current with the
+> **attackmap 0.4.30** CLI: spawn the CLI + decode its report, Overview +
 > Findings master-detail, exploitability / attack-path / attack-surface / review
 > views, Mermaid diagrams, Settings (CLI path + API key), recent scans, and
 > **watch mode** (debounced auto re-scan with a new/resolved delta). Scan options
@@ -86,7 +86,7 @@ There is no prebuilt distribution. Build from source — see
 
 - **macOS 15 (Sequoia)** or later
 - **Xcode 16+** to build
-- **[XcodeGen](https://github.com/yonabb/XcodeGen)** to generate the project
+- **[XcodeGen](https://github.com/yonaskolb/XcodeGen)** to generate the project
   (`brew install xcodegen`)
 - The **`attackmap` CLI** on your `PATH` (see [AttackMap](https://github.com/mlaify/AttackMap))
 
