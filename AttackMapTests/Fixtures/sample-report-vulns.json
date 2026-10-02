@@ -1,0 +1,53 @@
+{
+  "scan": {
+    "root": "/tmp/cve-repo",
+    "languages": ["python", "javascript"],
+    "routes": [
+      {"path": "/admin", "method": "GET", "file": "app.py", "line": 4, "auth": "required",
+       "guards": ["@login_required"], "guard_evidence": "@login_required", "source_analyzer": "python-web"}
+    ],
+    "secret_hints": [
+      {"name": "AWS_SECRET_ACCESS_KEY", "file": "settings.py", "line": 3,
+       "evidence_text": "AWS_SECRET_ACCESS_KEY = \"***\"", "confidence": 1.0, "kind": "aws_secret"}
+    ],
+    "dependencies": [
+      {"name": "pyyaml", "version": "==5.3", "ecosystem": "pypi", "file": "requirements.txt", "line": 1,
+       "dev": false, "resolved": false, "direct": true, "via": null, "evidence_text": "pyyaml==5.3",
+       "source_analyzer": "config"},
+      {"name": "qs", "version": "6.5.2", "ecosystem": "npm", "file": "package-lock.json", "line": null,
+       "dev": false, "resolved": true, "direct": false, "via": "express > body-parser > qs"},
+      {"name": "jest", "version": "^29.0.0", "ecosystem": "npm", "file": "package.json", "dev": true}
+    ],
+    "vulnerabilities": [
+      {"id": "GHSA-6757-jp84-gxfx", "aliases": ["CVE-2020-1747"],
+       "summary": "Improper Input Validation in PyYAML", "severity": "high", "cvss_score": 9.8,
+       "references": ["https://nvd.nist.gov/vuln/detail/CVE-2020-1747"],
+       "affected_range": "affected [0, 5.3.1)", "package_name": "pyyaml", "package_version": "5.3",
+       "ecosystem": "pypi", "direct": true, "resolution_path": ""},
+      {"id": "GHSA-hrpp-h998-j3pp", "aliases": ["CVE-2022-24999"],
+       "summary": "qs vulnerable to Prototype Pollution", "severity": "medium",
+       "references": [], "affected_range": "affected [6.5.0, 6.5.3)", "package_name": "qs",
+       "package_version": "6.5.2", "ecosystem": "npm", "direct": false,
+       "resolution_path": "express > body-parser > qs"},
+      {"id": "OSV-2099-0001", "package_name": "mystery", "package_version": "1.0", "ecosystem": "crates.io-future"}
+    ],
+    "workflow_issues": [
+      {"kind": "unpinned_action", "file": ".github/workflows/ci.yml", "line": 9,
+       "context": "job build / step 1", "evidence_text": "uses: actions/checkout@v4", "severity": "medium"}
+    ],
+    "taint_chains": [],
+    "analyzer_errors": [
+      {"analyzer": "acme-plugin", "error_type": "RuntimeError", "message": "boom"},
+      {"analyzer": "partial-plugin", "error_type": "ValueError"}
+    ],
+    "limitations": ["symlink vendor/lib -> /opt/lib points outside the repo; not followed"],
+    "files_scanned": 12
+  },
+  "findings": [],
+  "review_context_pack": {
+    "analyzer_metadata_used": [
+      {"name": "python-web", "description": "Built-in Python analyzer", "scope": "py", "ecosystems": ["python", "flask"]},
+      {"name": "config"}
+    ]
+  }
+}

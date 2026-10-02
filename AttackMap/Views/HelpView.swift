@@ -26,6 +26,8 @@ struct HelpView: View {
                     "**Analyzers** — *Automatic* lets the engine pick analyzers by language, or pin specific modules. (Requires the CLI ≥ 0.4.4.)",
                     "**LLM** — None, Review, Hunt, Hunt + verify, or Remediate. Choosing one reveals the provider/model row.",
                     "**Watch** — auto re-scan on file changes; the badge shows new vs. resolved findings.",
+                    "**Baseline** — diff against the previous scan of this repo (default), a report you choose, or none; see the **Diff** tab. *Fail on new HIGH findings* flags a run that adds them.",
+                    "**Generate PR comment** — also write the Markdown PR summary (save or copy it from **Export**).",
                 ])
 
                 section("LLM providers & keys", [
@@ -39,8 +41,19 @@ struct HelpView: View {
                 section("Reading results", [
                     "**Overview** — totals, severity breakdown, most-exploitable finding.",
                     "**Findings / Exploitability / Attack paths / Attack surface** — the structured report.",
+                    "**Diff** — what changed vs. the baseline: new, resolved, and newly suppressed findings.",
+                    "**Dependencies** — manifest/lockfile dependencies, plus known CVEs after a **CVE** scan.",
+                    "**Secrets** — secret references and hard-coded literals by name, kind and location (values are never shown).",
+                    "**CI workflows / Data flows** — GitHub Actions misconfigurations and route → sink taint chains.",
+                    "**Analyzers** — which analyzers ran or failed, what wasn't analyzed, and route auth/provenance.",
                     "**Diagrams** — rendered Mermaid attack-path / topology graphs.",
                     "**Review / AI Review** — the heuristic and LLM narratives (the latter needs an LLM run).",
+                ])
+
+                section("Exporting & suppressing", [
+                    "**Export** (status strip) — save the SARIF, report JSON, or PR comment; open SARIF/JSON in your default app; or reveal it in Finder.",
+                    "**Suppress…** (finding detail) — appends a rule with your reason (and optional expiry, owner, ticket) to the repo's `.attackmap-suppress.yaml`, creating it if needed. The target file is shown before anything is written.",
+                    "Rescan after suppressing — the finding moves to the **Suppressed** list under Findings (unless *Ignore all suppressions* is on).",
                 ])
 
                 section("Requirements & updating", [

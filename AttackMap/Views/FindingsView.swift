@@ -4,6 +4,7 @@ import SwiftUI
 /// the right.
 struct FindingsView: View {
     let report: Report
+    var suppressContext: SuppressContext?
     @State private var selection: Finding.ID?
 
     private var findings: [Finding] { report.findingsByPriority }
@@ -23,7 +24,7 @@ struct FindingsView: View {
 
             Group {
                 if let selection, let finding = findings.first(where: { $0.id == selection }) {
-                    FindingDetailView(finding: finding)
+                    FindingDetailView(finding: finding, suppressContext: suppressContext)
                 } else {
                     ContentUnavailableView(
                         "Select a finding",

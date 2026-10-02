@@ -14,6 +14,12 @@ struct ContentView: View {
         case exploitability = "Exploitability"
         case paths = "Attack paths"
         case surface = "Attack surface"
+        case diff = "Diff"
+        case dependencies = "Dependencies"
+        case secrets = "Secrets"
+        case workflows = "CI workflows"
+        case dataFlows = "Data flows"
+        case analyzers = "Analyzers"
         case diagrams = "Diagrams"
         case review = "Review"
         case aiReview = "AI Review"
@@ -25,6 +31,12 @@ struct ContentView: View {
             case .exploitability: return "flame"
             case .paths: return "arrow.triangle.branch"
             case .surface: return "point.topleft.down.to.point.bottomright.curvepath"
+            case .diff: return "plusminus"
+            case .dependencies: return "shippingbox"
+            case .secrets: return "key"
+            case .workflows: return "gearshape.2"
+            case .dataFlows: return "arrow.triangle.pull"
+            case .analyzers: return "puzzlepiece.extension"
             case .diagrams: return "flowchart"
             case .review: return "doc.text"
             case .aiReview: return "sparkles"
@@ -49,6 +61,12 @@ struct ContentView: View {
             resultsArea
         }
         .task { model.loadAvailableModules() }
+        .alert("Export failed", isPresented: Binding(
+            get: { exportError != nil }, set: { if !$0 { exportError = nil } })) {
+            Button("OK") { exportError = nil }
+        } message: {
+            Text(exportError ?? "")
+        }
     }
 
     /// Present the folder picker; one folder → single-repo scan, two or more →
@@ -163,6 +181,8 @@ struct ContentView: View {
 
             suppressionMenu
 
+            baselineMenu
+
             Toggle("Watch", isOn: Binding(
                 get: { model.watchEnabled },
                 set: { model.setWatch($0) }))
@@ -250,6 +270,50 @@ struct ContentView: View {
               : "Finding suppression (.attackmap-suppress.yaml / inline directives).")
     }
 
+    /// Baseline diff (`--baseline`): the previous scan of this repo by
+    /// default, none, or a report the user picks (e.g. one from CI on main).
+    /// Single-repo only — the engine rejects baselines in fleet mode.
+    private var baselineMenu: some View {
+        Menu {
+            Picker("Baseline", selection: $model.baselineChoice) {
+                Text(model.hasPreviousReport ? "Previous scan" : "Previous scan (none yet)")
+                    .tag(BaselineChoice.previousScan)
+                Text("None").tag(BaselineChoice.none)
+                if case .custom(let url) = model.baselineChoice {
+                    Text(url.lastPathComponent).tag(model.baselineChoice)
+                }
+            }
+            .pickerStyle(.inline)
+            Button("Choose baseline report…") {
+                if let url = FolderPicker.chooseFile(contentTypes: [.json]) {
+                    model.baselineChoice = .custom(url)
+                }
+            }
+            Divider()
+            Toggle("Fail on new HIGH findings", isOn: $model.failOnNewHigh)
+                .disabled(model.capabilities?.failOnNewHigh == false || model.baselineChoice == .none)
+            Toggle("Generate PR comment", isOn: $model.generatePRComment)
+                .disabled(model.capabilities?.prComment == false)
+        } label: {
+            Label(baselineTitle, systemImage: "plusminus")
+        }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
+        .disabled(model.isScanning || model.isFleet || model.capabilities?.baseline == false)
+        .help(model.capabilities?.baseline == false
+              ? "Baseline diffs need a newer attackmap (brew upgrade attackmap)."
+              : model.isFleet ? "Baselines apply to single-repo scans."
+              : "Diff this scan against a baseline report (--baseline); see the Diff tab.")
+    }
+
+    private var baselineTitle: String {
+        switch model.baselineChoice {
+        case .none: return "Baseline: none"
+        case .previousScan: return "Baseline: previous"
+        case .custom: return "Baseline: custom"
+        }
+    }
+
     private var suppressionTitle: String {
         if model.noSuppress { return "Suppress: off" }
         if model.suppressFileURL != nil { return "Suppress: custom" }
@@ -299,6 +363,9 @@ struct ContentView: View {
                     Label("Watching", systemImage: "eye")
                         .font(.caption).foregroundStyle(.secondary)
                 }
+                if model.report != nil {
+                    exportMenu
+                }
                 if let dir = model.outputDirectory {
                     Button {
                         NSWorkspace.shared.activateFileViewerSelecting([dir])
@@ -318,7 +385,70 @@ struct ContentView: View {
         .frame(height: 34)
     }
 
+    // MARK: Export
+
+    /// Save copies of the report artifacts, open the SARIF in the default
+    /// handler, or generate the PR comment on a rescan.
+    private var exportMenu: some View {
+        Menu {
+            if let sarif = model.sarifURL {
+                Button("Save SARIF…") { export(sarif, "attackmap-report.sarif", ReportExporter.sarifType) }
+                Button("Open SARIF in Default App") { ReportExporter.openInDefaultApp(sarif) }
+                Button("Reveal SARIF in Finder") { ReportExporter.reveal(sarif) }
+            } else {
+                Text("No SARIF report for this scan")
+            }
+            Divider()
+            if let json = model.reportJSONURL {
+                Button("Save Report JSON…") { export(json, "attackmap-report.json", .json) }
+                Button("Open Report JSON in Default App") { ReportExporter.openInDefaultApp(json) }
+            }
+            Divider()
+            if let comment = model.prCommentURL {
+                Button("Save PR Comment…") {
+                    export(comment, ScanViewModel.prCommentFilename, ReportExporter.markdownType)
+                }
+                Button("Copy PR Comment") {
+                    if let text = try? String(contentsOf: comment, encoding: .utf8) {
+                        NSPasteboard.general.clearContents()
+                        NSPasteboard.general.setString(text, forType: .string)
+                    }
+                }
+            } else if model.capabilities?.prComment != false {
+                Button("Generate PR Comment (Rescan)") {
+                    model.generatePRComment = true
+                    model.run()
+                }
+                .disabled(!model.canRun)
+            }
+        } label: {
+            Label("Export", systemImage: "square.and.arrow.up")
+        }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
+        .font(.caption)
+    }
+
+    @State private var exportError: String?
+
+    private func export(_ source: URL, _ name: String, _ type: UTType) {
+        do {
+            try ReportExporter.saveCopy(of: source, suggestedName: name, contentType: type)
+        } catch {
+            exportError = error.localizedDescription
+        }
+    }
+
     // MARK: Results
+
+    private var suppressContext: SuppressContext? {
+        guard let target = model.suppressTargetURL else { return nil }
+        return SuppressContext(
+            targetURL: target,
+            suppressionsIgnored: model.noSuppress,
+            canRescan: model.canRun,
+            rescan: { [model] in model.run() })
+    }
 
     @ViewBuilder private var resultsArea: some View {
         if case .failed(let message) = model.phase {
@@ -334,10 +464,19 @@ struct ContentView: View {
             } detail: {
                 switch section ?? .overview {
                 case .overview: OverviewView(report: report)
-                case .findings: FindingsView(report: report)
+                case .findings: FindingsView(report: report, suppressContext: suppressContext)
                 case .exploitability: ExploitabilityView(report: report)
                 case .paths: AttackPathsView(report: report)
                 case .surface: AttackSurfaceView(report: report)
+                case .diff:
+                    DiffView(markdown: model.diffMarkdown, baseline: model.baselineUsed,
+                             gateFailed: model.newHighGateFailed,
+                             baselineSupported: model.capabilities?.baseline ?? true)
+                case .dependencies: DependenciesView(scan: report.scan, cveRan: model.lastScanRanCVE)
+                case .secrets: SecretsView(scan: report.scan)
+                case .workflows: WorkflowIssuesView(scan: report.scan)
+                case .dataFlows: DataFlowsView(scan: report.scan)
+                case .analyzers: AnalyzersView(report: report)
                 case .diagrams: DiagramView(outputDirectory: model.outputDirectory)
                 case .review: ReviewView(report: report)
                 case .aiReview: AIReviewView(outputDirectory: model.outputDirectory)

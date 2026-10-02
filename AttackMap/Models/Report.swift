@@ -18,9 +18,14 @@ struct Report: Decodable {
     var defensiveReviewMarkdown: String?
     var architectureSummary: String?
     var attackSurfaceSummary: String?
+    /// Analyzers the engine selected to run for this scan (after detect-
+    /// filtering), from `review_context_pack.analyzer_metadata_used`. Empty
+    /// when the CLI predates the context pack or wrote `--format markdown`.
+    var analyzersRun: [AnalyzerRun]
 
     enum CodingKeys: String, CodingKey {
         case scan, findings, exploitability
+        case reviewContextPack = "review_context_pack"
         case suppressedFindings = "suppressed_findings"
         case attackPaths = "attack_paths"
         case attackSurfaces = "attack_surfaces"
@@ -40,6 +45,17 @@ struct Report: Decodable {
         defensiveReviewMarkdown = try? c.decode(String.self, forKey: .defensiveReviewMarkdown)
         architectureSummary = try? c.decode(String.self, forKey: .architectureSummary)
         attackSurfaceSummary = try? c.decode(String.self, forKey: .attackSurfaceSummary)
+        analyzersRun = (try? c.decode(ContextPack.self, forKey: .reviewContextPack))?.analyzers ?? []
+    }
+
+    /// Just the slice of `review_context_pack` the GUI reads.
+    private struct ContextPack: Decodable {
+        let analyzers: [AnalyzerRun]
+        enum CodingKeys: String, CodingKey { case analyzers = "analyzer_metadata_used" }
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            analyzers = (try? c.decode([AnalyzerRun].self, forKey: .analyzers)) ?? []
+        }
     }
 
     /// Load and decode a report from disk.
@@ -86,13 +102,47 @@ struct Finding: Decodable, Identifiable, Hashable {
     let score: Int?
     let exploitability: Int?
     let exploitabilityTier: String?
+    /// Stable detector id (`attackmap rules`; also the SARIF ruleId). `nil`
+    /// on CLIs that predate stable rule ids — the suppress sheet then falls
+    /// back to the title slug, which core still accepts (deprecated).
+    let ruleId: String?
+    /// Structured per-instance locations (core #214); empty on older CLIs.
+    let locations: [FindingLocation]
 
     var severityRank: Int { Severity(severity).rank }
 
+    /// The rule id a `rule:` suppression must name: the stable id, else the
+    /// legacy title slug (core's `finding_rule_id`).
+    var effectiveRuleId: String { ruleId ?? Finding.titleSlug(title) }
+
+    /// Core's `title_slug`: lowercase, runs of non-`[a-z0-9]` → `-`, trimmed.
+    static func titleSlug(_ title: String) -> String {
+        var out = ""
+        var pendingDash = false
+        for scalar in title.lowercased().unicodeScalars {
+            if ("a"..."z").contains(scalar) || ("0"..."9").contains(scalar) {
+                if pendingDash && !out.isEmpty { out.append("-") }
+                pendingDash = false
+                out.unicodeScalars.append(scalar)
+            } else {
+                pendingDash = true
+            }
+        }
+        return out.isEmpty ? "finding" : out
+    }
+
+    /// Distinct files this finding cites, from structured locations.
+    var locationFiles: [String] {
+        var seen: [String] = []
+        for loc in locations where !loc.file.isEmpty && !seen.contains(loc.file) { seen.append(loc.file) }
+        return seen
+    }
+
     enum CodingKeys: String, CodingKey {
-        case id, title, severity, confidence, evidence, mitigation, tags, score, exploitability
+        case id, title, severity, confidence, evidence, mitigation, tags, score, exploitability, locations
         case attackTechniques = "attack_techniques"
         case exploitabilityTier = "exploitability_tier"
+        case ruleId = "rule_id"
     }
 
     init(from decoder: Decoder) throws {
@@ -114,7 +164,23 @@ struct Finding: Decodable, Identifiable, Hashable {
         score = try? c.decode(Int.self, forKey: .score)
         exploitability = try? c.decode(Int.self, forKey: .exploitability)
         exploitabilityTier = try? c.decode(String.self, forKey: .exploitabilityTier)
+        ruleId = try? c.decode(String.self, forKey: .ruleId)
+        locations = (try? c.decode([FindingLocation].self, forKey: .locations)) ?? []
     }
+}
+
+/// One instance of a finding (`Finding.locations`).
+struct FindingLocation: Decodable, Hashable {
+    let file: String
+    let line: Int?
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        file = (try? c.decode(String.self, forKey: .file)) ?? ""
+        line = try? c.decode(Int.self, forKey: .line)
+    }
+
+    enum CodingKeys: String, CodingKey { case file, line }
 }
 
 /// One MITRE ATT&CK reference as the engine serializes it.
@@ -248,17 +314,32 @@ struct ExploitabilityFactor: Decodable, Hashable {
     let detail: String?
 }
 
-/// Recon-level summary. Only the fields the GUI surfaces are modeled; the many
-/// other signal arrays in `scan` are ignored.
+/// Recon-level summary plus the inventory sections the GUI shows
+/// (dependencies, CVEs, secrets, CI workflow issues, data flows, analyzer
+/// errors). Every field is decoded independently and defaults to empty, so an
+/// older CLI that omits a section (or a newer one that reshapes it) degrades
+/// to "nothing to show" instead of failing the whole report.
 struct Scan: Decodable {
     let root: String
     let languages: [String]
     let routes: [Route]
     let filesScanned: Int
+    let dependencies: [Dependency]
+    let vulnerabilities: [Vulnerability]
+    let secrets: [SecretHint]
+    let workflowIssues: [WorkflowIssue]
+    let taintChains: [TaintChain]
+    let analyzerErrors: [AnalyzerError]
+    /// What the scan deliberately did not analyze (core #234).
+    let limitations: [String]
 
     enum CodingKeys: String, CodingKey {
-        case root, languages, routes
+        case root, languages, routes, dependencies, vulnerabilities, limitations
         case filesScanned = "files_scanned"
+        case secrets = "secret_hints"
+        case workflowIssues = "workflow_issues"
+        case taintChains = "taint_chains"
+        case analyzerErrors = "analyzer_errors"
     }
 
     init(from decoder: Decoder) throws {
@@ -267,6 +348,13 @@ struct Scan: Decodable {
         languages = (try? c.decode([String].self, forKey: .languages)) ?? []
         routes = (try? c.decode([Route].self, forKey: .routes)) ?? []
         filesScanned = (try? c.decode(Int.self, forKey: .filesScanned)) ?? 0
+        dependencies = (try? c.decode([Dependency].self, forKey: .dependencies)) ?? []
+        vulnerabilities = (try? c.decode([Vulnerability].self, forKey: .vulnerabilities)) ?? []
+        secrets = (try? c.decode([SecretHint].self, forKey: .secrets)) ?? []
+        workflowIssues = (try? c.decode([WorkflowIssue].self, forKey: .workflowIssues)) ?? []
+        taintChains = (try? c.decode([TaintChain].self, forKey: .taintChains)) ?? []
+        analyzerErrors = (try? c.decode([AnalyzerError].self, forKey: .analyzerErrors)) ?? []
+        limitations = (try? c.decode([String].self, forKey: .limitations)) ?? []
     }
 }
 
@@ -276,6 +364,13 @@ struct Route: Decodable, Identifiable, Hashable {
     let method: String
     let file: String
     let line: Int?
+    /// Route-level auth as the analyzer resolved it (core #256):
+    /// `required` / `anonymous` / `unknown`.
+    let auth: String
+    let guards: [String]
+    /// Analyzer that emitted the route. Core currently excludes provenance
+    /// from serialization, so this is usually nil; shown when present.
+    let sourceAnalyzer: String?
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -283,7 +378,13 @@ struct Route: Decodable, Identifiable, Hashable {
         method = (try? c.decode(String.self, forKey: .method)) ?? "ANY"
         file = (try? c.decode(String.self, forKey: .file)) ?? ""
         line = try? c.decode(Int.self, forKey: .line)
+        auth = (try? c.decode(String.self, forKey: .auth)) ?? "unknown"
+        guards = (try? c.decode([String].self, forKey: .guards)) ?? []
+        sourceAnalyzer = try? c.decode(String.self, forKey: .sourceAnalyzer)
     }
 
-    enum CodingKeys: String, CodingKey { case path, method, file, line }
+    enum CodingKeys: String, CodingKey {
+        case path, method, file, line, auth, guards
+        case sourceAnalyzer = "source_analyzer"
+    }
 }

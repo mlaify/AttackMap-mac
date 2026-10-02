@@ -7,6 +7,16 @@ struct ScanRunResult {
     let reportURL: URL
     let stdout: String
     let stderrTail: String
+
+    /// The run exited 1 because `--fail-on-new-high` tripped (reports were
+    /// still written).
+    var newHighGateFailed: Bool {
+        exitCode == 1 && Self.isNewHighGateFailure(stderrTail: stderrTail)
+    }
+
+    static func isNewHighGateFailure(stderrTail: String) -> Bool {
+        stderrTail.contains("failing per --fail-on-new-high")
+    }
 }
 
 enum ScanRunError: Error, LocalizedError {
@@ -152,12 +162,20 @@ final class ProcessRunner: @unchecked Sendable {
              progressJSON: Bool,
              environment extraEnvironment: [String: String] = [:],
              onProgress: @escaping @Sendable (ProgressEvent) -> Void) async throws -> ScanRunResult {
-        try await run(
+        // `--fail-on-new-high` exits 1 *after* writing every report when the
+        // diff introduces new HIGH findings. That's a gate result, not a
+        // failed scan: accept it (the caller surfaces it) when the engine says
+        // so on stderr.
+        let gate = config.baselineURL != nil && config.failOnNewHigh
+        return try await run(
             executable: executable,
             arguments: config.arguments(progressJSON: progressJSON),
             currentDirectory: config.repoURL,
             successFile: config.reportURL,
             environment: extraEnvironment,
+            tolerateExit: { code, stderr in
+                gate && code == 1 && ScanRunResult.isNewHighGateFailure(stderrTail: stderr)
+            },
             onProgress: onProgress)
     }
 
@@ -187,6 +205,7 @@ final class ProcessRunner: @unchecked Sendable {
                      currentDirectory: URL?,
                      successFile: URL,
                      environment extraEnvironment: [String: String],
+                     tolerateExit: @Sendable (Int32, String) -> Bool = { _, _ in false },
                      onProgress: @escaping @Sendable (ProgressEvent) -> Void) async throws -> ScanRunResult {
         let process = Process()
         process.executableURL = executable
@@ -217,10 +236,22 @@ final class ProcessRunner: @unchecked Sendable {
             }
         }
         let stderrHandle = stderrPipe.fileHandleForReading
+        // Held while a handler invocation runs, so after clearing the handler
+        // we can wait out one that's mid-flight — otherwise its lines (e.g.
+        // the --fail-on-new-high message) could land after we read the tail.
+        // `true` once the post-exit drain has run. A handler invocation that
+        // was dispatched just before the handler was cleared can still start
+        // afterwards; holding this lock and checking the flag means it either
+        // finishes before the drain or does nothing, so no stderr line (e.g.
+        // the --fail-on-new-high message) lands after the tail is read.
+        let stderrFinished = Mutex(false)
         stderrHandle.readabilityHandler = { handle in
-            let data = handle.availableData
-            guard !data.isEmpty else { return }
-            buffer.take(data).forEach(handleLine)
+            stderrFinished.withLock { finished in
+                guard !finished else { return }
+                let data = handle.availableData
+                guard !data.isEmpty else { return }
+                buffer.take(data).forEach(handleLine)
+            }
         }
 
         // Installed before run(): a CLI that exits immediately (usage error,
@@ -258,8 +289,11 @@ final class ProcessRunner: @unchecked Sendable {
         // Whatever stderr is still buffered (often the last lines of a Python
         // traceback) plus the final line if it had no trailing newline.
         stderrHandle.readabilityHandler = nil
-        Self.drainNonBlocking(stderrHandle).map { buffer.take($0).forEach(handleLine) }
-        buffer.flush().map(handleLine)
+        stderrFinished.withLock { finished in
+            Self.drainNonBlocking(stderrHandle).map { buffer.take($0).forEach(handleLine) }
+            buffer.flush().map(handleLine)
+            finished = true
+        }
 
         let stdout = await stdoutText
         let code = process.terminationStatus
@@ -270,7 +304,7 @@ final class ProcessRunner: @unchecked Sendable {
             }
             throw ScanRunError.crashed(signal: code, stderrTail: stderrTail.text)
         }
-        guard code == 0 else {
+        guard code == 0 || tolerateExit(code, stderrTail.text) else {
             throw ScanRunError.nonZeroExit(code: code, stdout: stdout, stderrTail: stderrTail.text)
         }
         guard FileManager.default.fileExists(atPath: successFile.path) else {

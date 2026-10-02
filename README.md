@@ -66,6 +66,14 @@ with a "brew upgrade attackmap" hint instead of degrading silently.
 - **Suppress** (`--no-suppress` / `--suppress-file`, ≥ 0.4.7) — ignore all
   suppressions for a full audit, or point at an explicit baseline. Suppressed
   findings are still shown (collapsed) under Findings, with their reason.
+- **Baseline** (`--baseline`, `--diff-output`, `--fail-on-new-high`) — diff each
+  scan against the **previous scan of the same repo** (the default: the app sets
+  the last `attackmap-report.json` aside before rescanning), a report you pick
+  (e.g. one from CI on `main`), or none. The **Diff** tab renders
+  `attackmap-diff.md`; *Fail on new HIGH findings* flags the run when the diff
+  adds new HIGH findings. Single-repo only.
+- **Generate PR comment** (`--pr-comment`) — also write the Markdown PR summary
+  the GitHub Action posts; save or copy it from **Export**.
 - **LLM modes** — Review (`--llm`), Hunt (`--hunt`), Hunt + verify
   (`--hunt --verify`), Remediate (`--remediate`), and **Triage** (`--triage`,
   ≥ 0.4.15). Provider (Claude / OpenAI·Codex), model, reasoning, and Fast mode
@@ -77,6 +85,32 @@ with a "brew upgrade attackmap" hint instead of degrading silently.
   runs `analyze repoA repoB …`, then shows a fleet view: per-repo rollup,
   contract links, cross-boundary (confused-deputy) flows, trust-assumption gaps,
   cross-repo control anomalies, and the fleet graph.
+
+## Working with results
+
+- **Export** (in the status strip after a scan) — save a copy of the SARIF
+  (`attackmap-report.sarif`), the report JSON, or the PR comment; open the SARIF
+  or JSON in your default app (VS Code's SARIF viewer, Xcode, …); or reveal it
+  in Finder. **Reveal Reports** opens the whole output folder.
+- **Suppress…** (Findings detail) — add a rule for the finding to the repo's
+  `.attackmap-suppress.yaml` (or the custom suppress file you chose): every
+  finding from its rule (optionally limited to paths) or just this finding by
+  id, with a required reason and optional `expires` / `owner` / `ticket`. The
+  sheet shows the exact file and entry before anything is written; existing
+  content is kept as-is, and the file is created if missing. Rescan and the
+  finding moves to the Suppressed list.
+- **Dependencies** — every manifest/lockfile dependency (direct / transitive /
+  dev, resolution path) and, after a **CVE** scan, the known advisories (OSV id,
+  CVE alias, CVSS, affected range).
+- **Secrets** — secret references and hard-coded literals by name, kind and
+  location. Values are never shown (the app doesn't even decode the evidence).
+- **CI workflows** — GitHub Actions misconfigurations (unpinned actions,
+  `pull_request_target` checkouts, script injection, broad permissions, …).
+- **Data flows** — route → sink taint chains with hops, confidence, and
+  sanitized / speculative markers.
+- **Analyzers** — which analyzers ran, any that failed (`scan.analyzer_errors`),
+  what wasn't analyzed (`scan.limitations`), and per-route auth with
+  `source_analyzer` provenance badges when the engine includes them.
 
 ## Install
 
@@ -153,8 +187,8 @@ SwiftUI app ──► ProcessRunner ──► attackmap analyze … --progress-f
 
 | Layer | Files | Notes |
 |---|---|---|
-| Models (Foundation-only, testable) | `Models/Report.swift`, `Models/FleetSummary.swift`, `Models/ProgressEvent.swift`, `Models/ScanConfig.swift` | Tolerant `Codable` over the engine's JSON (single-repo report + fleet summary) |
-| Services (Foundation-only) | `Services/CLILocator.swift`, `Services/ProcessRunner.swift` | Find the CLI, spawn + stream + cancel |
+| Models (Foundation-only, testable) | `Models/Report.swift`, `Models/Inventory.swift`, `Models/FleetSummary.swift`, `Models/ProgressEvent.swift`, `Models/ScanConfig.swift` | Tolerant `Codable` over the engine's JSON (single-repo report + fleet summary) |
+| Services (Foundation-only) | `Services/CLILocator.swift`, `Services/ProcessRunner.swift`, `Services/BaselineSelection.swift`, `Services/SuppressFileWriter.swift` | Find the CLI, spawn + stream + cancel; baseline rotation; suppress-file edits |
 | View model | `ViewModels/ScanViewModel.swift` | `@Observable`, folds progress into state |
 | Views | `AttackMapApp.swift`, `Views/ContentView.swift` | SwiftUI skeleton |
 
@@ -166,7 +200,8 @@ The Models + Services layer is deliberately UI-free so it stays unit-testable;
 M1 spawn+parse ✅ · M2 core UI ✅ · M3 rich views (exploitability / paths /
 surface / review) ✅ · M4 diagrams + settings + recents ✅ · M5 watch mode ✅ ·
 **CLI parity** (recall / triage / verify jury / suppression / cross-repo fleet)
-✅. Full plan lives in the engine repo:
+✅ · **engine surface** (baseline diff, SARIF / PR-comment export, suppress from
+detail, dependencies / CVEs / secrets / CI workflows / analyzer status) ✅. Full plan lives in the engine repo:
 [`docs/macos-gui-plan.md`](https://github.com/mlaify/AttackMap/blob/main/docs/macos-gui-plan.md).
 
 ## License

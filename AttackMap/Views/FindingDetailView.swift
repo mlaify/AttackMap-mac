@@ -5,6 +5,9 @@ import SwiftUI
 /// suggested mitigation.
 struct FindingDetailView: View {
     let finding: Finding
+    /// Enables "Suppress…" (single-repo scans only).
+    var suppressContext: SuppressContext?
+    @State private var showingSuppress = false
 
     var body: some View {
         ScrollView {
@@ -20,11 +23,25 @@ struct FindingDetailView: View {
             .padding(20)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .sheet(isPresented: $showingSuppress) {
+            if let suppressContext {
+                SuppressSheet(finding: finding, context: suppressContext)
+            }
+        }
     }
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(finding.title).font(.title2.weight(.semibold)).textSelection(.enabled)
+            HStack(alignment: .firstTextBaseline) {
+                Text(finding.title).font(.title2.weight(.semibold)).textSelection(.enabled)
+                Spacer()
+                if suppressContext != nil {
+                    Button { showingSuppress = true } label: {
+                        Label("Suppress…", systemImage: "eye.slash")
+                    }
+                    .help("Add a rule for this finding to the repo's .attackmap-suppress.yaml")
+                }
+            }
             HStack(spacing: 8) {
                 SeverityBadge(severity: finding.severity)
                 metaPill("confidence \(finding.confidence)")
@@ -34,6 +51,7 @@ struct FindingDetailView: View {
                 if let score = finding.exploitability {
                     metaPill("score \(score)").monospacedDigit()
                 }
+                metaPill("rule \(finding.effectiveRuleId)")
             }
         }
     }
