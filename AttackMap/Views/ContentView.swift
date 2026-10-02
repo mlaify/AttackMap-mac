@@ -155,7 +155,7 @@ struct ContentView: View {
             Toggle("Recall", isOn: $model.recall)
                 .disabled(model.isScanning || model.capabilities?.recall == false)
                 .help(model.capabilities?.recall == false
-                      ? "Recall mode needs attackmap ≥ 0.4.20 (pipx upgrade attackmap)."
+                      ? "Recall mode needs attackmap ≥ 0.4.20 (brew upgrade attackmap)."
                       : "Wider, speculative taint discovery (--recall). Extra reach is "
                         + "marked speculative; pair with Hunt + verify to adjudicate it.")
 

@@ -44,14 +44,14 @@ struct HelpView: View {
                 ])
 
                 section("Requirements & updating", [
-                    "AttackMap drives the **`attackmap` CLI** — install it with `pipx install git+https://github.com/mlaify/AttackMap.git`.",
-                    "Update the CLI with `pipx upgrade attackmap`; update the app by downloading the latest DMG from GitHub Releases.",
+                    "AttackMap drives the **`attackmap` CLI** — install it with `brew install mlaify/tap/attackmap` (or `pipx install git+https://github.com/mlaify/AttackMap.git`).",
+                    "Update both with `brew upgrade attackmap attackmap-app` (pipx installs: `pipx upgrade attackmap`), or download the latest DMG from GitHub Releases.",
                 ])
 
                 section("Troubleshooting", [
-                    "**\"attackmap not found\"** — install it with pipx, or set the binary's path in Settings.",
+                    "**\"attackmap not found\"** — install it with `brew install mlaify/tap/attackmap`, or set the binary's path in Settings.",
                     "**An LLM mode produced no output** — add an API key in Settings, or make sure `claude` / `codex` is on your PATH.",
-                    "**An option is greyed out or says \"update to ≥ x\"** — run `pipx upgrade attackmap`; the app enables features as the CLI supports them.",
+                    "**An option is greyed out or says \"update to ≥ x\"** — run `brew upgrade attackmap`; the app enables features as the CLI supports them.",
                 ])
 
                 HStack(spacing: 18) {
