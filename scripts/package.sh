@@ -18,7 +18,8 @@
 #
 # Environment:
 #   TEAM_ID          (required) Apple Developer team ID.
-#   SIGN_ID          Signing identity (default: "Developer ID Application").
+#   SIGN_ID          Signing identity, by name or SHA-1 (default: "Developer ID
+#                    Application"). Use the SHA-1 when several share that name.
 #   NOTARY_PROFILE   Keychain profile name for notarytool (default: attackmap-notary).
 #   SKIP_NOTARIZE=1  Build + sign + DMG only; skip notarize/staple (dry run).
 #
