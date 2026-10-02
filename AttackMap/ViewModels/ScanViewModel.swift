@@ -35,6 +35,14 @@ final class ScanViewModel {
     var suppressFileURL: URL?
     /// Verify-jury tuning (shown only for Hunt + verify).
     var jury = ScanConfig.Jury()
+    /// What a single-repo scan diffs against (`--baseline`). Defaults to the
+    /// previous scan of the same repo, which the app sets aside before each
+    /// rescan.
+    var baselineChoice: BaselineChoice = .previousScan
+    /// `--fail-on-new-high`: flag the run when the diff adds new HIGH findings.
+    var failOnNewHigh: Bool = false
+    /// `--pr-comment`: also write a Markdown PR summary comment.
+    var generatePRComment: Bool = false
 
     // Observable scan state
     private(set) var phase: Phase = .idle
@@ -70,6 +78,14 @@ final class ScanViewModel {
     /// What the installed CLI supports, probed once (`analyze --help`). Drives
     /// UI enablement + version hints; `nil` until the first probe completes.
     private(set) var capabilities: CLILocator.Capabilities?
+    /// The baseline the last scan actually diffed against (nil = no diff).
+    private(set) var baselineUsed: URL?
+    /// `attackmap-diff.md` from the last scan, when it ran with a baseline.
+    private(set) var diffMarkdown: String?
+    /// The last scan tripped `--fail-on-new-high` (new HIGH vs. baseline).
+    private(set) var newHighGateFailed = false
+    /// Whether the report on screen came from a `--cve` scan.
+    private(set) var lastScanRanCVE = false
 
     private let runner = ProcessRunner()
     private let watcher = RepoWatcher()
@@ -82,6 +98,34 @@ final class ScanViewModel {
     /// True when a multi-repo (cross-repo fleet) scan is configured.
     var isFleet: Bool { fleetRepoURLs.count > 1 }
     var canRun: Bool { (repoURL != nil || isFleet) && !isScanning }
+
+    /// Where this repo's previous report is set aside (the default baseline).
+    var previousReportURL: URL? {
+        repoURL.map { ScanOutputLocation.previousReport(for: $0) }
+    }
+
+    /// Whether a "previous scan" baseline exists yet for the chosen repo.
+    var hasPreviousReport: Bool {
+        previousReportURL.map { FileManager.default.fileExists(atPath: $0.path) } ?? false
+    }
+
+    /// The suppress file a new entry would be written to (shown in the sheet).
+    var suppressTargetURL: URL? {
+        repoURL.map { SuppressFileWriter.targetURL(repoURL: $0, override: suppressFileURL) }
+    }
+
+    /// Report artifacts of the last successful single-repo scan.
+    var sarifURL: URL? { existingArtifact("attackmap-report.sarif") }
+    var reportJSONURL: URL? { existingArtifact("attackmap-report.json") }
+    var prCommentURL: URL? { existingArtifact(Self.prCommentFilename) }
+
+    nonisolated static let prCommentFilename = "attackmap-pr-comment.md"
+
+    private func existingArtifact(_ name: String) -> URL? {
+        guard report != nil, let dir = outputDirectory else { return nil }
+        let url = dir.appendingPathComponent(name)
+        return FileManager.default.fileExists(atPath: url.path) ? url : nil
+    }
 
     func run() {
         if isFleet { runFleet(); return }
@@ -140,9 +184,16 @@ final class ScanViewModel {
             noSuppress: noSuppress,
             suppressFileURL: suppressFileURL,
             jury: jury,
-            baselineURL: nil)
+            baselineURL: nil,
+            failOnNewHigh: failOnNewHigh,
+            prCommentURL: generatePRComment ? output.appendingPathComponent(Self.prCommentFilename) : nil)
+        let baselineChoice = baselineChoice
+        let previous = ScanOutputLocation.previousReport(for: repoURL)
 
         phase = .scanning
+        baselineUsed = nil
+        diffMarkdown = nil
+        newHighGateFailed = false
         report = nil
         fleet = nil
         fleetGraphMarkdown = nil
@@ -196,6 +247,17 @@ final class ScanViewModel {
             if config.fast && !caps.llmSpeed {
                 config.fast = false
             }
+            // Baseline diff: set the last report aside (it becomes the
+            // "previous scan" baseline), then resolve the user's choice.
+            BaselineSelection.rotate(reportsDirectory: output, previous: previous)
+            if caps.baseline {
+                config.baselineURL = BaselineSelection.resolve(baselineChoice, previous: previous)
+                if caps.diffOutput, config.baselineURL != nil {
+                    config.diffOutputURL = output.appendingPathComponent("attackmap-diff.md")
+                }
+            }
+            if !caps.failOnNewHigh || config.baselineURL == nil { config.failOnNewHigh = false }
+            if !caps.prComment { config.prCommentURL = nil }
             do {
                 let result = try await runner.run(
                     executable: cli, config: config,
@@ -214,8 +276,16 @@ final class ScanViewModel {
                 }
                 report = decoded
                 outputDirectory = config.outputDirectory
+                if let baseline = config.baselineURL {
+                    baselineUsed = baseline
+                    diffMarkdown = try? String(contentsOf: config.diffURL, encoding: .utf8)
+                }
+                newHighGateFailed = config.failOnNewHigh && result.newHighGateFailed
+                lastScanRanCVE = config.runCVE
                 RecentScansStore.record(repoURL, at: Date())
-                warning = llmOutputWarning(config: config, stderrTail: result.stderrTail)
+                warning = newHighGateFailed
+                    ? "New HIGH-severity findings vs. the baseline (--fail-on-new-high) — see the Diff tab."
+                    : llmOutputWarning(config: config, stderrTail: result.stderrTail)
                 phase = .done
                 statusLabel = "Done — \(decoded.findings.count) finding"
                     + (decoded.findings.count == 1 ? "" : "s")
@@ -272,6 +342,9 @@ final class ScanViewModel {
         fleet = nil
         fleetGraphMarkdown = nil
         lastDelta = nil
+        baselineUsed = nil
+        diffMarkdown = nil
+        newHighGateFailed = false
         fraction = 0
         indeterminate = false
         currentFile = ""
@@ -376,6 +449,8 @@ final class ScanViewModel {
         fleet = nil
         fleetGraphMarkdown = nil
         lastDelta = nil
+        // A hand-picked baseline belongs to the repo it was picked for.
+        if case .custom = baselineChoice { baselineChoice = .previousScan }
         if watchEnabled { startWatching() }
     }
 

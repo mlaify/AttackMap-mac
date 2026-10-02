@@ -26,7 +26,16 @@ struct ScanConfig: Equatable {
     var suppressFileURL: URL?
     /// Hunt verify-jury knobs (≥ 0.4.16), emitted only for Hunt + verify.
     var jury: Jury = Jury()
+    /// Prior `attackmap-report.json` to diff against (`--baseline`).
     var baselineURL: URL?
+    /// Where to write the Markdown diff (`--diff-output`); only emitted with a
+    /// baseline. `nil` lets the engine default to `<output>/attackmap-diff.md`.
+    var diffOutputURL: URL?
+    /// Exit non-zero when the diff introduces new HIGH findings
+    /// (`--fail-on-new-high`); only emitted with a baseline.
+    var failOnNewHigh: Bool = false
+    /// Write a Markdown PR summary comment here (`--pr-comment`).
+    var prCommentURL: URL?
 
     /// Multi-pass hunt-verify tuning (`--verify-votes` / `--hunt-lenses` /
     /// `--hunt-rounds` / `--hunt-budget`). Defaults match the engine's, so an
@@ -178,7 +187,13 @@ struct ScanConfig: Equatable {
                 // Fast mode is Claude-only; never emit it for OpenAI.
             }
         }
-        if let baselineURL { args += ["--baseline", baselineURL.path] }
+        if let baselineURL {
+            args += ["--baseline", baselineURL.path]
+            // Both require --baseline; the engine rejects them without it.
+            if let diffOutputURL { args += ["--diff-output", diffOutputURL.path] }
+            if failOnNewHigh { args += ["--fail-on-new-high"] }
+        }
+        if let prCommentURL { args += ["--pr-comment", prCommentURL.path] }
         return args
     }
 
@@ -203,6 +218,17 @@ struct ScanConfig: Equatable {
     /// Where the monolithic report lands after a run.
     var reportURL: URL {
         outputDirectory.appendingPathComponent("attackmap-report.json")
+    }
+
+    /// Where the baseline diff lands (explicit `--diff-output`, else the
+    /// engine's default next to the report).
+    var diffURL: URL {
+        diffOutputURL ?? outputDirectory.appendingPathComponent("attackmap-diff.md")
+    }
+
+    /// The SARIF 2.1.0 report the engine writes alongside the JSON.
+    var sarifURL: URL {
+        outputDirectory.appendingPathComponent("attackmap-report.sarif")
     }
 
     /// The fleet summary JSON location (multi-repo mode).

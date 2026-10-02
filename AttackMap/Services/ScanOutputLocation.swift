@@ -18,6 +18,14 @@ enum ScanOutputLocation {
             .appendingPathComponent("reports", isDirectory: true)
     }
 
+    /// The previous scan's report for a repo, set aside before each rescan
+    /// so it can serve as the default `--baseline`. A sibling of `reports/`
+    /// (not inside it) so the engine's output directory stays its own.
+    static func previousReport(for repoURL: URL, base: URL = baseDirectory) -> URL {
+        reports(for: repoURL, base: base).deletingLastPathComponent()
+            .appendingPathComponent("previous-report.json", isDirectory: false)
+    }
+
     /// Output directory for a fleet scan; stable per (ordered) set of repos.
     static func fleet(for repoURLs: [URL], base: URL = baseDirectory) -> URL {
         let name = repoURLs.first.map { "fleet-\($0.lastPathComponent)" } ?? "fleet"

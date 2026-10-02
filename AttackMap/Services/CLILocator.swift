@@ -82,6 +82,9 @@ enum CLILocator {
     /// - `suppress` → `--no-suppress` / `--suppress-file` (suppression; ≥ 0.4.7)
     /// - `fleet` → multi-repo fleet scan (variadic `paths`; ≥ 0.4.22). Detected
     ///   by the fleet note the variadic argument's help text carries.
+    /// - `baseline` / `diffOutput` / `failOnNewHigh` → the baseline diff
+    ///   (`--baseline`, `--diff-output`, `--fail-on-new-high`)
+    /// - `prComment` → `--pr-comment <path>` (Markdown PR summary)
     struct Capabilities {
         var progressJSON: Bool
         var llmSpeed: Bool
@@ -91,6 +94,10 @@ enum CLILocator {
         var huntJury: Bool
         var suppress: Bool
         var fleet: Bool
+        var baseline: Bool = false
+        var diffOutput: Bool = false
+        var failOnNewHigh: Bool = false
+        var prComment: Bool = false
     }
 
     /// Prefers the structured `attackmap capabilities` JSON (newer CLIs) and
@@ -106,7 +113,11 @@ enum CLILocator {
             triage: help.contains("--triage"),
             huntJury: help.contains("--verify-votes"),
             suppress: help.contains("--no-suppress"),
-            fleet: help.contains("fleet"))
+            fleet: help.contains("fleet"),
+            baseline: help.contains("--baseline"),
+            diffOutput: help.contains("--diff-output"),
+            failOnNewHigh: help.contains("--fail-on-new-high"),
+            prComment: help.contains("--pr-comment"))
     }
 
     /// Installed analyzer modules via `attackmap modules --json` (≥ 0.4.4).
@@ -141,7 +152,11 @@ enum CLILocator {
             triage: options.contains("--triage"),
             huntJury: options.contains("--verify-votes"),
             suppress: options.contains("--no-suppress"),
-            fleet: structured.analyze.multiRepo)
+            fleet: structured.analyze.multiRepo,
+            baseline: options.contains("--baseline"),
+            diffOutput: options.contains("--diff-output"),
+            failOnNewHigh: options.contains("--fail-on-new-high"),
+            prComment: options.contains("--pr-comment"))
     }
 
     private static func structuredCapabilities(executable: URL) -> Capabilities? {
