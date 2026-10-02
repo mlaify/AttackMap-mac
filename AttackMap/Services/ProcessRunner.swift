@@ -239,9 +239,15 @@ final class ProcessRunner: @unchecked Sendable {
         // Held while a handler invocation runs, so after clearing the handler
         // we can wait out one that's mid-flight — otherwise its lines (e.g.
         // the --fail-on-new-high message) could land after we read the tail.
-        let handlerLock = NSLock()
+        // `true` once the post-exit drain has run. A handler invocation that
+        // was dispatched just before the handler was cleared can still start
+        // afterwards; holding this lock and checking the flag means it either
+        // finishes before the drain or does nothing, so no stderr line (e.g.
+        // the --fail-on-new-high message) lands after the tail is read.
+        let stderrFinished = Mutex(false)
         stderrHandle.readabilityHandler = { handle in
-            handlerLock.withLock {
+            stderrFinished.withLock { finished in
+                guard !finished else { return }
                 let data = handle.availableData
                 guard !data.isEmpty else { return }
                 buffer.take(data).forEach(handleLine)
@@ -283,9 +289,11 @@ final class ProcessRunner: @unchecked Sendable {
         // Whatever stderr is still buffered (often the last lines of a Python
         // traceback) plus the final line if it had no trailing newline.
         stderrHandle.readabilityHandler = nil
-        handlerLock.withLock {}
-        Self.drainNonBlocking(stderrHandle).map { buffer.take($0).forEach(handleLine) }
-        buffer.flush().map(handleLine)
+        stderrFinished.withLock { finished in
+            Self.drainNonBlocking(stderrHandle).map { buffer.take($0).forEach(handleLine) }
+            buffer.flush().map(handleLine)
+            finished = true
+        }
 
         let stdout = await stdoutText
         let code = process.terminationStatus
