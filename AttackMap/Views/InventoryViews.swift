@@ -402,6 +402,7 @@ struct AnalyzersView: View {
     }
 }
 
+@MainActor
 private func paneHeader(_ title: String, systemImage: String) -> some View {
     HStack {
         Label(title, systemImage: systemImage).font(.callout.weight(.semibold))
