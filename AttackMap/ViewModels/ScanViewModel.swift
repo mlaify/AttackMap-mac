@@ -90,7 +90,7 @@ final class ScanViewModel {
         let override = UserDefaults.standard.string(forKey: "cliPathOverride") ?? cliPathOverride
         guard let cli = CLILocator.locate(explicitPath: override) else {
             phase = .failed(
-                "attackmap not found. Install it (pipx install git+https://github.com/mlaify/AttackMap.git) "
+                "attackmap not found. Install it (brew install mlaify/tap/attackmap) "
                 + "or set its path in Settings.")
             return
         }
@@ -165,7 +165,7 @@ final class ScanViewModel {
             if config.llmMode == .triage, !caps.triage {
                 phase = .failed(
                     "This attackmap build doesn't support triage mode. "
-                    + "Update to attackmap ≥ 0.4.15 (pipx upgrade attackmap) to use it.")
+                    + "Update to attackmap ≥ 0.4.15 (brew upgrade attackmap) to use it.")
                 stopStageTimer()
                 return
             }
@@ -180,7 +180,7 @@ final class ScanViewModel {
             if config.llmMode != .none, config.provider == .openai, !caps.llmProvider {
                 phase = .failed(
                     "This attackmap build doesn't support the OpenAI/Codex provider. "
-                    + "Update to attackmap ≥ 0.4.3 (pipx upgrade attackmap) to use it.")
+                    + "Update to attackmap ≥ 0.4.3 (brew upgrade attackmap) to use it.")
                 stopStageTimer()
                 return
             }
@@ -236,7 +236,7 @@ final class ScanViewModel {
         let override = UserDefaults.standard.string(forKey: "cliPathOverride") ?? cliPathOverride
         guard let cli = CLILocator.locate(explicitPath: override) else {
             phase = .failed(
-                "attackmap not found. Install it (pipx install git+https://github.com/mlaify/AttackMap.git) "
+                "attackmap not found. Install it (brew install mlaify/tap/attackmap) "
                 + "or set its path in Settings.")
             return
         }
@@ -274,7 +274,7 @@ final class ScanViewModel {
             guard caps.fleet else {
                 phase = .failed(
                     "This attackmap build doesn't support multi-repo fleet scans. "
-                    + "Update to attackmap ≥ 0.4.22 (pipx upgrade attackmap) to use it.")
+                    + "Update to attackmap ≥ 0.4.22 (brew upgrade attackmap) to use it.")
                 stopStageTimer()
                 return
             }

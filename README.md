@@ -57,7 +57,7 @@ A run against [OWASP Juice Shop](https://github.com/juice-shop/juice-shop).
 Every option is **feature-detected** off `attackmap analyze --help`, so the app
 adapts to whatever CLI you have installed: a modifier the CLI doesn't recognize
 is dropped (never passed as an unknown flag), and a whole mode it lacks stops
-with a "pipx upgrade attackmap" hint instead of degrading silently.
+with a "brew upgrade attackmap" hint instead of degrading silently.
 
 - **CVE** (`--cve`) — SBOM + OSV.dev dependency scan.
 - **Recall** (`--recall`, ≥ 0.4.20) — wider, speculative taint discovery; the
@@ -80,8 +80,11 @@ with a "pipx upgrade attackmap" hint instead of degrading silently.
 
 ## Install
 
-There is no prebuilt distribution. Build from source — see
-[Build & run](#build--run) below.
+```bash
+brew install --cask mlaify/tap/attackmap-app   # notarized app + the attackmap CLI
+```
+
+Or build from source; see [Build & run](#build--run) below.
 
 ## Requirements
 
@@ -89,7 +92,7 @@ There is no prebuilt distribution. Build from source — see
 - **Xcode 16+** to build
 - **[XcodeGen](https://github.com/yonaskolb/XcodeGen)** to generate the project
   (`brew install xcodegen`)
-- The **`attackmap` CLI** on your `PATH` (see [AttackMap](https://github.com/mlaify/AttackMap))
+- The **`attackmap` CLI** on your `PATH` (`brew install mlaify/tap/attackmap`; see [AttackMap](https://github.com/mlaify/AttackMap))
 
 ## Build & run
 
