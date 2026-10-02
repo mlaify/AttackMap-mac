@@ -16,12 +16,32 @@ an Apple requirement, not ours.
 ## One-time setup
 
 ### 1. Developer ID Application certificate
-In Xcode → Settings → Accounts → Manage Certificates → **+** → *Developer ID
-Application* (or create it in the Apple Developer portal). Confirm it's present:
+Create it in the **Apple Developer portal, not Xcode**. Xcode always issues from
+Apple's original Developer ID intermediate, which expires **2027-02-01** and takes
+every certificate it issued with it. Only the portal lets you pick the G2 one:
+
+1. Keychain Access → Certificate Assistant → *Request a Certificate From a
+   Certificate Authority…* → **Saved to disk**.
+2. [Certificates → +](https://developer.apple.com/account/resources/certificates/add)
+   → *Developer ID Application* → Profile Type **G2 Sub-CA** → upload the request.
+3. Download the `.cer` and double-click it to install.
+
+Confirm it's present and from G2:
 
 ```sh
 security find-identity -v -p codesigning   # should list "Developer ID Application: … (TEAMID)"
+security find-certificate -c "Developer ID Application" -a -p \
+  | openssl x509 -noout -issuer -enddate    # first cert only; issuer must include OU=G2
 ```
+
+If the keychain holds more than one *Developer ID Application* identity (for
+example an old-intermediate one awaiting expiry), `codesign` rejects the name as
+ambiguous. Pass the G2 one by hash: `SIGN_ID=<sha1 from find-identity>`. Don't
+revoke old Developer ID certificates to tidy up; revoking invalidates everything
+already signed with them. Let them expire.
+
+Releases already shipped stay trusted after the old intermediate expires: they're
+signed with a secure timestamp and notarized.
 
 Your **Team ID** is the 10-char code in parentheses (also in the Developer
 portal → Membership).
@@ -70,7 +90,7 @@ Add these **repository secrets** (Settings → Secrets and variables → Actions
 
 | Secret | What it is | How to produce |
 |---|---|---|
-| `MACOS_DEV_ID_CERT_P12` | Base64 of the Developer ID cert **+ private key**, exported as `.p12` | Keychain Access → right-click the identity → Export → `.p12`; then `base64 -i cert.p12 \| pbcopy` |
+| `MACOS_DEV_ID_CERT_P12` | Base64 of the **G2** Developer ID cert **+ private key**, exported as `.p12`. Include only that one identity, so signing by name stays unambiguous in CI | Keychain Access → right-click the identity → Export → `.p12`; then `base64 -i cert.p12 \| pbcopy` |
 | `MACOS_CERT_PASSWORD` | The password you set when exporting the `.p12` | — |
 | `APPLE_TEAM_ID` | Your 10-char Team ID | Developer portal → Membership |
 | `NOTARY_KEY_P8` | Base64 of `AuthKey_XXXX.p8` | `base64 -i AuthKey_XXXX.p8 \| pbcopy` |
