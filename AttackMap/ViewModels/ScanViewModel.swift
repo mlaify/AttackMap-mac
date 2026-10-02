@@ -88,12 +88,20 @@ final class ScanViewModel {
         guard let repoURL else { return }
         // Honor an explicit CLI path from Settings (shared via UserDefaults).
         let override = UserDefaults.standard.string(forKey: "cliPathOverride") ?? cliPathOverride
-        guard let cli = CLILocator.locate(explicitPath: override) else {
-            phase = .failed(
-                "attackmap not found. Install it (brew install mlaify/tap/attackmap) "
-                + "or set its path in Settings.")
-            return
+        // Resolving the CLI can spawn the login shell: keep it off the main
+        // thread so the UI never beachballs on a slow .zprofile (#4).
+        Task {
+            guard let cli = await CLILocator.locateAsync(explicitPath: override) else {
+                phase = .failed(
+                    "attackmap not found. Install it (brew install mlaify/tap/attackmap) "
+                    + "or set its path in Settings.")
+                return
+            }
+            startScan(repoURL: repoURL, cli: cli)
         }
+    }
+
+    private func startScan(repoURL: URL, cli: URL) {
 
         // Provide the API key only when an LLM mode actually needs it, and only
         // the one matching the selected provider.
@@ -234,12 +242,18 @@ final class ScanViewModel {
     private func runFleet() {
         guard isFleet, let first = fleetRepoURLs.first else { return }
         let override = UserDefaults.standard.string(forKey: "cliPathOverride") ?? cliPathOverride
-        guard let cli = CLILocator.locate(explicitPath: override) else {
-            phase = .failed(
-                "attackmap not found. Install it (brew install mlaify/tap/attackmap) "
-                + "or set its path in Settings.")
-            return
+        Task {
+            guard let cli = await CLILocator.locateAsync(explicitPath: override) else {
+                phase = .failed(
+                    "attackmap not found. Install it (brew install mlaify/tap/attackmap) "
+                    + "or set its path in Settings.")
+                return
+            }
+            startFleet(first: first, cli: cli)
         }
+    }
+
+    private func startFleet(first: URL, cli: URL) {
 
         // Fleet output lives outside the repos too, keyed by the repo set.
         let output = ScanOutputLocation.fleet(for: fleetRepoURLs)
@@ -335,12 +349,12 @@ final class ScanViewModel {
     /// that's no longer installed.
     func loadAvailableModules() {
         let override = UserDefaults.standard.string(forKey: "cliPathOverride") ?? cliPathOverride
-        guard let cli = CLILocator.locate(explicitPath: override) else {
-            availableModules = []
-            capabilities = nil
-            return
-        }
         Task {
+            guard let cli = await CLILocator.locateAsync(explicitPath: override) else {
+                availableModules = []
+                capabilities = nil
+                return
+            }
             let (mods, caps) = await Task.detached {
                 (CLILocator.installedModules(executable: cli),
                  CLILocator.capabilities(executable: cli))

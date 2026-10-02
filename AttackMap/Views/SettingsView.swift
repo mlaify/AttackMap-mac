@@ -65,10 +65,10 @@ struct SettingsView: View {
         }
     }
 
-    private var detected: Bool { CLILocator.locate(explicitPath: cliPath) != nil }
+    private var detected: Bool { CLILocator.cachedLocate(explicitPath: cliPath) != nil }
 
     private var detectionStatus: String {
-        if let url = CLILocator.locate(explicitPath: cliPath) { return "Using: \(url.path)" }
+        if let url = CLILocator.cachedLocate(explicitPath: cliPath) { return "Using: \(url.path)" }
         return "attackmap not found — install via `brew install mlaify/tap/attackmap`."
     }
 }
