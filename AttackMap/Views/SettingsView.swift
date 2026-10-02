@@ -24,17 +24,15 @@ struct SettingsView: View {
                     .textFieldStyle(.roundedBorder)
                 HStack {
                     Button("Save to Keychain") {
-                        Keychain.set(apiKey, account: Keychain.anthropicAPIKey)
-                        note = "Saved."
+                        note = Self.save(apiKey, account: Keychain.anthropicAPIKey)
                     }
                     Button("Clear") {
                         apiKey = ""
-                        Keychain.set(nil, account: Keychain.anthropicAPIKey)
-                        note = "Cleared."
+                        note = Self.save(nil, account: Keychain.anthropicAPIKey)
                     }
                     Text(note).font(.caption).foregroundStyle(.secondary)
                 }
-                Text("Used for the Claude provider (API backend). Passed to attackmap only when an LLM mode is selected. Stored in your login Keychain, never on disk.")
+                Text("Used for the Claude provider (API backend). Passed to attackmap only when an LLM mode is selected. Stored in the Keychain, never in a file. Every analyzer plugin the CLI loads can read it while an LLM mode runs.")
                     .font(.caption).foregroundStyle(.secondary)
             }
 
@@ -43,17 +41,15 @@ struct SettingsView: View {
                     .textFieldStyle(.roundedBorder)
                 HStack {
                     Button("Save to Keychain") {
-                        Keychain.set(openAIKey, account: Keychain.openAIAPIKey)
-                        openAINote = "Saved."
+                        openAINote = Self.save(openAIKey, account: Keychain.openAIAPIKey)
                     }
                     Button("Clear") {
                         openAIKey = ""
-                        Keychain.set(nil, account: Keychain.openAIAPIKey)
-                        openAINote = "Cleared."
+                        openAINote = Self.save(nil, account: Keychain.openAIAPIKey)
                     }
                     Text(openAINote).font(.caption).foregroundStyle(.secondary)
                 }
-                Text("Used for the OpenAI provider (API backend). Not needed if you sign in with the `codex` CLI. Stored in your login Keychain, never on disk.")
+                Text("Used for the OpenAI provider (API backend). Not needed if you sign in with the `codex` CLI. Stored in the Keychain, never in a file. Every analyzer plugin the CLI loads can read it while an LLM mode runs.")
                     .font(.caption).foregroundStyle(.secondary)
             }
         }
@@ -62,6 +58,20 @@ struct SettingsView: View {
         .onAppear {
             apiKey = Keychain.get(account: Keychain.anthropicAPIKey) ?? ""
             openAIKey = Keychain.get(account: Keychain.openAIAPIKey) ?? ""
+        }
+    }
+
+    /// Save or clear a key and describe the outcome; failures are shown, not
+    /// swallowed (#8).
+    static func save(_ value: String?, account: String) -> String {
+        do {
+            switch try Keychain.set(value, account: account) {
+            case nil: return "Cleared."
+            case .dataProtection?: return "Saved."
+            case .legacy?: return "Saved (login keychain)."
+            }
+        } catch {
+            return (error as? LocalizedError)?.errorDescription ?? "Couldn't save to the Keychain."
         }
     }
 

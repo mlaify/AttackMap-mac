@@ -1,4 +1,5 @@
 import Foundation
+import Synchronization
 
 /// Outcome of a completed scan.
 struct ScanRunResult {
@@ -51,12 +52,11 @@ enum ScanRunError: Error, LocalizedError {
 /// Splits raw bytes on `\n` *before* decoding, so a multi-byte UTF-8 character
 /// split across two reads (e.g. `é` in a repo path) decodes intact. Thread-safe:
 /// the pipe's readability handler and the post-exit drain can both feed it.
-final class LineBuffer: @unchecked Sendable {
-    private let lock = NSLock()
-    private var partial = Data()
+final class LineBuffer: Sendable {
+    private let partialData = Mutex(Data())
 
     func take(_ data: Data) -> [String] {
-        lock.withLock {
+        partialData.withLock { partial in
             partial.append(data)
             var lines: [String] = []
             while let newline = partial.firstIndex(of: 0x0A) {
@@ -69,7 +69,7 @@ final class LineBuffer: @unchecked Sendable {
 
     /// The trailing line that had no newline, if any (call once, after EOF).
     func flush() -> String? {
-        lock.withLock {
+        partialData.withLock { partial in
             guard !partial.isEmpty else { return nil }
             defer { partial.removeAll() }
             return String(decoding: partial, as: UTF8.self)
@@ -79,45 +79,47 @@ final class LineBuffer: @unchecked Sendable {
 
 /// Keeps the last N non-progress stderr lines (e.g. "LLM review skipped: …"),
 /// so a silent backend failure can be surfaced to the user.
-final class StderrTail: @unchecked Sendable {
-    private let lock = NSLock()
-    private var lines: [String] = []
+final class StderrTail: Sendable {
+    private let lines = Mutex<[String]>([])
     private let limit = 50
 
     func append(_ line: String) {
-        lock.withLock {
+        lines.withLock { lines in
             lines.append(line)
             if lines.count > limit { lines.removeFirst(lines.count - limit) }
         }
     }
 
-    var text: String { lock.withLock { lines.joined(separator: "\n") } }
+    var text: String { lines.withLock { $0.joined(separator: "\n") } }
 }
 
 /// Resumes a waiter exactly once, whether the event fires before or after the
 /// wait starts. The termination handler is installed *before* `run()` (a CLI
 /// that fails instantly can exit before a later assignment), so it may fire
 /// before anyone awaits it.
-final class OneShotSignal: @unchecked Sendable {
-    private let lock = NSLock()
-    private var fired = false
-    private var continuation: CheckedContinuation<Void, Never>?
+final class OneShotSignal: Sendable {
+    private struct State {
+        var fired = false
+        var continuation: CheckedContinuation<Void, Never>?
+    }
+
+    private let state = Mutex(State())
 
     func fire() {
-        let waiter: CheckedContinuation<Void, Never>? = lock.withLock {
-            guard !fired else { return nil }
-            fired = true
-            defer { continuation = nil }
-            return continuation
+        let waiter: CheckedContinuation<Void, Never>? = state.withLock { state in
+            guard !state.fired else { return nil }
+            state.fired = true
+            defer { state.continuation = nil }
+            return state.continuation
         }
         waiter?.resume()
     }
 
     func wait() async {
         await withCheckedContinuation { (c: CheckedContinuation<Void, Never>) in
-            let resumeNow: Bool = lock.withLock {
-                if fired { return true }
-                continuation = c
+            let resumeNow: Bool = state.withLock { state in
+                if state.fired { return true }
+                state.continuation = c
                 return false
             }
             if resumeNow { c.resume() }
@@ -128,13 +130,20 @@ final class OneShotSignal: @unchecked Sendable {
 /// Spawns `attackmap analyze …`, streams NDJSON progress from stderr, and
 /// resolves with the report location on success. Not tied to any UI type; the
 /// caller hops `onProgress` to the main actor as needed.
+///
+/// `@unchecked Sendable`: `process` and `cancelRequested` are only touched
+/// under `lock`. (`Process` isn't Sendable, so it can't live in a `Mutex`.)
 final class ProcessRunner: @unchecked Sendable {
     private let lock = NSLock()
     private var process: Process?
     private var cancelRequested = false
 
     /// How long `cancel()` waits after SIGTERM before SIGKILLing what's left.
-    var killGracePeriod: TimeInterval = 3
+    let killGracePeriod: TimeInterval
+
+    init(killGracePeriod: TimeInterval = 3) {
+        self.killGracePeriod = killGracePeriod
+    }
 
     /// Run a single-repo scan to completion. `onProgress` fires for each decoded
     /// progress event (on an arbitrary queue — marshal to the main actor).
