@@ -111,11 +111,11 @@ final class ScanViewModel {
             }
         }
 
-        // Capture the prior scan's finding IDs so we can report new/resolved.
+        // Capture the prior scan's finding evidence so we can report new/resolved.
         let hadPrevious = report != nil
-        let previousIDs = Set(report?.findings.map(\.id) ?? [])
+        let previousKeys = report.map(Self.deltaKeys) ?? []
 
-        let output = repoURL.appendingPathComponent(".attackmap-gui/reports", isDirectory: true)
+        let output = ScanOutputLocation.reports(for: repoURL)
         try? FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
         var config = ScanConfig(
             repoURL: repoURL,
@@ -197,9 +197,9 @@ final class ScanViewModel {
                 }
                 let decoded = try Report.load(from: result.reportURL)
                 if hadPrevious {
-                    let newIDs = Set(decoded.findings.map(\.id))
-                    lastDelta = (added: newIDs.subtracting(previousIDs).count,
-                                 resolved: previousIDs.subtracting(newIDs).count)
+                    let newKeys = Self.deltaKeys(decoded)
+                    lastDelta = (added: newKeys.subtracting(previousKeys).count,
+                                 resolved: previousKeys.subtracting(newKeys).count)
                 } else {
                     lastDelta = nil
                 }
@@ -241,9 +241,8 @@ final class ScanViewModel {
             return
         }
 
-        // Fleet output lives beside the first repo, in its own subdirectory so a
-        // later single-repo scan of the same repo doesn't collide.
-        let output = first.appendingPathComponent(".attackmap-gui/fleet", isDirectory: true)
+        // Fleet output lives outside the repos too, keyed by the repo set.
+        let output = ScanOutputLocation.fleet(for: fleetRepoURLs)
         try? FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
         let config = ScanConfig(
             repoURL: first, outputDirectory: output,
@@ -442,6 +441,21 @@ final class ScanViewModel {
     /// If an LLM mode was requested but produced no artifact (usually: no
     /// backend — no API key and `claude` not found), return a message that
     /// includes the engine's own "skipped" line when we captured it.
+    /// Watch-mode delta keys (#6): one per (finding, evidence item). Core's
+    /// finding id derives from the title alone and aggregates every instance,
+    /// so a second unauthenticated route is new evidence under the same id.
+    nonisolated static func deltaKeys(_ report: Report) -> Set<String> {
+        var keys = Set<String>()
+        for finding in report.findings {
+            if finding.evidence.isEmpty {
+                keys.insert(finding.id)
+            } else {
+                for item in finding.evidence { keys.insert(finding.id + "\u{1F}" + item) }
+            }
+        }
+        return keys
+    }
+
     private func llmOutputWarning(config: ScanConfig, stderrTail: String) -> String? {
         guard let artifact = config.llmMode.artifactFilename else { return nil }
         let url = config.outputDirectory.appendingPathComponent(artifact)

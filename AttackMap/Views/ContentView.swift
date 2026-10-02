@@ -299,6 +299,16 @@ struct ContentView: View {
                     Label("Watching", systemImage: "eye")
                         .font(.caption).foregroundStyle(.secondary)
                 }
+                if let dir = model.outputDirectory {
+                    Button {
+                        NSWorkspace.shared.activateFileViewerSelecting([dir])
+                    } label: {
+                        Label("Reveal Reports", systemImage: "folder")
+                    }
+                    .buttonStyle(.borderless)
+                    .font(.caption)
+                    .help(dir.path)
+                }
             case .idle:
                 Text("Choose a repository and run a scan.").foregroundStyle(.secondary)
             }
