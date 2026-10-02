@@ -200,8 +200,9 @@ final class ScanViewModel {
                 let result = try await runner.run(
                     executable: cli, config: config,
                     progressJSON: progressJSON, environment: environment
-                ) { [weak self] event in
-                    Task { @MainActor in self?.apply(event) }
+                ) { event in
+                    // The enclosing Task already holds self strongly.
+                    Task { @MainActor in self.apply(event) }
                 }
                 let decoded = try Report.load(from: result.reportURL)
                 if hadPrevious {
@@ -303,8 +304,9 @@ final class ScanViewModel {
                 let result = try await runner.runFleet(
                     executable: cli, config: fleetConfig, paths: paths,
                     progressJSON: progressJSON
-                ) { [weak self] event in
-                    Task { @MainActor in self?.apply(event) }
+                ) { event in
+                    // The enclosing Task already holds self strongly.
+                    Task { @MainActor in self.apply(event) }
                 }
                 let decoded = try FleetSummary.load(from: result.reportURL)
                 fleet = decoded

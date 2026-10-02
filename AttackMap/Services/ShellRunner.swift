@@ -1,4 +1,5 @@
 import Foundation
+import Synchronization
 
 /// Runs a short helper process (login-shell PATH lookup, `--help` probe,
 /// `modules --json`) and captures its stdout.
@@ -58,9 +59,8 @@ enum ShellRunner {
     }
 }
 
-private final class LockedData: @unchecked Sendable {
-    private let lock = NSLock()
-    private var data = Data()
-    func set(_ value: Data) { lock.withLock { data = value } }
-    func get() -> Data { lock.withLock { data } }
+private final class LockedData: Sendable {
+    private let data = Mutex(Data())
+    func set(_ value: Data) { data.withLock { $0 = value } }
+    func get() -> Data { data.withLock { $0 } }
 }

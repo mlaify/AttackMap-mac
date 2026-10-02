@@ -70,9 +70,13 @@ final class ProcessRunnerTests: XCTestCase {
     func testCancelKillsGrandchild() async throws {
         let pidFile = work.appendingPathComponent("child.pid")
         let exe = try script("sh -c 'sleep 60' &\necho $! > '\(pidFile.path)'\nwait")
-        let runner = ProcessRunner()
-        runner.killGracePeriod = 0.5
-        let task = Task { try await self.run(runner, exe) }
+        let runner = ProcessRunner(killGracePeriod: 0.5)
+        let cwd: URL = work
+        let task = Task {
+            try await runner.run(executable: exe, arguments: [], currentDirectory: cwd,
+                                 successFile: cwd.appendingPathComponent("never"),
+                                 environment: [:], onProgress: { _ in })
+        }
         let childPID = try await waitForPID(at: pidFile)
         runner.cancel()
         do {

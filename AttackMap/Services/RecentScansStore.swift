@@ -14,7 +14,9 @@ struct RecentScan: Codable, Identifiable, Hashable {
 enum RecentScansStore {
     private static let key = "recentScans"
     private static let maxCount = 10
-    private static let defaults = UserDefaults.standard
+    // Computed, not stored: UserDefaults is thread-safe but not Sendable, so a
+    // stored static is a Swift 6 global-state error (#8).
+    private static var defaults: UserDefaults { .standard }
 
     static func all() -> [RecentScan] {
         guard let data = defaults.data(forKey: key),
