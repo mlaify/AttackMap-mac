@@ -12,7 +12,7 @@ struct AboutView: View {
     }
     private var cliPath: String? {
         let override = UserDefaults.standard.string(forKey: "cliPathOverride")
-        return CLILocator.locate(explicitPath: override)?.path
+        return CLILocator.cachedLocate(explicitPath: override)?.path
     }
 
     var body: some View {
