@@ -13,6 +13,8 @@ enum ScanRunError: Error, LocalizedError {
     case nonZeroExit(code: Int32, stdout: String, stderrTail: String)
     case reportMissing(URL)
     case cancelled
+    /// The CLI was killed by a signal the app didn't send (crash, OOM killer).
+    case crashed(signal: Int32, stderrTail: String)
 
     var errorDescription: String? {
         switch self {
@@ -20,6 +22,8 @@ enum ScanRunError: Error, LocalizedError {
         case .nonZeroExit(let code, _, _): return "attackmap exited with code \(code)."
         case .reportMissing(let url): return "Scan finished but no report at \(url.path)."
         case .cancelled: return "Scan cancelled."
+        case .crashed(let signal, _):
+            return "attackmap was terminated by signal \(signal) (\(ProcessRunner.signalName(signal)))."
         }
     }
 
@@ -33,6 +37,9 @@ enum ScanRunError: Error, LocalizedError {
                 .filter { !$0.isEmpty }
                 .joined(separator: "\n")
             return combined.isEmpty ? nil : combined
+        case .crashed(_, let stderrTail):
+            let tail = stderrTail.trimmingCharacters(in: .whitespacesAndNewlines)
+            return tail.isEmpty ? nil : tail
         default:
             return nil
         }
@@ -40,32 +47,82 @@ enum ScanRunError: Error, LocalizedError {
 }
 
 /// Accumulates streamed bytes and yields complete lines as they arrive.
-private final class LineBuffer {
-    private var partial = ""
+///
+/// Splits raw bytes on `\n` *before* decoding, so a multi-byte UTF-8 character
+/// split across two reads (e.g. `é` in a repo path) decodes intact. Thread-safe:
+/// the pipe's readability handler and the post-exit drain can both feed it.
+final class LineBuffer: @unchecked Sendable {
+    private let lock = NSLock()
+    private var partial = Data()
 
     func take(_ data: Data) -> [String] {
-        partial += String(decoding: data, as: UTF8.self)
-        var lines: [String] = []
-        while let newline = partial.firstIndex(of: "\n") {
-            lines.append(String(partial[..<newline]))
-            partial = String(partial[partial.index(after: newline)...])
+        lock.withLock {
+            partial.append(data)
+            var lines: [String] = []
+            while let newline = partial.firstIndex(of: 0x0A) {
+                lines.append(String(decoding: partial[partial.startIndex..<newline], as: UTF8.self))
+                partial.removeSubrange(partial.startIndex...newline)
+            }
+            return lines
         }
-        return lines
+    }
+
+    /// The trailing line that had no newline, if any (call once, after EOF).
+    func flush() -> String? {
+        lock.withLock {
+            guard !partial.isEmpty else { return nil }
+            defer { partial.removeAll() }
+            return String(decoding: partial, as: UTF8.self)
+        }
     }
 }
 
 /// Keeps the last N non-progress stderr lines (e.g. "LLM review skipped: …"),
 /// so a silent backend failure can be surfaced to the user.
-private final class StderrTail {
+final class StderrTail: @unchecked Sendable {
+    private let lock = NSLock()
     private var lines: [String] = []
     private let limit = 50
 
     func append(_ line: String) {
-        lines.append(line)
-        if lines.count > limit { lines.removeFirst(lines.count - limit) }
+        lock.withLock {
+            lines.append(line)
+            if lines.count > limit { lines.removeFirst(lines.count - limit) }
+        }
     }
 
-    var text: String { lines.joined(separator: "\n") }
+    var text: String { lock.withLock { lines.joined(separator: "\n") } }
+}
+
+/// Resumes a waiter exactly once, whether the event fires before or after the
+/// wait starts. The termination handler is installed *before* `run()` (a CLI
+/// that fails instantly can exit before a later assignment), so it may fire
+/// before anyone awaits it.
+final class OneShotSignal: @unchecked Sendable {
+    private let lock = NSLock()
+    private var fired = false
+    private var continuation: CheckedContinuation<Void, Never>?
+
+    func fire() {
+        let waiter: CheckedContinuation<Void, Never>? = lock.withLock {
+            guard !fired else { return nil }
+            fired = true
+            defer { continuation = nil }
+            return continuation
+        }
+        waiter?.resume()
+    }
+
+    func wait() async {
+        await withCheckedContinuation { (c: CheckedContinuation<Void, Never>) in
+            let resumeNow: Bool = lock.withLock {
+                if fired { return true }
+                continuation = c
+                return false
+            }
+            if resumeNow { c.resume() }
+        }
+    }
 }
 
 /// Spawns `attackmap analyze …`, streams NDJSON progress from stderr, and
@@ -74,6 +131,10 @@ private final class StderrTail {
 final class ProcessRunner: @unchecked Sendable {
     private let lock = NSLock()
     private var process: Process?
+    private var cancelRequested = false
+
+    /// How long `cancel()` waits after SIGTERM before SIGKILLing what's left.
+    var killGracePeriod: TimeInterval = 3
 
     /// Run a single-repo scan to completion. `onProgress` fires for each decoded
     /// progress event (on an arbitrary queue — marshal to the main actor).
@@ -110,7 +171,9 @@ final class ProcessRunner: @unchecked Sendable {
 
     /// Core runner: spawn `attackmap` with an explicit argument vector, stream
     /// NDJSON progress, and resolve when `successFile` exists after a clean exit.
-    private func run(executable: URL,
+    /// Internal (not private) so the lifecycle can be unit-tested with any
+    /// executable.
+    func run(executable: URL,
                      arguments: [String],
                      currentDirectory: URL?,
                      successFile: URL,
@@ -136,22 +199,32 @@ final class ProcessRunner: @unchecked Sendable {
 
         let buffer = LineBuffer()
         let stderrTail = StderrTail()
-        stderrPipe.fileHandleForReading.readabilityHandler = { handle in
-            let data = handle.availableData
-            guard !data.isEmpty else { return }
-            for line in buffer.take(data) {
-                if let event = ProgressEvent.decode(line: line) {
-                    onProgress(event)
-                } else {
-                    let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
-                    if !trimmed.isEmpty { stderrTail.append(trimmed) }
-                }
+        let handleLine: @Sendable (String) -> Void = { line in
+            if let event = ProgressEvent.decode(line: line) {
+                onProgress(event)
+            } else {
+                let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !trimmed.isEmpty { stderrTail.append(trimmed) }
             }
         }
+        let stderrHandle = stderrPipe.fileHandleForReading
+        stderrHandle.readabilityHandler = { handle in
+            let data = handle.availableData
+            guard !data.isEmpty else { return }
+            buffer.take(data).forEach(handleLine)
+        }
 
-        lock.withLock { self.process = process }
+        // Installed before run(): a CLI that exits immediately (usage error,
+        // missing interpreter) must still resume the wait below.
+        let terminated = OneShotSignal()
+        process.terminationHandler = { _ in terminated.fire() }
+
+        lock.withLock {
+            self.process = process
+            self.cancelRequested = false
+        }
         defer {
-            stderrPipe.fileHandleForReading.readabilityHandler = nil
+            stderrHandle.readabilityHandler = nil
             lock.withLock { self.process = nil }
         }
 
@@ -171,16 +244,22 @@ final class ProcessRunner: @unchecked Sendable {
         }.value
 
         // Await termination without blocking a thread.
-        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-            process.terminationHandler = { _ in continuation.resume() }
-        }
+        await terminated.wait()
+
+        // Whatever stderr is still buffered (often the last lines of a Python
+        // traceback) plus the final line if it had no trailing newline.
+        stderrHandle.readabilityHandler = nil
+        Self.drainNonBlocking(stderrHandle).map { buffer.take($0).forEach(handleLine) }
+        buffer.flush().map(handleLine)
 
         let stdout = await stdoutText
         let code = process.terminationStatus
 
-        // SIGTERM from cancel() surfaces as a signal termination (negative/15).
         if process.terminationReason == .uncaughtSignal {
-            throw ScanRunError.cancelled
+            if lock.withLock({ cancelRequested }) {
+                throw ScanRunError.cancelled
+            }
+            throw ScanRunError.crashed(signal: code, stderrTail: stderrTail.text)
         }
         guard code == 0 else {
             throw ScanRunError.nonZeroExit(code: code, stdout: stdout, stderrTail: stderrTail.text)
@@ -193,8 +272,79 @@ final class ProcessRunner: @unchecked Sendable {
             stdout: stdout, stderrTail: stderrTail.text)
     }
 
-    /// Terminate the in-flight scan, if any.
+    /// Terminate the in-flight scan and everything it spawned (LLM backends,
+    /// `pip install` from module auto-install): SIGTERM the whole process tree,
+    /// then SIGKILL whatever is still alive after `killGracePeriod`.
     func cancel() {
-        lock.withLock { process?.terminate() }
+        let target: Process? = lock.withLock {
+            guard let process, process.isRunning else { return nil }
+            cancelRequested = true
+            return process
+        }
+        guard let target else { return }
+        let root = target.processIdentifier
+        // Collect descendants *before* signalling: once the CLI dies its
+        // children are reparented to launchd and can no longer be found.
+        let tree = ProcessTree.descendants(of: root) + [root]
+        for pid in tree { kill(pid, SIGTERM) }
+        let grace = killGracePeriod
+        DispatchQueue.global().asyncAfter(deadline: .now() + grace) {
+            for pid in tree + ProcessTree.descendants(of: root) where kill(pid, 0) == 0 {
+                kill(pid, SIGKILL)
+            }
+        }
+    }
+
+    /// Read whatever is buffered on `handle` without waiting for EOF (a
+    /// grandchild that inherited the pipe could keep it open indefinitely).
+    static func drainNonBlocking(_ handle: FileHandle) -> Data? {
+        let fd = handle.fileDescriptor
+        let flags = fcntl(fd, F_GETFL)
+        guard flags >= 0, fcntl(fd, F_SETFL, flags | O_NONBLOCK) == 0 else { return nil }
+        var data = Data()
+        var chunk = [UInt8](repeating: 0, count: 65_536)
+        while true {
+            let n = read(fd, &chunk, chunk.count)
+            if n > 0 { data.append(chunk, count: n) } else { break }
+        }
+        return data.isEmpty ? nil : data
+    }
+
+    static func signalName(_ signal: Int32) -> String {
+        switch signal {
+        case SIGKILL: return "SIGKILL — killed, possibly out of memory"
+        case SIGSEGV: return "SIGSEGV — crashed"
+        case SIGABRT: return "SIGABRT — aborted"
+        case SIGBUS: return "SIGBUS — crashed"
+        case SIGTERM: return "SIGTERM"
+        case SIGINT: return "SIGINT"
+        default: return "signal \(signal)"
+        }
+    }
+}
+
+/// Finds a process's descendants (children, grandchildren, …) via libproc.
+enum ProcessTree {
+    static func descendants(of pid: pid_t) -> [pid_t] {
+        var result: [pid_t] = []
+        var queue: [pid_t] = [pid]
+        while let parent = queue.popLast() {
+            for child in children(of: parent) where !result.contains(child) {
+                result.append(child)
+                queue.append(child)
+            }
+        }
+        return result
+    }
+
+    private static func children(of pid: pid_t) -> [pid_t] {
+        let estimate = proc_listchildpids(pid, nil, 0)
+        guard estimate > 0 else { return [] }
+        var pids = [pid_t](repeating: 0, count: Int(estimate) + 16)
+        let count = pids.withUnsafeMutableBytes { buf in
+            proc_listchildpids(pid, buf.baseAddress, Int32(buf.count))
+        }
+        guard count > 0 else { return [] }
+        return Array(pids.prefix(Int(count))).filter { $0 > 0 }
     }
 }
