@@ -1,0 +1,3256 @@
+{
+  "scan": {
+    "root": "/tmp/fx-repo",
+    "languages": [
+      "python"
+    ],
+    "routes": [
+      {
+        "path": "/run",
+        "method": "POST",
+        "file": "app.py",
+        "line": 9,
+        "auth": "unknown",
+        "guards": [],
+        "guard_evidence": null
+      },
+      {
+        "path": "/health",
+        "method": "GET",
+        "file": "app.py",
+        "line": 14,
+        "auth": "unknown",
+        "guards": [],
+        "guard_evidence": null
+      }
+    ],
+    "external_calls": [],
+    "databases": [],
+    "auth_hints": [
+      {
+        "hint": "api_key",
+        "file": "app.py",
+        "line": 6,
+        "evidence_text": "API_KEY = \"sk_l\u2026\"",
+        "confidence": 0.6
+      }
+    ],
+    "service_hints": [],
+    "edge_hints": [],
+    "entrypoint_hints": [
+      {
+        "hint": "wsgi_app_run",
+        "file": "app.py",
+        "line": 19,
+        "evidence_text": "app.run(debug=True)",
+        "confidence": 0.7
+      },
+      {
+        "hint": "main_guard",
+        "file": "app.py",
+        "line": 18,
+        "evidence_text": "if __name__ == \"__main__\":",
+        "confidence": 0.7
+      }
+    ],
+    "protocol_hints": [],
+    "framework_hints": [
+      {
+        "hint": "flask",
+        "file": "app.py",
+        "line": 3,
+        "evidence_text": "from flask import Flask, request",
+        "confidence": 0.7
+      }
+    ],
+    "secret_hints": [
+      {
+        "name": "DB_PASSWORD",
+        "file": "app.py",
+        "line": 7,
+        "evidence_text": "DB_PASSWORD = os.getenv(\"DB_PASSWORD\")",
+        "confidence": 0.85,
+        "kind": "env_reference"
+      },
+      {
+        "name": "sk_l\u2026",
+        "file": "app.py",
+        "line": 6,
+        "evidence_text": "API_KEY = \"sk_l\u2026\"",
+        "confidence": 1.0,
+        "kind": "stripe_key"
+      }
+    ],
+    "taint_chains": [
+      {
+        "route_path": "/run",
+        "route_method": "POST",
+        "route_file": "app.py",
+        "sink_kind": "subprocess_shell",
+        "sink_file": "app.py",
+        "sink_line": 11,
+        "hops": 0,
+        "files": [
+          "app.py"
+        ],
+        "evidence_text": "os.system(request.form[\"cmd\"])",
+        "confidence": 0.65,
+        "sanitized": false,
+        "sanitizer_evidence": null,
+        "speculative": false
+      }
+    ],
+    "dependencies": [
+      {
+        "name": "flask",
+        "version": "==2.0.1",
+        "ecosystem": "pypi",
+        "file": "requirements.txt",
+        "line": 1,
+        "dev": false,
+        "resolved": false,
+        "direct": true,
+        "via": null,
+        "evidence_text": "flask==2.0.1"
+      },
+      {
+        "name": "requests",
+        "version": ">=2.20",
+        "ecosystem": "pypi",
+        "file": "requirements.txt",
+        "line": 2,
+        "dev": false,
+        "resolved": false,
+        "direct": true,
+        "via": null,
+        "evidence_text": "requests>=2.20"
+      },
+      {
+        "name": "pyyaml",
+        "version": "==5.3",
+        "ecosystem": "pypi",
+        "file": "requirements.txt",
+        "line": 3,
+        "dev": false,
+        "resolved": false,
+        "direct": true,
+        "via": null,
+        "evidence_text": "pyyaml==5.3"
+      }
+    ],
+    "vulnerabilities": [],
+    "authz_candidates": [],
+    "crypto_weaknesses": [],
+    "web_hardening_issues": [
+      {
+        "kind": "debug_enabled",
+        "file": "app.py",
+        "line": 19,
+        "evidence_text": "app.run(debug=True)",
+        "severity": "medium"
+      }
+    ],
+    "code_weaknesses": [],
+    "workflow_issues": [
+      {
+        "kind": "broad_permissions",
+        "file": ".github/workflows/ci.yml",
+        "line": 3,
+        "context": "workflow (top-level permissions)",
+        "evidence_text": "permissions: write-all",
+        "severity": "high"
+      },
+      {
+        "kind": "oidc_on_untrusted_trigger",
+        "file": ".github/workflows/ci.yml",
+        "line": 3,
+        "context": "workflow (top-level permissions)",
+        "evidence_text": "id-token: *** on a pull_request_target-triggered workflow \u2014 PR code can mint cloud OIDC credentials",
+        "severity": "high"
+      },
+      {
+        "kind": "unpinned_action",
+        "file": ".github/workflows/ci.yml",
+        "line": 8,
+        "context": "job 'build' step 'actions/checkout@v4'",
+        "evidence_text": "uses: actions/checkout@v4 (pin to a full commit SHA)",
+        "severity": "low"
+      },
+      {
+        "kind": "pr_target_checkout",
+        "file": ".github/workflows/ci.yml",
+        "line": 10,
+        "context": "job 'build' step 'actions/checkout@v4'",
+        "evidence_text": "pull_request_target checks out untrusted PR code: ref: ${{ github.event.pull_request.head.sha }}",
+        "severity": "high"
+      },
+      {
+        "kind": "checkout_persist_credentials",
+        "file": ".github/workflows/ci.yml",
+        "line": 8,
+        "context": "job 'build' step 'actions/checkout@v4'",
+        "evidence_text": "actions/checkout on pull_request_target without persist-credentials: false; later step job 'build' step 'step' runs code that can read the token from .git/config",
+        "severity": "medium"
+      },
+      {
+        "kind": "script_injection",
+        "file": ".github/workflows/ci.yml",
+        "line": 11,
+        "context": "job 'build' step 'step'",
+        "evidence_text": "attacker-controlled ${{ github.event.pull_request.title }} interpolated into run: script",
+        "severity": "high"
+      }
+    ],
+    "anomalies": [],
+    "limitations": [],
+    "analyzer_errors": [],
+    "files_scanned": 4
+  },
+  "architecture_summary": "# Architecture Summary\n\n## Overview\n- AttackMap inferred a web-facing repository with 2 entry points.\n- Files scanned: 4\n- Languages detected: python\n- Inferred entry points: 2\n- Datastores detected: none\n- External targets detected: none\n- Auth hints observed: api_key\n- Secret-like env references: 2\n\n## Entry Point Concentration\n- app.py: 2 routes\n\n## Likely Review Starting Point\n- Start with `app.py`. It contains 2 of the detected routes and is the fastest place to validate exposure and trust boundaries.\n\n## Inferred Trust Boundaries\n- repo -> web (contains)\n\n## Analyst Notes\n- AttackMap inferred this system shape heuristically from framework patterns, dependencies, and code hints.\n- Treat this as an initial map for security review, then validate the highest-risk routes and boundaries manually.",
+  "attack_surface_summary": "# Attack Surface\n\n## Priority View\n- High-risk entry points: 0\n- Public routes detected: 2\n- Internal-only routes detected: 0\n- Routes with likely data access: 0\n- Routes with outbound trust boundaries: 0\n\n## Highest-Risk Entry Points\n- No high-risk entry points were classified\n\n## Auth And Privileged Routes\n- No dedicated auth or admin routes were classified\n\n## Public Application Routes\n- [LOW] POST /run (app.py) -> public_api, public; no auth signals observed\n\n## Operational And Internal Routes\n- [LOW] GET /health (app.py) -> health, public; no auth signals observed\n\n## External Dependencies\n- No explicit outbound HTTP calls detected\n\n## Secrets And Auth Hints\n- Secret-related env usage: DB_PASSWORD (app.py)\n- Secret-related env usage: sk_l\u2026 (app.py)\n- Auth-related keywords observed: api_key",
+  "defensive_review": "# Defensive Review\n\n## System Overview\n- AttackMap reviewed a web/service-facing codebase with 2 inferred entry points across 4 scanned files.\n- Raw inferred entry points: 2\n- Observed runtime/public surfaces: 2\n- Protocol/lexicon-derived surfaces (inferred): 0\n- Internal-only surfaces: 0\n- Test/example/mocked surfaces (down-weighted): 0\n- Languages: python\n- Datastores: none\n- External dependencies observed: 0\n- Identified assets: 0 | controls observed: 0 | control absences: 2\n\n## Notable Observations\n- No notable cross-cutting observations were generated for this scan.\n\n## ATT&CK Techniques Mapped\n- `T1059` **Command and Scripting Interpreter** \u2014 _Execution_\n- `T1078` **Valid Accounts** \u2014 _Privilege Escalation_\n- `T1078.004` **Valid Accounts: Cloud Accounts** \u2014 _Privilege Escalation_\n- `T1190` **Exploit Public-Facing Application** \u2014 _Initial Access_\n- `T1195` **Supply Chain Compromise** \u2014 _Initial Access_\n- `T1195.001` **Supply Chain Compromise: Compromise Software Dependencies and Development Tools** \u2014 _Initial Access_\n- `T1528` **Steal Application Access Token** \u2014 _Credential Access_\n- `T1552` **Unsecured Credentials** \u2014 _Credential Access_\n- `T1552.001` **Unsecured Credentials: Credentials In Files** \u2014 _Credential Access_\n\n## Detection Opportunities\n- **Detection coverage for findings without a paired insight** _(signal=log)_\n  - _Why:_ These findings did not generate cross-cutting insights but are still actionable with runtime telemetry.\n  - _Suggested rule:_ Add per-finding logging at the affected handler with a structured `{finding_id, route, status_code}` payload, and aggregate in the SIEM.\n  - _ATT&CK:_ `T1552`, `T1528`, `T1059`, `T1078`\n\n## Asset Inventory\n- No high-value assets identified from code signals.\n\n## Defensive Controls\n\n**Expected but not observed (control absences):**\n- `csrf_protection` \u00b7 CSRF protection \u2014 Public state-changing routes observed without CSRF markers.\n- `rate_limiting` \u00b7 Rate limiting \u2014 Public routes observed without any rate-limiting markers.\n\n## Strengths\n- Authentication/identity indicators are present in code signals (api_key).\n- Secret usage appears environment-driven rather than hardcoded literals.\n- 2 route(s) were classified as low-risk operational surfaces.\n\n## Weaknesses / Risk Hotspots\n- [HIGH | score 21.6] State-changing routes are reachable without an authentication control\n- Reason: exposure=6.0, privilege=5.0, reachability=3.0\n- Provenance: observed_runtime=100%, protocol_derived=0%, low_quality=0%\n- [HIGH | score 20.1] Hard-coded secret literals were found in source or config\n- Reason: exposure=6.0, confidence=4.5, reachability=3.0\n- Provenance: observed_runtime=100%, protocol_derived=0%, low_quality=0%\n- [MEDIUM | score 20.1] Secret-bearing environment variables are referenced in executable paths\n- Reason: exposure=6.0, confidence=4.5, reachability=3.0\n- Provenance: observed_runtime=100%, protocol_derived=0%, low_quality=0%\n- Hotspot [score 15.0]: POST `/run` (`app.py:9`) -> public_api / low\n- Reason: exposure=6.0, privilege=3.0\n- Provenance: observed_runtime=100%, protocol_derived=0%, low_quality=0%\n\n## Key Evidence Chains\n- No explicit attack path was generated from current signals.\n\n## Recommendations\n- [observed] Require authentication (and server-side authorization) on every state-changing endpoint \u2014 attach an auth middleware/guard to the route or its router, a dependency/decorator on the handler, or a global policy that defaults to deny. Confirm the control actually runs before the handler mutates state.\n- [observed] Rotate every detected credential immediately, purge it from git history, and move to environment-injected or vault-managed values. Anyone with read access to the repository already has these secrets.\n- [observed] Confirm these secrets are injected securely, never logged or returned, rotated regularly, and scoped only to the privileges each route actually needs.\n- [observed] Prefer argv-list subprocess calls with shell=False. Never interpolate request data into a shell string; validate and constrain any external command inputs.\n- Add targeted tests for highest-risk routes and service edges to prevent regressions in boundary enforcement.\n\n## Analyst Notes\n- This defensive review is heuristic and intended as an engineering triage starting point.\n- Validate top risks with repository-specific architecture context and runtime controls.\n- Notable observations are cross-cutting hypotheses; treat them as triage prompts, not verdicts.",
+  "defensive_review_json": {
+    "schema_version": "1.3.0",
+    "target_metadata": {
+      "root": "/tmp/fx-repo",
+      "files_scanned": 4,
+      "languages": [
+        "python"
+      ]
+    },
+    "system_overview": {
+      "repository_type": "web/service-facing",
+      "raw_inferred_entry_point_count": 2,
+      "external_call_count": 0,
+      "database_count": 0,
+      "auth_hint_count": 1,
+      "secret_hint_count": 2,
+      "asset_count": 0,
+      "control_count_present": 0,
+      "control_count_absent": 2,
+      "notable_observation_count": 0,
+      "detection_opportunity_count": 1,
+      "attack_techniques_observed_count": 9
+    },
+    "attack_surface": {
+      "total_surfaces": 2,
+      "evidence_class_counts": {
+        "observed_runtime_public": 2,
+        "observed_runtime_internal": 0,
+        "inferred_protocol": 0,
+        "inferred": 0,
+        "low_quality": 0
+      },
+      "surfaces": [
+        {
+          "method": "POST",
+          "route": "/run",
+          "file": "app.py",
+          "line": 9,
+          "category": "public_api",
+          "exposure": "public",
+          "risk": "low",
+          "evidence_class": "observed_runtime_public",
+          "auth_signals": [],
+          "data_store_interaction": false,
+          "outbound_integration": false
+        },
+        {
+          "method": "GET",
+          "route": "/health",
+          "file": "app.py",
+          "line": 14,
+          "category": "health",
+          "exposure": "public",
+          "risk": "low",
+          "evidence_class": "observed_runtime_public",
+          "auth_signals": [],
+          "data_store_interaction": false,
+          "outbound_integration": false
+        }
+      ]
+    },
+    "assets": [],
+    "controls": [
+      {
+        "id": "control:absent:csrf_protection",
+        "kind": "csrf_protection",
+        "name": "CSRF protection",
+        "strength": "absent",
+        "scope": "global",
+        "placements": [],
+        "evidence": [],
+        "notes": "Public state-changing routes observed without CSRF markers."
+      },
+      {
+        "id": "control:absent:rate_limiting",
+        "kind": "rate_limiting",
+        "name": "Rate limiting",
+        "strength": "absent",
+        "scope": "global",
+        "placements": [],
+        "evidence": [],
+        "notes": "Public routes observed without any rate-limiting markers."
+      }
+    ],
+    "notable_observations": [],
+    "detection_opportunities": [
+      {
+        "id": "detect:findings:residual",
+        "title": "Detection coverage for findings without a paired insight",
+        "rationale": "These findings did not generate cross-cutting insights but are still actionable with runtime telemetry.",
+        "signal_kind": "log",
+        "suggested_rule": "Add per-finding logging at the affected handler with a structured `{finding_id, route, status_code}` payload, and aggregate in the SIEM.",
+        "related_insight_ids": [],
+        "related_finding_titles": [
+          "CI script injection via untrusted context in a run: step",
+          "Hard-coded secret literals were found in source or config",
+          "OIDC token (id-token: write) available to pull-request-triggered workflow",
+          "Over-broad GITHUB_TOKEN permissions (write-all)",
+          "pull_request_target checks out untrusted PR code"
+        ],
+        "attack_techniques": [
+          {
+            "technique_id": "T1552",
+            "name": "Unsecured Credentials",
+            "tactic": "Credential Access",
+            "url": "https://attack.mitre.org/techniques/T1552/"
+          },
+          {
+            "technique_id": "T1528",
+            "name": "Steal Application Access Token",
+            "tactic": "Credential Access",
+            "url": "https://attack.mitre.org/techniques/T1528/"
+          },
+          {
+            "technique_id": "T1059",
+            "name": "Command and Scripting Interpreter",
+            "tactic": "Execution",
+            "url": "https://attack.mitre.org/techniques/T1059/"
+          },
+          {
+            "technique_id": "T1078",
+            "name": "Valid Accounts",
+            "tactic": "Defense Evasion / Persistence / Initial Access",
+            "url": "https://attack.mitre.org/techniques/T1078/"
+          },
+          {
+            "technique_id": "T1110",
+            "name": "Brute Force",
+            "tactic": "Credential Access",
+            "url": "https://attack.mitre.org/techniques/T1110/"
+          },
+          {
+            "technique_id": "T1556",
+            "name": "Modify Authentication Process",
+            "tactic": "Defense Evasion / Persistence",
+            "url": "https://attack.mitre.org/techniques/T1556/"
+          }
+        ]
+      }
+    ],
+    "attack_techniques_observed": [
+      {
+        "technique_id": "T1059",
+        "name": "Command and Scripting Interpreter",
+        "tactic": "Execution",
+        "url": "https://attack.mitre.org/techniques/T1059/"
+      },
+      {
+        "technique_id": "T1078",
+        "name": "Valid Accounts",
+        "tactic": "Privilege Escalation",
+        "url": "https://attack.mitre.org/techniques/T1078/"
+      },
+      {
+        "technique_id": "T1078.004",
+        "name": "Valid Accounts: Cloud Accounts",
+        "tactic": "Privilege Escalation",
+        "url": "https://attack.mitre.org/techniques/T1078/004/"
+      },
+      {
+        "technique_id": "T1190",
+        "name": "Exploit Public-Facing Application",
+        "tactic": "Initial Access",
+        "url": "https://attack.mitre.org/techniques/T1190/"
+      },
+      {
+        "technique_id": "T1195",
+        "name": "Supply Chain Compromise",
+        "tactic": "Initial Access",
+        "url": "https://attack.mitre.org/techniques/T1195/"
+      },
+      {
+        "technique_id": "T1195.001",
+        "name": "Supply Chain Compromise: Compromise Software Dependencies and Development Tools",
+        "tactic": "Initial Access",
+        "url": "https://attack.mitre.org/techniques/T1195/001/"
+      },
+      {
+        "technique_id": "T1528",
+        "name": "Steal Application Access Token",
+        "tactic": "Credential Access",
+        "url": "https://attack.mitre.org/techniques/T1528/"
+      },
+      {
+        "technique_id": "T1552",
+        "name": "Unsecured Credentials",
+        "tactic": "Credential Access",
+        "url": "https://attack.mitre.org/techniques/T1552/"
+      },
+      {
+        "technique_id": "T1552.001",
+        "name": "Unsecured Credentials: Credentials In Files",
+        "tactic": "Credential Access",
+        "url": "https://attack.mitre.org/techniques/T1552/001/"
+      }
+    ],
+    "strengths": [
+      {
+        "statement": "Authentication/identity indicators were observed in code signals.",
+        "evidence_basis": "observed",
+        "evidence": [
+          "api_key"
+        ]
+      },
+      {
+        "statement": "Secret references appear environment-driven rather than hardcoded literals.",
+        "evidence_basis": "observed",
+        "evidence": [
+          "DB_PASSWORD (app.py)",
+          "sk_l\u2026 (app.py)"
+        ]
+      }
+    ],
+    "weaknesses_risk_hotspots": {
+      "weaknesses": [
+        {
+          "title": "CI script injection via untrusted context in a run: step",
+          "severity": "high",
+          "confidence": "high",
+          "evidence_basis": "observed",
+          "evidence": [
+            ".github/workflows/ci.yml:11 [job 'build' step 'step'] \u2014 attacker-controlled ${{ github.event.pull_request.title }} interpolated into run: script"
+          ],
+          "locations": [
+            {
+              "file": ".github/workflows/ci.yml",
+              "line": 11,
+              "fingerprint": "2a785d9cf6c5d3dd"
+            }
+          ],
+          "mitigation": "Never interpolate `${{ github.event.* }}` / `github.head_ref` directly into a run: script \u2014 a crafted issue/PR title or branch name runs arbitrary shell. Bind the value to an `env:` variable and reference it as `\"$ENVVAR\"` so it's passed as data, not expanded into the command.",
+          "attack_techniques": [
+            {
+              "technique_id": "T1059",
+              "name": "Command and Scripting Interpreter",
+              "tactic": "Execution",
+              "url": "https://attack.mitre.org/techniques/T1059/"
+            }
+          ]
+        },
+        {
+          "title": "Hard-coded secret literals were found in source or config",
+          "severity": "high",
+          "confidence": "high",
+          "evidence_basis": "observed",
+          "evidence": [
+            "[stripe_key] sk_l\u2026 in app.py"
+          ],
+          "locations": [
+            {
+              "file": "app.py",
+              "line": 6,
+              "fingerprint": "8d4e6f0be45c9049"
+            }
+          ],
+          "mitigation": "Rotate every detected credential immediately, purge it from git history, and move to environment-injected or vault-managed values. Anyone with read access to the repository already has these secrets.",
+          "attack_techniques": [
+            {
+              "technique_id": "T1552",
+              "name": "Unsecured Credentials",
+              "tactic": "Credential Access",
+              "url": "https://attack.mitre.org/techniques/T1552/"
+            },
+            {
+              "technique_id": "T1528",
+              "name": "Steal Application Access Token",
+              "tactic": "Credential Access",
+              "url": "https://attack.mitre.org/techniques/T1528/"
+            },
+            {
+              "technique_id": "T1059",
+              "name": "Command and Scripting Interpreter",
+              "tactic": "Execution",
+              "url": "https://attack.mitre.org/techniques/T1059/"
+            }
+          ]
+        },
+        {
+          "title": "OIDC token (id-token: write) available to pull-request-triggered workflow",
+          "severity": "high",
+          "confidence": "high",
+          "evidence_basis": "observed",
+          "evidence": [
+            ".github/workflows/ci.yml:3 [workflow (top-level permissions)] \u2014 id-token: *** on a pull_request_target-triggered workflow \u2014 PR code can mint cloud OIDC credentials"
+          ],
+          "locations": [
+            {
+              "file": ".github/workflows/ci.yml",
+              "line": 3,
+              "fingerprint": "a771d1e0b89cd65b"
+            }
+          ],
+          "mitigation": "`id-token: write` lets any step mint an OIDC token your cloud trusts. Don't grant it on `pull_request_target`, `issue_comment` or `workflow_run` workflows that touch PR input; move deployment to a `push`/`release` workflow behind a protected environment, and scope the cloud trust policy to `ref:refs/heads/main`.",
+          "attack_techniques": [
+            {
+              "technique_id": "T1078.004",
+              "name": "Valid Accounts: Cloud Accounts",
+              "tactic": "Privilege Escalation",
+              "url": "https://attack.mitre.org/techniques/T1078/004/"
+            }
+          ]
+        },
+        {
+          "title": "Over-broad GITHUB_TOKEN permissions (write-all)",
+          "severity": "high",
+          "confidence": "high",
+          "evidence_basis": "observed",
+          "evidence": [
+            ".github/workflows/ci.yml:3 [workflow (top-level permissions)] \u2014 permissions: write-all"
+          ],
+          "locations": [
+            {
+              "file": ".github/workflows/ci.yml",
+              "line": 3,
+              "fingerprint": "972d4bdbc8ecc97e"
+            }
+          ],
+          "mitigation": "Set least-privilege `permissions:` per job (default to `contents: read` and grant only what a job needs). `write-all` gives a compromised step or action full write access to the repo, releases, packages, and more.",
+          "attack_techniques": [
+            {
+              "technique_id": "T1078",
+              "name": "Valid Accounts",
+              "tactic": "Privilege Escalation",
+              "url": "https://attack.mitre.org/techniques/T1078/"
+            }
+          ]
+        },
+        {
+          "title": "Request-reachable OS command execution",
+          "severity": "high",
+          "confidence": "medium",
+          "evidence_basis": "observed",
+          "evidence": [
+            "route POST /run in app.py",
+            "sink at app.py:11 (command execution)",
+            "import path: app.py (0 hop(s))"
+          ],
+          "locations": [
+            {
+              "file": "app.py",
+              "line": 11,
+              "fingerprint": "110788d49ae89c6a"
+            },
+            {
+              "file": "app.py",
+              "line": null,
+              "fingerprint": "779af97a65abe2cd"
+            }
+          ],
+          "mitigation": "Prefer argv-list subprocess calls with shell=False. Never interpolate request data into a shell string; validate and constrain any external command inputs.",
+          "attack_techniques": [
+            {
+              "technique_id": "T1059",
+              "name": "Command and Scripting Interpreter",
+              "tactic": "Execution",
+              "url": "https://attack.mitre.org/techniques/T1059/"
+            }
+          ]
+        },
+        {
+          "title": "State-changing routes are reachable without an authentication control",
+          "severity": "high",
+          "confidence": "medium",
+          "evidence_basis": "observed",
+          "evidence": [
+            "POST /run in app.py:9 \u2014 no authentication/authorization control found on the route's chain"
+          ],
+          "locations": [
+            {
+              "file": "app.py",
+              "line": 9,
+              "fingerprint": "76f599d4d92278d0"
+            }
+          ],
+          "mitigation": "Require authentication (and server-side authorization) on every state-changing endpoint \u2014 attach an auth middleware/guard to the route or its router, a dependency/decorator on the handler, or a global policy that defaults to deny. Confirm the control actually runs before the handler mutates state.",
+          "attack_techniques": [
+            {
+              "technique_id": "T1190",
+              "name": "Exploit Public-Facing Application",
+              "tactic": "Initial Access",
+              "url": "https://attack.mitre.org/techniques/T1190/"
+            }
+          ]
+        },
+        {
+          "title": "pull_request_target checks out untrusted PR code",
+          "severity": "high",
+          "confidence": "high",
+          "evidence_basis": "observed",
+          "evidence": [
+            ".github/workflows/ci.yml:10 [job 'build' step 'actions/checkout@v4'] \u2014 pull_request_target checks out untrusted PR code: ref: ${{ github.event.pull_request.head.sha }}"
+          ],
+          "locations": [
+            {
+              "file": ".github/workflows/ci.yml",
+              "line": 10,
+              "fingerprint": "703bf84b09f70b22"
+            }
+          ],
+          "mitigation": "`pull_request_target` runs with the base repo's secrets in scope. Don't check out and build the PR head ref in that context. Use `pull_request` for untrusted code, or check out only the base ref and never run fork-supplied build/test scripts with secrets available.",
+          "attack_techniques": [
+            {
+              "technique_id": "T1195",
+              "name": "Supply Chain Compromise",
+              "tactic": "Initial Access",
+              "url": "https://attack.mitre.org/techniques/T1195/"
+            }
+          ]
+        },
+        {
+          "title": "Debug mode or unrestricted management endpoints enabled",
+          "severity": "medium",
+          "confidence": "medium",
+          "evidence_basis": "observed",
+          "evidence": [
+            "app.py:19 \u2014 app.run(debug=True)"
+          ],
+          "locations": [
+            {
+              "file": "app.py",
+              "line": 19,
+              "fingerprint": "14220c815ef5e8f5"
+            }
+          ],
+          "mitigation": "Never ship with debug mode on (Flask/Django `DEBUG`, Rails `consider_all_requests_local`) or Spring actuator endpoints exposed with `*`. Debug consoles leak internals and can enable RCE.",
+          "attack_techniques": [
+            {
+              "technique_id": "T1190",
+              "name": "Exploit Public-Facing Application",
+              "tactic": "Initial Access",
+              "url": "https://attack.mitre.org/techniques/T1190/"
+            }
+          ]
+        }
+      ],
+      "risk_hotspots": [
+        {
+          "surface": {
+            "method": "GET",
+            "route": "/health",
+            "file": "app.py",
+            "category": "health",
+            "risk": "low",
+            "exposure": "public"
+          },
+          "evidence_class": "observed_runtime_public",
+          "notes": [
+            "Operational endpoints reveal limited attack surface but may disclose useful reconnaissance details.",
+            "No auth indicators were observed near this route."
+          ]
+        },
+        {
+          "surface": {
+            "method": "POST",
+            "route": "/run",
+            "file": "app.py",
+            "category": "public_api",
+            "risk": "low",
+            "exposure": "public"
+          },
+          "evidence_class": "observed_runtime_public",
+          "notes": [
+            "Public application routes are initial footholds for probing input handling and authorization gaps.",
+            "No auth indicators were observed near this route."
+          ]
+        }
+      ]
+    },
+    "evidence_chains": [],
+    "recommendations": [
+      {
+        "priority": "high",
+        "evidence_basis": "observed",
+        "action": "Never interpolate `${{ github.event.* }}` / `github.head_ref` directly into a run: script \u2014 a crafted issue/PR title or branch name runs arbitrary shell. Bind the value to an `env:` variable and reference it as `\"$ENVVAR\"` so it's passed as data, not expanded into the command.",
+        "linked_finding": "CI script injection via untrusted context in a run: step"
+      },
+      {
+        "priority": "high",
+        "evidence_basis": "observed",
+        "action": "Rotate every detected credential immediately, purge it from git history, and move to environment-injected or vault-managed values. Anyone with read access to the repository already has these secrets.",
+        "linked_finding": "Hard-coded secret literals were found in source or config"
+      },
+      {
+        "priority": "high",
+        "evidence_basis": "observed",
+        "action": "`id-token: write` lets any step mint an OIDC token your cloud trusts. Don't grant it on `pull_request_target`, `issue_comment` or `workflow_run` workflows that touch PR input; move deployment to a `push`/`release` workflow behind a protected environment, and scope the cloud trust policy to `ref:refs/heads/main`.",
+        "linked_finding": "OIDC token (id-token: write) available to pull-request-triggered workflow"
+      },
+      {
+        "priority": "high",
+        "evidence_basis": "observed",
+        "action": "Set least-privilege `permissions:` per job (default to `contents: read` and grant only what a job needs). `write-all` gives a compromised step or action full write access to the repo, releases, packages, and more.",
+        "linked_finding": "Over-broad GITHUB_TOKEN permissions (write-all)"
+      },
+      {
+        "priority": "high",
+        "evidence_basis": "observed",
+        "action": "Prefer argv-list subprocess calls with shell=False. Never interpolate request data into a shell string; validate and constrain any external command inputs.",
+        "linked_finding": "Request-reachable OS command execution"
+      },
+      {
+        "priority": "high",
+        "evidence_basis": "observed",
+        "action": "Require authentication (and server-side authorization) on every state-changing endpoint \u2014 attach an auth middleware/guard to the route or its router, a dependency/decorator on the handler, or a global policy that defaults to deny. Confirm the control actually runs before the handler mutates state.",
+        "linked_finding": "State-changing routes are reachable without an authentication control"
+      },
+      {
+        "priority": "high",
+        "evidence_basis": "observed",
+        "action": "`pull_request_target` runs with the base repo's secrets in scope. Don't check out and build the PR head ref in that context. Use `pull_request` for untrusted code, or check out only the base ref and never run fork-supplied build/test scripts with secrets available.",
+        "linked_finding": "pull_request_target checks out untrusted PR code"
+      },
+      {
+        "priority": "medium",
+        "evidence_basis": "observed",
+        "action": "Never ship with debug mode on (Flask/Django `DEBUG`, Rails `consider_all_requests_local`) or Spring actuator endpoints exposed with `*`. Debug consoles leak internals and can enable RCE.",
+        "linked_finding": "Debug mode or unrestricted management endpoints enabled"
+      }
+    ],
+    "raw_structured_signals": {
+      "scan": {
+        "root": "/tmp/fx-repo",
+        "languages": [
+          "python"
+        ],
+        "routes": [
+          {
+            "path": "/run",
+            "method": "POST",
+            "file": "app.py",
+            "line": 9,
+            "auth": "unknown",
+            "guards": [],
+            "guard_evidence": null
+          },
+          {
+            "path": "/health",
+            "method": "GET",
+            "file": "app.py",
+            "line": 14,
+            "auth": "unknown",
+            "guards": [],
+            "guard_evidence": null
+          }
+        ],
+        "external_calls": [],
+        "databases": [],
+        "auth_hints": [
+          {
+            "hint": "api_key",
+            "file": "app.py",
+            "line": 6,
+            "evidence_text": "API_KEY = \"sk_l\u2026\"",
+            "confidence": 0.6
+          }
+        ],
+        "service_hints": [],
+        "edge_hints": [],
+        "entrypoint_hints": [
+          {
+            "hint": "wsgi_app_run",
+            "file": "app.py",
+            "line": 19,
+            "evidence_text": "app.run(debug=True)",
+            "confidence": 0.7
+          },
+          {
+            "hint": "main_guard",
+            "file": "app.py",
+            "line": 18,
+            "evidence_text": "if __name__ == \"__main__\":",
+            "confidence": 0.7
+          }
+        ],
+        "protocol_hints": [],
+        "framework_hints": [
+          {
+            "hint": "flask",
+            "file": "app.py",
+            "line": 3,
+            "evidence_text": "from flask import Flask, request",
+            "confidence": 0.7
+          }
+        ],
+        "secret_hints": [
+          {
+            "name": "DB_PASSWORD",
+            "file": "app.py",
+            "line": 7,
+            "evidence_text": "DB_PASSWORD = os.getenv(\"DB_PASSWORD\")",
+            "confidence": 0.85,
+            "kind": "env_reference"
+          },
+          {
+            "name": "sk_l\u2026",
+            "file": "app.py",
+            "line": 6,
+            "evidence_text": "API_KEY = \"sk_l\u2026\"",
+            "confidence": 1.0,
+            "kind": "stripe_key"
+          }
+        ],
+        "taint_chains": [
+          {
+            "route_path": "/run",
+            "route_method": "POST",
+            "route_file": "app.py",
+            "sink_kind": "subprocess_shell",
+            "sink_file": "app.py",
+            "sink_line": 11,
+            "hops": 0,
+            "files": [
+              "app.py"
+            ],
+            "evidence_text": "os.system(request.form[\"cmd\"])",
+            "confidence": 0.65,
+            "sanitized": false,
+            "sanitizer_evidence": null,
+            "speculative": false
+          }
+        ],
+        "dependencies": [
+          {
+            "name": "flask",
+            "version": "==2.0.1",
+            "ecosystem": "pypi",
+            "file": "requirements.txt",
+            "line": 1,
+            "dev": false,
+            "resolved": false,
+            "direct": true,
+            "via": null,
+            "evidence_text": "flask==2.0.1"
+          },
+          {
+            "name": "requests",
+            "version": ">=2.20",
+            "ecosystem": "pypi",
+            "file": "requirements.txt",
+            "line": 2,
+            "dev": false,
+            "resolved": false,
+            "direct": true,
+            "via": null,
+            "evidence_text": "requests>=2.20"
+          },
+          {
+            "name": "pyyaml",
+            "version": "==5.3",
+            "ecosystem": "pypi",
+            "file": "requirements.txt",
+            "line": 3,
+            "dev": false,
+            "resolved": false,
+            "direct": true,
+            "via": null,
+            "evidence_text": "pyyaml==5.3"
+          }
+        ],
+        "vulnerabilities": [],
+        "authz_candidates": [],
+        "crypto_weaknesses": [],
+        "web_hardening_issues": [
+          {
+            "kind": "debug_enabled",
+            "file": "app.py",
+            "line": 19,
+            "evidence_text": "app.run(debug=True)",
+            "severity": "medium"
+          }
+        ],
+        "code_weaknesses": [],
+        "workflow_issues": [
+          {
+            "kind": "broad_permissions",
+            "file": ".github/workflows/ci.yml",
+            "line": 3,
+            "context": "workflow (top-level permissions)",
+            "evidence_text": "permissions: write-all",
+            "severity": "high"
+          },
+          {
+            "kind": "oidc_on_untrusted_trigger",
+            "file": ".github/workflows/ci.yml",
+            "line": 3,
+            "context": "workflow (top-level permissions)",
+            "evidence_text": "id-token: *** on a pull_request_target-triggered workflow \u2014 PR code can mint cloud OIDC credentials",
+            "severity": "high"
+          },
+          {
+            "kind": "unpinned_action",
+            "file": ".github/workflows/ci.yml",
+            "line": 8,
+            "context": "job 'build' step 'actions/checkout@v4'",
+            "evidence_text": "uses: actions/checkout@v4 (pin to a full commit SHA)",
+            "severity": "low"
+          },
+          {
+            "kind": "pr_target_checkout",
+            "file": ".github/workflows/ci.yml",
+            "line": 10,
+            "context": "job 'build' step 'actions/checkout@v4'",
+            "evidence_text": "pull_request_target checks out untrusted PR code: ref: ${{ github.event.pull_request.head.sha }}",
+            "severity": "high"
+          },
+          {
+            "kind": "checkout_persist_credentials",
+            "file": ".github/workflows/ci.yml",
+            "line": 8,
+            "context": "job 'build' step 'actions/checkout@v4'",
+            "evidence_text": "actions/checkout on pull_request_target without persist-credentials: false; later step job 'build' step 'step' runs code that can read the token from .git/config",
+            "severity": "medium"
+          },
+          {
+            "kind": "script_injection",
+            "file": ".github/workflows/ci.yml",
+            "line": 11,
+            "context": "job 'build' step 'step'",
+            "evidence_text": "attacker-controlled ${{ github.event.pull_request.title }} interpolated into run: script",
+            "severity": "high"
+          }
+        ],
+        "anomalies": [],
+        "limitations": [],
+        "analyzer_errors": [],
+        "files_scanned": 4
+      },
+      "attack_surfaces": [
+        {
+          "route": "/run",
+          "method": "POST",
+          "file": "app.py",
+          "category": "public_api",
+          "exposure": "public",
+          "risk": "low",
+          "auth_signals": [],
+          "data_store_interaction": false,
+          "outbound_integration": false,
+          "rationale": [
+            "Public application routes are initial footholds for probing input handling and authorization gaps.",
+            "No auth indicators were observed near this route."
+          ],
+          "line": 9
+        },
+        {
+          "route": "/health",
+          "method": "GET",
+          "file": "app.py",
+          "category": "health",
+          "exposure": "public",
+          "risk": "low",
+          "auth_signals": [],
+          "data_store_interaction": false,
+          "outbound_integration": false,
+          "rationale": [
+            "Operational endpoints reveal limited attack surface but may disclose useful reconnaissance details.",
+            "No auth indicators were observed near this route."
+          ],
+          "line": 14
+        }
+      ],
+      "findings": [
+        {
+          "title": "CI script injection via untrusted context in a run: step",
+          "severity": "high",
+          "rule_id": "script-injection",
+          "evidence": [
+            ".github/workflows/ci.yml:11 [job 'build' step 'step'] \u2014 attacker-controlled ${{ github.event.pull_request.title }} interpolated into run: script"
+          ],
+          "locations": [
+            {
+              "file": ".github/workflows/ci.yml",
+              "line": 11,
+              "fingerprint": "2a785d9cf6c5d3dd"
+            }
+          ],
+          "mitigation": "Never interpolate `${{ github.event.* }}` / `github.head_ref` directly into a run: script \u2014 a crafted issue/PR title or branch name runs arbitrary shell. Bind the value to an `env:` variable and reference it as `\"$ENVVAR\"` so it's passed as data, not expanded into the command.",
+          "confidence": "high",
+          "attack_techniques": [
+            {
+              "technique_id": "T1059",
+              "name": "Command and Scripting Interpreter",
+              "tactic": "Execution",
+              "url": "https://attack.mitre.org/techniques/T1059/"
+            }
+          ],
+          "tags": [
+            "ci-security",
+            "supply-chain",
+            "external/cwe/cwe-78"
+          ],
+          "score": 100,
+          "exploitability": null,
+          "exploitability_tier": null
+        },
+        {
+          "title": "Hard-coded secret literals were found in source or config",
+          "severity": "high",
+          "rule_id": "hardcoded-secret",
+          "evidence": [
+            "[stripe_key] sk_l\u2026 in app.py"
+          ],
+          "locations": [
+            {
+              "file": "app.py",
+              "line": 6,
+              "fingerprint": "8d4e6f0be45c9049"
+            }
+          ],
+          "mitigation": "Rotate every detected credential immediately, purge it from git history, and move to environment-injected or vault-managed values. Anyone with read access to the repository already has these secrets.",
+          "confidence": "high",
+          "attack_techniques": [
+            {
+              "technique_id": "T1552",
+              "name": "Unsecured Credentials",
+              "tactic": "Credential Access",
+              "url": "https://attack.mitre.org/techniques/T1552/"
+            },
+            {
+              "technique_id": "T1528",
+              "name": "Steal Application Access Token",
+              "tactic": "Credential Access",
+              "url": "https://attack.mitre.org/techniques/T1528/"
+            },
+            {
+              "technique_id": "T1059",
+              "name": "Command and Scripting Interpreter",
+              "tactic": "Execution",
+              "url": "https://attack.mitre.org/techniques/T1059/"
+            }
+          ],
+          "tags": [
+            "secret-exposure",
+            "data-risk",
+            "hardcoded-literal"
+          ],
+          "score": 100,
+          "exploitability": null,
+          "exploitability_tier": null
+        },
+        {
+          "title": "OIDC token (id-token: write) available to pull-request-triggered workflow",
+          "severity": "high",
+          "rule_id": "oidc-on-untrusted-trigger",
+          "evidence": [
+            ".github/workflows/ci.yml:3 [workflow (top-level permissions)] \u2014 id-token: *** on a pull_request_target-triggered workflow \u2014 PR code can mint cloud OIDC credentials"
+          ],
+          "locations": [
+            {
+              "file": ".github/workflows/ci.yml",
+              "line": 3,
+              "fingerprint": "a771d1e0b89cd65b"
+            }
+          ],
+          "mitigation": "`id-token: write` lets any step mint an OIDC token your cloud trusts. Don't grant it on `pull_request_target`, `issue_comment` or `workflow_run` workflows that touch PR input; move deployment to a `push`/`release` workflow behind a protected environment, and scope the cloud trust policy to `ref:refs/heads/main`.",
+          "confidence": "high",
+          "attack_techniques": [
+            {
+              "technique_id": "T1078.004",
+              "name": "Valid Accounts: Cloud Accounts",
+              "tactic": "Privilege Escalation",
+              "url": "https://attack.mitre.org/techniques/T1078/004/"
+            }
+          ],
+          "tags": [
+            "ci-security",
+            "supply-chain",
+            "external/cwe/cwe-250"
+          ],
+          "score": 100,
+          "exploitability": null,
+          "exploitability_tier": null
+        },
+        {
+          "title": "Over-broad GITHUB_TOKEN permissions (write-all)",
+          "severity": "high",
+          "rule_id": "broad-permissions",
+          "evidence": [
+            ".github/workflows/ci.yml:3 [workflow (top-level permissions)] \u2014 permissions: write-all"
+          ],
+          "locations": [
+            {
+              "file": ".github/workflows/ci.yml",
+              "line": 3,
+              "fingerprint": "972d4bdbc8ecc97e"
+            }
+          ],
+          "mitigation": "Set least-privilege `permissions:` per job (default to `contents: read` and grant only what a job needs). `write-all` gives a compromised step or action full write access to the repo, releases, packages, and more.",
+          "confidence": "high",
+          "attack_techniques": [
+            {
+              "technique_id": "T1078",
+              "name": "Valid Accounts",
+              "tactic": "Privilege Escalation",
+              "url": "https://attack.mitre.org/techniques/T1078/"
+            }
+          ],
+          "tags": [
+            "ci-security",
+            "supply-chain",
+            "external/cwe/cwe-250"
+          ],
+          "score": 100,
+          "exploitability": null,
+          "exploitability_tier": null
+        },
+        {
+          "title": "pull_request_target checks out untrusted PR code",
+          "severity": "high",
+          "rule_id": "pr-target-checkout",
+          "evidence": [
+            ".github/workflows/ci.yml:10 [job 'build' step 'actions/checkout@v4'] \u2014 pull_request_target checks out untrusted PR code: ref: ${{ github.event.pull_request.head.sha }}"
+          ],
+          "locations": [
+            {
+              "file": ".github/workflows/ci.yml",
+              "line": 10,
+              "fingerprint": "703bf84b09f70b22"
+            }
+          ],
+          "mitigation": "`pull_request_target` runs with the base repo's secrets in scope. Don't check out and build the PR head ref in that context. Use `pull_request` for untrusted code, or check out only the base ref and never run fork-supplied build/test scripts with secrets available.",
+          "confidence": "high",
+          "attack_techniques": [
+            {
+              "technique_id": "T1195",
+              "name": "Supply Chain Compromise",
+              "tactic": "Initial Access",
+              "url": "https://attack.mitre.org/techniques/T1195/"
+            }
+          ],
+          "tags": [
+            "ci-security",
+            "supply-chain",
+            "external/cwe/cwe-829"
+          ],
+          "score": 100,
+          "exploitability": null,
+          "exploitability_tier": null
+        },
+        {
+          "title": "Request-reachable OS command execution",
+          "severity": "high",
+          "rule_id": "subprocess-shell",
+          "evidence": [
+            "route POST /run in app.py",
+            "sink at app.py:11 (command execution)",
+            "import path: app.py (0 hop(s))"
+          ],
+          "locations": [
+            {
+              "file": "app.py",
+              "line": 11,
+              "fingerprint": "110788d49ae89c6a"
+            },
+            {
+              "file": "app.py",
+              "line": null,
+              "fingerprint": "779af97a65abe2cd"
+            }
+          ],
+          "mitigation": "Prefer argv-list subprocess calls with shell=False. Never interpolate request data into a shell string; validate and constrain any external command inputs.",
+          "confidence": "medium",
+          "attack_techniques": [
+            {
+              "technique_id": "T1059",
+              "name": "Command and Scripting Interpreter",
+              "tactic": "Execution",
+              "url": "https://attack.mitre.org/techniques/T1059/"
+            }
+          ],
+          "tags": [
+            "taint-chain",
+            "input-handling",
+            "data-risk"
+          ],
+          "score": 75,
+          "exploitability": 100,
+          "exploitability_tier": "critical"
+        },
+        {
+          "title": "State-changing routes are reachable without an authentication control",
+          "severity": "high",
+          "rule_id": "unauth-state-change",
+          "evidence": [
+            "POST /run in app.py:9 \u2014 no authentication/authorization control found on the route's chain"
+          ],
+          "locations": [
+            {
+              "file": "app.py",
+              "line": 9,
+              "fingerprint": "76f599d4d92278d0"
+            }
+          ],
+          "mitigation": "Require authentication (and server-side authorization) on every state-changing endpoint \u2014 attach an auth middleware/guard to the route or its router, a dependency/decorator on the handler, or a global policy that defaults to deny. Confirm the control actually runs before the handler mutates state.",
+          "confidence": "medium",
+          "attack_techniques": [
+            {
+              "technique_id": "T1190",
+              "name": "Exploit Public-Facing Application",
+              "tactic": "Initial Access",
+              "url": "https://attack.mitre.org/techniques/T1190/"
+            }
+          ],
+          "tags": [
+            "exposed-endpoint",
+            "auth-missing",
+            "state-changing"
+          ],
+          "score": 75,
+          "exploitability": null,
+          "exploitability_tier": null
+        },
+        {
+          "title": "Secret-bearing environment variables are referenced in executable paths",
+          "severity": "medium",
+          "rule_id": "secret-env-reference",
+          "evidence": [
+            "DB_PASSWORD in app.py"
+          ],
+          "locations": [
+            {
+              "file": "app.py",
+              "line": 7,
+              "fingerprint": "3b943e1dc1c8aa71"
+            }
+          ],
+          "mitigation": "Confirm these secrets are injected securely, never logged or returned, rotated regularly, and scoped only to the privileges each route actually needs.",
+          "confidence": "high",
+          "attack_techniques": [
+            {
+              "technique_id": "T1552",
+              "name": "Unsecured Credentials",
+              "tactic": "Credential Access",
+              "url": "https://attack.mitre.org/techniques/T1552/"
+            },
+            {
+              "technique_id": "T1528",
+              "name": "Steal Application Access Token",
+              "tactic": "Credential Access",
+              "url": "https://attack.mitre.org/techniques/T1528/"
+            },
+            {
+              "technique_id": "T1059",
+              "name": "Command and Scripting Interpreter",
+              "tactic": "Execution",
+              "url": "https://attack.mitre.org/techniques/T1059/"
+            }
+          ],
+          "tags": [
+            "secret-exposure"
+          ],
+          "score": 50,
+          "exploitability": null,
+          "exploitability_tier": null
+        },
+        {
+          "title": "actions/checkout leaves the token in .git/config for untrusted code",
+          "severity": "medium",
+          "rule_id": "checkout-persist-credentials",
+          "evidence": [
+            ".github/workflows/ci.yml:8 [job 'build' step 'actions/checkout@v4'] \u2014 actions/checkout on pull_request_target without persist-credentials: false; later step job 'build' step 'step' runs code that can read the token from .git/config"
+          ],
+          "locations": [
+            {
+              "file": ".github/workflows/ci.yml",
+              "line": 8,
+              "fingerprint": "955596eed18ca475"
+            }
+          ],
+          "mitigation": "`actions/checkout` persists the `GITHUB_TOKEN` in `.git/config` by default. On `pull_request_target` / `issue_comment` / `workflow_run` jobs that later run PR code or artifacts, set `persist-credentials: false` so that code can't read the write-capable token.",
+          "confidence": "high",
+          "attack_techniques": [
+            {
+              "technique_id": "T1552.001",
+              "name": "Unsecured Credentials: Credentials In Files",
+              "tactic": "Credential Access",
+              "url": "https://attack.mitre.org/techniques/T1552/001/"
+            }
+          ],
+          "tags": [
+            "ci-security",
+            "supply-chain",
+            "external/cwe/cwe-522"
+          ],
+          "score": 50,
+          "exploitability": null,
+          "exploitability_tier": null
+        },
+        {
+          "title": "Debug mode or unrestricted management endpoints enabled",
+          "severity": "medium",
+          "rule_id": "debug-enabled",
+          "evidence": [
+            "app.py:19 \u2014 app.run(debug=True)"
+          ],
+          "locations": [
+            {
+              "file": "app.py",
+              "line": 19,
+              "fingerprint": "14220c815ef5e8f5"
+            }
+          ],
+          "mitigation": "Never ship with debug mode on (Flask/Django `DEBUG`, Rails `consider_all_requests_local`) or Spring actuator endpoints exposed with `*`. Debug consoles leak internals and can enable RCE.",
+          "confidence": "medium",
+          "attack_techniques": [
+            {
+              "technique_id": "T1190",
+              "name": "Exploit Public-Facing Application",
+              "tactic": "Initial Access",
+              "url": "https://attack.mitre.org/techniques/T1190/"
+            }
+          ],
+          "tags": [
+            "web-hardening"
+          ],
+          "score": 37,
+          "exploitability": null,
+          "exploitability_tier": null
+        },
+        {
+          "title": "Unpinned GitHub Action (not pinned to a commit SHA)",
+          "severity": "low",
+          "rule_id": "unpinned-action",
+          "evidence": [
+            ".github/workflows/ci.yml:8 [job 'build' step 'actions/checkout@v4'] \u2014 uses: actions/checkout@v4 (pin to a full commit SHA)"
+          ],
+          "locations": [
+            {
+              "file": ".github/workflows/ci.yml",
+              "line": 8,
+              "fingerprint": "b472c85c87c8d24c"
+            }
+          ],
+          "mitigation": "Pin third-party actions to a full 40-character commit SHA (`uses: org/action@<sha>`), not a moving tag or branch. A tag/branch lets the action owner \u2014 or anyone who compromises them \u2014 change what runs in your pipeline. Dependabot can keep the pinned SHAs updated.",
+          "confidence": "high",
+          "attack_techniques": [
+            {
+              "technique_id": "T1195.001",
+              "name": "Supply Chain Compromise: Compromise Software Dependencies and Development Tools",
+              "tactic": "Initial Access",
+              "url": "https://attack.mitre.org/techniques/T1195/001/"
+            }
+          ],
+          "tags": [
+            "ci-security",
+            "supply-chain",
+            "external/cwe/cwe-829"
+          ],
+          "score": 10,
+          "exploitability": null,
+          "exploitability_tier": null
+        }
+      ],
+      "attack_paths": [],
+      "assets": [],
+      "controls": [
+        {
+          "id": "control:absent:csrf_protection",
+          "kind": "csrf_protection",
+          "name": "CSRF protection",
+          "strength": "absent",
+          "scope": "global",
+          "placements": [],
+          "evidence": [],
+          "notes": "Public state-changing routes observed without CSRF markers."
+        },
+        {
+          "id": "control:absent:rate_limiting",
+          "kind": "rate_limiting",
+          "name": "Rate limiting",
+          "strength": "absent",
+          "scope": "global",
+          "placements": [],
+          "evidence": [],
+          "notes": "Public routes observed without any rate-limiting markers."
+        }
+      ],
+      "notable_observations": [],
+      "detection_opportunities": [
+        {
+          "id": "detect:findings:residual",
+          "title": "Detection coverage for findings without a paired insight",
+          "rationale": "These findings did not generate cross-cutting insights but are still actionable with runtime telemetry.",
+          "signal_kind": "log",
+          "suggested_rule": "Add per-finding logging at the affected handler with a structured `{finding_id, route, status_code}` payload, and aggregate in the SIEM.",
+          "related_insight_ids": [],
+          "related_finding_titles": [
+            "CI script injection via untrusted context in a run: step",
+            "Hard-coded secret literals were found in source or config",
+            "OIDC token (id-token: write) available to pull-request-triggered workflow",
+            "Over-broad GITHUB_TOKEN permissions (write-all)",
+            "pull_request_target checks out untrusted PR code"
+          ],
+          "attack_techniques": [
+            {
+              "technique_id": "T1552",
+              "name": "Unsecured Credentials",
+              "tactic": "Credential Access",
+              "url": "https://attack.mitre.org/techniques/T1552/"
+            },
+            {
+              "technique_id": "T1528",
+              "name": "Steal Application Access Token",
+              "tactic": "Credential Access",
+              "url": "https://attack.mitre.org/techniques/T1528/"
+            },
+            {
+              "technique_id": "T1059",
+              "name": "Command and Scripting Interpreter",
+              "tactic": "Execution",
+              "url": "https://attack.mitre.org/techniques/T1059/"
+            },
+            {
+              "technique_id": "T1078",
+              "name": "Valid Accounts",
+              "tactic": "Defense Evasion / Persistence / Initial Access",
+              "url": "https://attack.mitre.org/techniques/T1078/"
+            },
+            {
+              "technique_id": "T1110",
+              "name": "Brute Force",
+              "tactic": "Credential Access",
+              "url": "https://attack.mitre.org/techniques/T1110/"
+            },
+            {
+              "technique_id": "T1556",
+              "name": "Modify Authentication Process",
+              "tactic": "Defense Evasion / Persistence",
+              "url": "https://attack.mitre.org/techniques/T1556/"
+            }
+          ]
+        }
+      ]
+    },
+    "limitations_meta": {
+      "analysis_mode": "heuristic",
+      "defensive_only": true,
+      "notes": [
+        "Observed vs inferred classifications are heuristic and based on route, file, and signal patterns.",
+        "Low-quality paths (tests/fixtures/mocks/examples) are retained in raw signals but separated in evidence class counts.",
+        "Use this artifact as a triage source-of-truth; validate high-priority items with repository context and runtime controls.",
+        "Assets, controls, and notable observations are heuristic overlays; absent-control entries indicate scanner did not find evidence, not necessarily that the control is missing in production.",
+        "ATT&CK technique mappings and detection opportunities are derived from insight kinds and finding-title keywords; treat them as triage hooks for SIEM/detection-engineering work, not authoritative MITRE mappings."
+      ]
+    }
+  },
+  "review_context_pack": {
+    "schema_version": "1.0.0",
+    "artifact_type": "attackmap_review_context_pack",
+    "attackmap_review_json": {
+      "schema_version": "1.3.0",
+      "target_metadata": {
+        "root": "/tmp/fx-repo",
+        "files_scanned": 4,
+        "languages": [
+          "python"
+        ]
+      },
+      "system_overview": {
+        "repository_type": "web/service-facing",
+        "raw_inferred_entry_point_count": 2,
+        "external_call_count": 0,
+        "database_count": 0,
+        "auth_hint_count": 1,
+        "secret_hint_count": 2,
+        "asset_count": 0,
+        "control_count_present": 0,
+        "control_count_absent": 2,
+        "notable_observation_count": 0,
+        "detection_opportunity_count": 1,
+        "attack_techniques_observed_count": 9
+      },
+      "attack_surface": {
+        "total_surfaces": 2,
+        "evidence_class_counts": {
+          "observed_runtime_public": 2,
+          "observed_runtime_internal": 0,
+          "inferred_protocol": 0,
+          "inferred": 0,
+          "low_quality": 0
+        },
+        "surfaces": [
+          {
+            "method": "POST",
+            "route": "/run",
+            "file": "app.py",
+            "line": 9,
+            "category": "public_api",
+            "exposure": "public",
+            "risk": "low",
+            "evidence_class": "observed_runtime_public",
+            "auth_signals": [],
+            "data_store_interaction": false,
+            "outbound_integration": false
+          },
+          {
+            "method": "GET",
+            "route": "/health",
+            "file": "app.py",
+            "line": 14,
+            "category": "health",
+            "exposure": "public",
+            "risk": "low",
+            "evidence_class": "observed_runtime_public",
+            "auth_signals": [],
+            "data_store_interaction": false,
+            "outbound_integration": false
+          }
+        ]
+      },
+      "assets": [],
+      "controls": [
+        {
+          "id": "control:absent:csrf_protection",
+          "kind": "csrf_protection",
+          "name": "CSRF protection",
+          "strength": "absent",
+          "scope": "global",
+          "placements": [],
+          "evidence": [],
+          "notes": "Public state-changing routes observed without CSRF markers."
+        },
+        {
+          "id": "control:absent:rate_limiting",
+          "kind": "rate_limiting",
+          "name": "Rate limiting",
+          "strength": "absent",
+          "scope": "global",
+          "placements": [],
+          "evidence": [],
+          "notes": "Public routes observed without any rate-limiting markers."
+        }
+      ],
+      "notable_observations": [],
+      "detection_opportunities": [
+        {
+          "id": "detect:findings:residual",
+          "title": "Detection coverage for findings without a paired insight",
+          "rationale": "These findings did not generate cross-cutting insights but are still actionable with runtime telemetry.",
+          "signal_kind": "log",
+          "suggested_rule": "Add per-finding logging at the affected handler with a structured `{finding_id, route, status_code}` payload, and aggregate in the SIEM.",
+          "related_insight_ids": [],
+          "related_finding_titles": [
+            "CI script injection via untrusted context in a run: step",
+            "Hard-coded secret literals were found in source or config",
+            "OIDC token (id-token: write) available to pull-request-triggered workflow",
+            "Over-broad GITHUB_TOKEN permissions (write-all)",
+            "pull_request_target checks out untrusted PR code"
+          ],
+          "attack_techniques": [
+            {
+              "technique_id": "T1552",
+              "name": "Unsecured Credentials",
+              "tactic": "Credential Access",
+              "url": "https://attack.mitre.org/techniques/T1552/"
+            },
+            {
+              "technique_id": "T1528",
+              "name": "Steal Application Access Token",
+              "tactic": "Credential Access",
+              "url": "https://attack.mitre.org/techniques/T1528/"
+            },
+            {
+              "technique_id": "T1059",
+              "name": "Command and Scripting Interpreter",
+              "tactic": "Execution",
+              "url": "https://attack.mitre.org/techniques/T1059/"
+            },
+            {
+              "technique_id": "T1078",
+              "name": "Valid Accounts",
+              "tactic": "Defense Evasion / Persistence / Initial Access",
+              "url": "https://attack.mitre.org/techniques/T1078/"
+            },
+            {
+              "technique_id": "T1110",
+              "name": "Brute Force",
+              "tactic": "Credential Access",
+              "url": "https://attack.mitre.org/techniques/T1110/"
+            },
+            {
+              "technique_id": "T1556",
+              "name": "Modify Authentication Process",
+              "tactic": "Defense Evasion / Persistence",
+              "url": "https://attack.mitre.org/techniques/T1556/"
+            }
+          ]
+        }
+      ],
+      "attack_techniques_observed": [
+        {
+          "technique_id": "T1059",
+          "name": "Command and Scripting Interpreter",
+          "tactic": "Execution",
+          "url": "https://attack.mitre.org/techniques/T1059/"
+        },
+        {
+          "technique_id": "T1078",
+          "name": "Valid Accounts",
+          "tactic": "Privilege Escalation",
+          "url": "https://attack.mitre.org/techniques/T1078/"
+        },
+        {
+          "technique_id": "T1078.004",
+          "name": "Valid Accounts: Cloud Accounts",
+          "tactic": "Privilege Escalation",
+          "url": "https://attack.mitre.org/techniques/T1078/004/"
+        },
+        {
+          "technique_id": "T1190",
+          "name": "Exploit Public-Facing Application",
+          "tactic": "Initial Access",
+          "url": "https://attack.mitre.org/techniques/T1190/"
+        },
+        {
+          "technique_id": "T1195",
+          "name": "Supply Chain Compromise",
+          "tactic": "Initial Access",
+          "url": "https://attack.mitre.org/techniques/T1195/"
+        },
+        {
+          "technique_id": "T1195.001",
+          "name": "Supply Chain Compromise: Compromise Software Dependencies and Development Tools",
+          "tactic": "Initial Access",
+          "url": "https://attack.mitre.org/techniques/T1195/001/"
+        },
+        {
+          "technique_id": "T1528",
+          "name": "Steal Application Access Token",
+          "tactic": "Credential Access",
+          "url": "https://attack.mitre.org/techniques/T1528/"
+        },
+        {
+          "technique_id": "T1552",
+          "name": "Unsecured Credentials",
+          "tactic": "Credential Access",
+          "url": "https://attack.mitre.org/techniques/T1552/"
+        },
+        {
+          "technique_id": "T1552.001",
+          "name": "Unsecured Credentials: Credentials In Files",
+          "tactic": "Credential Access",
+          "url": "https://attack.mitre.org/techniques/T1552/001/"
+        }
+      ],
+      "strengths": [
+        {
+          "statement": "Authentication/identity indicators were observed in code signals.",
+          "evidence_basis": "observed",
+          "evidence": [
+            "api_key"
+          ]
+        },
+        {
+          "statement": "Secret references appear environment-driven rather than hardcoded literals.",
+          "evidence_basis": "observed",
+          "evidence": [
+            "DB_PASSWORD (app.py)",
+            "sk_l\u2026 (app.py)"
+          ]
+        }
+      ],
+      "weaknesses_risk_hotspots": {
+        "weaknesses": [
+          {
+            "title": "CI script injection via untrusted context in a run: step",
+            "severity": "high",
+            "confidence": "high",
+            "evidence_basis": "observed",
+            "evidence": [
+              ".github/workflows/ci.yml:11 [job 'build' step 'step'] \u2014 attacker-controlled ${{ github.event.pull_request.title }} interpolated into run: script"
+            ],
+            "locations": [
+              {
+                "file": ".github/workflows/ci.yml",
+                "line": 11,
+                "fingerprint": "2a785d9cf6c5d3dd"
+              }
+            ],
+            "mitigation": "Never interpolate `${{ github.event.* }}` / `github.head_ref` directly into a run: script \u2014 a crafted issue/PR title or branch name runs arbitrary shell. Bind the value to an `env:` variable and reference it as `\"$ENVVAR\"` so it's passed as data, not expanded into the command.",
+            "attack_techniques": [
+              {
+                "technique_id": "T1059",
+                "name": "Command and Scripting Interpreter",
+                "tactic": "Execution",
+                "url": "https://attack.mitre.org/techniques/T1059/"
+              }
+            ]
+          },
+          {
+            "title": "Hard-coded secret literals were found in source or config",
+            "severity": "high",
+            "confidence": "high",
+            "evidence_basis": "observed",
+            "evidence": [
+              "[stripe_key] sk_l\u2026 in app.py"
+            ],
+            "locations": [
+              {
+                "file": "app.py",
+                "line": 6,
+                "fingerprint": "8d4e6f0be45c9049"
+              }
+            ],
+            "mitigation": "Rotate every detected credential immediately, purge it from git history, and move to environment-injected or vault-managed values. Anyone with read access to the repository already has these secrets.",
+            "attack_techniques": [
+              {
+                "technique_id": "T1552",
+                "name": "Unsecured Credentials",
+                "tactic": "Credential Access",
+                "url": "https://attack.mitre.org/techniques/T1552/"
+              },
+              {
+                "technique_id": "T1528",
+                "name": "Steal Application Access Token",
+                "tactic": "Credential Access",
+                "url": "https://attack.mitre.org/techniques/T1528/"
+              },
+              {
+                "technique_id": "T1059",
+                "name": "Command and Scripting Interpreter",
+                "tactic": "Execution",
+                "url": "https://attack.mitre.org/techniques/T1059/"
+              }
+            ]
+          },
+          {
+            "title": "OIDC token (id-token: write) available to pull-request-triggered workflow",
+            "severity": "high",
+            "confidence": "high",
+            "evidence_basis": "observed",
+            "evidence": [
+              ".github/workflows/ci.yml:3 [workflow (top-level permissions)] \u2014 id-token: *** on a pull_request_target-triggered workflow \u2014 PR code can mint cloud OIDC credentials"
+            ],
+            "locations": [
+              {
+                "file": ".github/workflows/ci.yml",
+                "line": 3,
+                "fingerprint": "a771d1e0b89cd65b"
+              }
+            ],
+            "mitigation": "`id-token: write` lets any step mint an OIDC token your cloud trusts. Don't grant it on `pull_request_target`, `issue_comment` or `workflow_run` workflows that touch PR input; move deployment to a `push`/`release` workflow behind a protected environment, and scope the cloud trust policy to `ref:refs/heads/main`.",
+            "attack_techniques": [
+              {
+                "technique_id": "T1078.004",
+                "name": "Valid Accounts: Cloud Accounts",
+                "tactic": "Privilege Escalation",
+                "url": "https://attack.mitre.org/techniques/T1078/004/"
+              }
+            ]
+          },
+          {
+            "title": "Over-broad GITHUB_TOKEN permissions (write-all)",
+            "severity": "high",
+            "confidence": "high",
+            "evidence_basis": "observed",
+            "evidence": [
+              ".github/workflows/ci.yml:3 [workflow (top-level permissions)] \u2014 permissions: write-all"
+            ],
+            "locations": [
+              {
+                "file": ".github/workflows/ci.yml",
+                "line": 3,
+                "fingerprint": "972d4bdbc8ecc97e"
+              }
+            ],
+            "mitigation": "Set least-privilege `permissions:` per job (default to `contents: read` and grant only what a job needs). `write-all` gives a compromised step or action full write access to the repo, releases, packages, and more.",
+            "attack_techniques": [
+              {
+                "technique_id": "T1078",
+                "name": "Valid Accounts",
+                "tactic": "Privilege Escalation",
+                "url": "https://attack.mitre.org/techniques/T1078/"
+              }
+            ]
+          },
+          {
+            "title": "Request-reachable OS command execution",
+            "severity": "high",
+            "confidence": "medium",
+            "evidence_basis": "observed",
+            "evidence": [
+              "route POST /run in app.py",
+              "sink at app.py:11 (command execution)",
+              "import path: app.py (0 hop(s))"
+            ],
+            "locations": [
+              {
+                "file": "app.py",
+                "line": 11,
+                "fingerprint": "110788d49ae89c6a"
+              },
+              {
+                "file": "app.py",
+                "line": null,
+                "fingerprint": "779af97a65abe2cd"
+              }
+            ],
+            "mitigation": "Prefer argv-list subprocess calls with shell=False. Never interpolate request data into a shell string; validate and constrain any external command inputs.",
+            "attack_techniques": [
+              {
+                "technique_id": "T1059",
+                "name": "Command and Scripting Interpreter",
+                "tactic": "Execution",
+                "url": "https://attack.mitre.org/techniques/T1059/"
+              }
+            ]
+          },
+          {
+            "title": "State-changing routes are reachable without an authentication control",
+            "severity": "high",
+            "confidence": "medium",
+            "evidence_basis": "observed",
+            "evidence": [
+              "POST /run in app.py:9 \u2014 no authentication/authorization control found on the route's chain"
+            ],
+            "locations": [
+              {
+                "file": "app.py",
+                "line": 9,
+                "fingerprint": "76f599d4d92278d0"
+              }
+            ],
+            "mitigation": "Require authentication (and server-side authorization) on every state-changing endpoint \u2014 attach an auth middleware/guard to the route or its router, a dependency/decorator on the handler, or a global policy that defaults to deny. Confirm the control actually runs before the handler mutates state.",
+            "attack_techniques": [
+              {
+                "technique_id": "T1190",
+                "name": "Exploit Public-Facing Application",
+                "tactic": "Initial Access",
+                "url": "https://attack.mitre.org/techniques/T1190/"
+              }
+            ]
+          },
+          {
+            "title": "pull_request_target checks out untrusted PR code",
+            "severity": "high",
+            "confidence": "high",
+            "evidence_basis": "observed",
+            "evidence": [
+              ".github/workflows/ci.yml:10 [job 'build' step 'actions/checkout@v4'] \u2014 pull_request_target checks out untrusted PR code: ref: ${{ github.event.pull_request.head.sha }}"
+            ],
+            "locations": [
+              {
+                "file": ".github/workflows/ci.yml",
+                "line": 10,
+                "fingerprint": "703bf84b09f70b22"
+              }
+            ],
+            "mitigation": "`pull_request_target` runs with the base repo's secrets in scope. Don't check out and build the PR head ref in that context. Use `pull_request` for untrusted code, or check out only the base ref and never run fork-supplied build/test scripts with secrets available.",
+            "attack_techniques": [
+              {
+                "technique_id": "T1195",
+                "name": "Supply Chain Compromise",
+                "tactic": "Initial Access",
+                "url": "https://attack.mitre.org/techniques/T1195/"
+              }
+            ]
+          },
+          {
+            "title": "Debug mode or unrestricted management endpoints enabled",
+            "severity": "medium",
+            "confidence": "medium",
+            "evidence_basis": "observed",
+            "evidence": [
+              "app.py:19 \u2014 app.run(debug=True)"
+            ],
+            "locations": [
+              {
+                "file": "app.py",
+                "line": 19,
+                "fingerprint": "14220c815ef5e8f5"
+              }
+            ],
+            "mitigation": "Never ship with debug mode on (Flask/Django `DEBUG`, Rails `consider_all_requests_local`) or Spring actuator endpoints exposed with `*`. Debug consoles leak internals and can enable RCE.",
+            "attack_techniques": [
+              {
+                "technique_id": "T1190",
+                "name": "Exploit Public-Facing Application",
+                "tactic": "Initial Access",
+                "url": "https://attack.mitre.org/techniques/T1190/"
+              }
+            ]
+          }
+        ],
+        "risk_hotspots": [
+          {
+            "surface": {
+              "method": "GET",
+              "route": "/health",
+              "file": "app.py",
+              "category": "health",
+              "risk": "low",
+              "exposure": "public"
+            },
+            "evidence_class": "observed_runtime_public",
+            "notes": [
+              "Operational endpoints reveal limited attack surface but may disclose useful reconnaissance details.",
+              "No auth indicators were observed near this route."
+            ]
+          },
+          {
+            "surface": {
+              "method": "POST",
+              "route": "/run",
+              "file": "app.py",
+              "category": "public_api",
+              "risk": "low",
+              "exposure": "public"
+            },
+            "evidence_class": "observed_runtime_public",
+            "notes": [
+              "Public application routes are initial footholds for probing input handling and authorization gaps.",
+              "No auth indicators were observed near this route."
+            ]
+          }
+        ]
+      },
+      "evidence_chains": [],
+      "recommendations": [
+        {
+          "priority": "high",
+          "evidence_basis": "observed",
+          "action": "Never interpolate `${{ github.event.* }}` / `github.head_ref` directly into a run: script \u2014 a crafted issue/PR title or branch name runs arbitrary shell. Bind the value to an `env:` variable and reference it as `\"$ENVVAR\"` so it's passed as data, not expanded into the command.",
+          "linked_finding": "CI script injection via untrusted context in a run: step"
+        },
+        {
+          "priority": "high",
+          "evidence_basis": "observed",
+          "action": "Rotate every detected credential immediately, purge it from git history, and move to environment-injected or vault-managed values. Anyone with read access to the repository already has these secrets.",
+          "linked_finding": "Hard-coded secret literals were found in source or config"
+        },
+        {
+          "priority": "high",
+          "evidence_basis": "observed",
+          "action": "`id-token: write` lets any step mint an OIDC token your cloud trusts. Don't grant it on `pull_request_target`, `issue_comment` or `workflow_run` workflows that touch PR input; move deployment to a `push`/`release` workflow behind a protected environment, and scope the cloud trust policy to `ref:refs/heads/main`.",
+          "linked_finding": "OIDC token (id-token: write) available to pull-request-triggered workflow"
+        },
+        {
+          "priority": "high",
+          "evidence_basis": "observed",
+          "action": "Set least-privilege `permissions:` per job (default to `contents: read` and grant only what a job needs). `write-all` gives a compromised step or action full write access to the repo, releases, packages, and more.",
+          "linked_finding": "Over-broad GITHUB_TOKEN permissions (write-all)"
+        },
+        {
+          "priority": "high",
+          "evidence_basis": "observed",
+          "action": "Prefer argv-list subprocess calls with shell=False. Never interpolate request data into a shell string; validate and constrain any external command inputs.",
+          "linked_finding": "Request-reachable OS command execution"
+        },
+        {
+          "priority": "high",
+          "evidence_basis": "observed",
+          "action": "Require authentication (and server-side authorization) on every state-changing endpoint \u2014 attach an auth middleware/guard to the route or its router, a dependency/decorator on the handler, or a global policy that defaults to deny. Confirm the control actually runs before the handler mutates state.",
+          "linked_finding": "State-changing routes are reachable without an authentication control"
+        },
+        {
+          "priority": "high",
+          "evidence_basis": "observed",
+          "action": "`pull_request_target` runs with the base repo's secrets in scope. Don't check out and build the PR head ref in that context. Use `pull_request` for untrusted code, or check out only the base ref and never run fork-supplied build/test scripts with secrets available.",
+          "linked_finding": "pull_request_target checks out untrusted PR code"
+        },
+        {
+          "priority": "medium",
+          "evidence_basis": "observed",
+          "action": "Never ship with debug mode on (Flask/Django `DEBUG`, Rails `consider_all_requests_local`) or Spring actuator endpoints exposed with `*`. Debug consoles leak internals and can enable RCE.",
+          "linked_finding": "Debug mode or unrestricted management endpoints enabled"
+        }
+      ],
+      "raw_structured_signals": {
+        "scan": {
+          "root": "/tmp/fx-repo",
+          "languages": [
+            "python"
+          ],
+          "routes": [
+            {
+              "path": "/run",
+              "method": "POST",
+              "file": "app.py",
+              "line": 9,
+              "auth": "unknown",
+              "guards": [],
+              "guard_evidence": null
+            },
+            {
+              "path": "/health",
+              "method": "GET",
+              "file": "app.py",
+              "line": 14,
+              "auth": "unknown",
+              "guards": [],
+              "guard_evidence": null
+            }
+          ],
+          "external_calls": [],
+          "databases": [],
+          "auth_hints": [
+            {
+              "hint": "api_key",
+              "file": "app.py",
+              "line": 6,
+              "evidence_text": "API_KEY = \"sk_l\u2026\"",
+              "confidence": 0.6
+            }
+          ],
+          "service_hints": [],
+          "edge_hints": [],
+          "entrypoint_hints": [
+            {
+              "hint": "wsgi_app_run",
+              "file": "app.py",
+              "line": 19,
+              "evidence_text": "app.run(debug=True)",
+              "confidence": 0.7
+            },
+            {
+              "hint": "main_guard",
+              "file": "app.py",
+              "line": 18,
+              "evidence_text": "if __name__ == \"__main__\":",
+              "confidence": 0.7
+            }
+          ],
+          "protocol_hints": [],
+          "framework_hints": [
+            {
+              "hint": "flask",
+              "file": "app.py",
+              "line": 3,
+              "evidence_text": "from flask import Flask, request",
+              "confidence": 0.7
+            }
+          ],
+          "secret_hints": [
+            {
+              "name": "DB_PASSWORD",
+              "file": "app.py",
+              "line": 7,
+              "evidence_text": "DB_PASSWORD = os.getenv(\"DB_PASSWORD\")",
+              "confidence": 0.85,
+              "kind": "env_reference"
+            },
+            {
+              "name": "sk_l\u2026",
+              "file": "app.py",
+              "line": 6,
+              "evidence_text": "API_KEY = \"sk_l\u2026\"",
+              "confidence": 1.0,
+              "kind": "stripe_key"
+            }
+          ],
+          "taint_chains": [
+            {
+              "route_path": "/run",
+              "route_method": "POST",
+              "route_file": "app.py",
+              "sink_kind": "subprocess_shell",
+              "sink_file": "app.py",
+              "sink_line": 11,
+              "hops": 0,
+              "files": [
+                "app.py"
+              ],
+              "evidence_text": "os.system(request.form[\"cmd\"])",
+              "confidence": 0.65,
+              "sanitized": false,
+              "sanitizer_evidence": null,
+              "speculative": false
+            }
+          ],
+          "dependencies": [
+            {
+              "name": "flask",
+              "version": "==2.0.1",
+              "ecosystem": "pypi",
+              "file": "requirements.txt",
+              "line": 1,
+              "dev": false,
+              "resolved": false,
+              "direct": true,
+              "via": null,
+              "evidence_text": "flask==2.0.1"
+            },
+            {
+              "name": "requests",
+              "version": ">=2.20",
+              "ecosystem": "pypi",
+              "file": "requirements.txt",
+              "line": 2,
+              "dev": false,
+              "resolved": false,
+              "direct": true,
+              "via": null,
+              "evidence_text": "requests>=2.20"
+            },
+            {
+              "name": "pyyaml",
+              "version": "==5.3",
+              "ecosystem": "pypi",
+              "file": "requirements.txt",
+              "line": 3,
+              "dev": false,
+              "resolved": false,
+              "direct": true,
+              "via": null,
+              "evidence_text": "pyyaml==5.3"
+            }
+          ],
+          "vulnerabilities": [],
+          "authz_candidates": [],
+          "crypto_weaknesses": [],
+          "web_hardening_issues": [
+            {
+              "kind": "debug_enabled",
+              "file": "app.py",
+              "line": 19,
+              "evidence_text": "app.run(debug=True)",
+              "severity": "medium"
+            }
+          ],
+          "code_weaknesses": [],
+          "workflow_issues": [
+            {
+              "kind": "broad_permissions",
+              "file": ".github/workflows/ci.yml",
+              "line": 3,
+              "context": "workflow (top-level permissions)",
+              "evidence_text": "permissions: write-all",
+              "severity": "high"
+            },
+            {
+              "kind": "oidc_on_untrusted_trigger",
+              "file": ".github/workflows/ci.yml",
+              "line": 3,
+              "context": "workflow (top-level permissions)",
+              "evidence_text": "id-token: *** on a pull_request_target-triggered workflow \u2014 PR code can mint cloud OIDC credentials",
+              "severity": "high"
+            },
+            {
+              "kind": "unpinned_action",
+              "file": ".github/workflows/ci.yml",
+              "line": 8,
+              "context": "job 'build' step 'actions/checkout@v4'",
+              "evidence_text": "uses: actions/checkout@v4 (pin to a full commit SHA)",
+              "severity": "low"
+            },
+            {
+              "kind": "pr_target_checkout",
+              "file": ".github/workflows/ci.yml",
+              "line": 10,
+              "context": "job 'build' step 'actions/checkout@v4'",
+              "evidence_text": "pull_request_target checks out untrusted PR code: ref: ${{ github.event.pull_request.head.sha }}",
+              "severity": "high"
+            },
+            {
+              "kind": "checkout_persist_credentials",
+              "file": ".github/workflows/ci.yml",
+              "line": 8,
+              "context": "job 'build' step 'actions/checkout@v4'",
+              "evidence_text": "actions/checkout on pull_request_target without persist-credentials: false; later step job 'build' step 'step' runs code that can read the token from .git/config",
+              "severity": "medium"
+            },
+            {
+              "kind": "script_injection",
+              "file": ".github/workflows/ci.yml",
+              "line": 11,
+              "context": "job 'build' step 'step'",
+              "evidence_text": "attacker-controlled ${{ github.event.pull_request.title }} interpolated into run: script",
+              "severity": "high"
+            }
+          ],
+          "anomalies": [],
+          "limitations": [],
+          "analyzer_errors": [],
+          "files_scanned": 4
+        },
+        "attack_surfaces": [
+          {
+            "route": "/run",
+            "method": "POST",
+            "file": "app.py",
+            "category": "public_api",
+            "exposure": "public",
+            "risk": "low",
+            "auth_signals": [],
+            "data_store_interaction": false,
+            "outbound_integration": false,
+            "rationale": [
+              "Public application routes are initial footholds for probing input handling and authorization gaps.",
+              "No auth indicators were observed near this route."
+            ],
+            "line": 9
+          },
+          {
+            "route": "/health",
+            "method": "GET",
+            "file": "app.py",
+            "category": "health",
+            "exposure": "public",
+            "risk": "low",
+            "auth_signals": [],
+            "data_store_interaction": false,
+            "outbound_integration": false,
+            "rationale": [
+              "Operational endpoints reveal limited attack surface but may disclose useful reconnaissance details.",
+              "No auth indicators were observed near this route."
+            ],
+            "line": 14
+          }
+        ],
+        "findings": [
+          {
+            "title": "CI script injection via untrusted context in a run: step",
+            "severity": "high",
+            "rule_id": "script-injection",
+            "evidence": [
+              ".github/workflows/ci.yml:11 [job 'build' step 'step'] \u2014 attacker-controlled ${{ github.event.pull_request.title }} interpolated into run: script"
+            ],
+            "locations": [
+              {
+                "file": ".github/workflows/ci.yml",
+                "line": 11,
+                "fingerprint": "2a785d9cf6c5d3dd"
+              }
+            ],
+            "mitigation": "Never interpolate `${{ github.event.* }}` / `github.head_ref` directly into a run: script \u2014 a crafted issue/PR title or branch name runs arbitrary shell. Bind the value to an `env:` variable and reference it as `\"$ENVVAR\"` so it's passed as data, not expanded into the command.",
+            "confidence": "high",
+            "attack_techniques": [
+              {
+                "technique_id": "T1059",
+                "name": "Command and Scripting Interpreter",
+                "tactic": "Execution",
+                "url": "https://attack.mitre.org/techniques/T1059/"
+              }
+            ],
+            "tags": [
+              "ci-security",
+              "supply-chain",
+              "external/cwe/cwe-78"
+            ],
+            "score": 100,
+            "exploitability": null,
+            "exploitability_tier": null
+          },
+          {
+            "title": "Hard-coded secret literals were found in source or config",
+            "severity": "high",
+            "rule_id": "hardcoded-secret",
+            "evidence": [
+              "[stripe_key] sk_l\u2026 in app.py"
+            ],
+            "locations": [
+              {
+                "file": "app.py",
+                "line": 6,
+                "fingerprint": "8d4e6f0be45c9049"
+              }
+            ],
+            "mitigation": "Rotate every detected credential immediately, purge it from git history, and move to environment-injected or vault-managed values. Anyone with read access to the repository already has these secrets.",
+            "confidence": "high",
+            "attack_techniques": [
+              {
+                "technique_id": "T1552",
+                "name": "Unsecured Credentials",
+                "tactic": "Credential Access",
+                "url": "https://attack.mitre.org/techniques/T1552/"
+              },
+              {
+                "technique_id": "T1528",
+                "name": "Steal Application Access Token",
+                "tactic": "Credential Access",
+                "url": "https://attack.mitre.org/techniques/T1528/"
+              },
+              {
+                "technique_id": "T1059",
+                "name": "Command and Scripting Interpreter",
+                "tactic": "Execution",
+                "url": "https://attack.mitre.org/techniques/T1059/"
+              }
+            ],
+            "tags": [
+              "secret-exposure",
+              "data-risk",
+              "hardcoded-literal"
+            ],
+            "score": 100,
+            "exploitability": null,
+            "exploitability_tier": null
+          },
+          {
+            "title": "OIDC token (id-token: write) available to pull-request-triggered workflow",
+            "severity": "high",
+            "rule_id": "oidc-on-untrusted-trigger",
+            "evidence": [
+              ".github/workflows/ci.yml:3 [workflow (top-level permissions)] \u2014 id-token: *** on a pull_request_target-triggered workflow \u2014 PR code can mint cloud OIDC credentials"
+            ],
+            "locations": [
+              {
+                "file": ".github/workflows/ci.yml",
+                "line": 3,
+                "fingerprint": "a771d1e0b89cd65b"
+              }
+            ],
+            "mitigation": "`id-token: write` lets any step mint an OIDC token your cloud trusts. Don't grant it on `pull_request_target`, `issue_comment` or `workflow_run` workflows that touch PR input; move deployment to a `push`/`release` workflow behind a protected environment, and scope the cloud trust policy to `ref:refs/heads/main`.",
+            "confidence": "high",
+            "attack_techniques": [
+              {
+                "technique_id": "T1078.004",
+                "name": "Valid Accounts: Cloud Accounts",
+                "tactic": "Privilege Escalation",
+                "url": "https://attack.mitre.org/techniques/T1078/004/"
+              }
+            ],
+            "tags": [
+              "ci-security",
+              "supply-chain",
+              "external/cwe/cwe-250"
+            ],
+            "score": 100,
+            "exploitability": null,
+            "exploitability_tier": null
+          },
+          {
+            "title": "Over-broad GITHUB_TOKEN permissions (write-all)",
+            "severity": "high",
+            "rule_id": "broad-permissions",
+            "evidence": [
+              ".github/workflows/ci.yml:3 [workflow (top-level permissions)] \u2014 permissions: write-all"
+            ],
+            "locations": [
+              {
+                "file": ".github/workflows/ci.yml",
+                "line": 3,
+                "fingerprint": "972d4bdbc8ecc97e"
+              }
+            ],
+            "mitigation": "Set least-privilege `permissions:` per job (default to `contents: read` and grant only what a job needs). `write-all` gives a compromised step or action full write access to the repo, releases, packages, and more.",
+            "confidence": "high",
+            "attack_techniques": [
+              {
+                "technique_id": "T1078",
+                "name": "Valid Accounts",
+                "tactic": "Privilege Escalation",
+                "url": "https://attack.mitre.org/techniques/T1078/"
+              }
+            ],
+            "tags": [
+              "ci-security",
+              "supply-chain",
+              "external/cwe/cwe-250"
+            ],
+            "score": 100,
+            "exploitability": null,
+            "exploitability_tier": null
+          },
+          {
+            "title": "pull_request_target checks out untrusted PR code",
+            "severity": "high",
+            "rule_id": "pr-target-checkout",
+            "evidence": [
+              ".github/workflows/ci.yml:10 [job 'build' step 'actions/checkout@v4'] \u2014 pull_request_target checks out untrusted PR code: ref: ${{ github.event.pull_request.head.sha }}"
+            ],
+            "locations": [
+              {
+                "file": ".github/workflows/ci.yml",
+                "line": 10,
+                "fingerprint": "703bf84b09f70b22"
+              }
+            ],
+            "mitigation": "`pull_request_target` runs with the base repo's secrets in scope. Don't check out and build the PR head ref in that context. Use `pull_request` for untrusted code, or check out only the base ref and never run fork-supplied build/test scripts with secrets available.",
+            "confidence": "high",
+            "attack_techniques": [
+              {
+                "technique_id": "T1195",
+                "name": "Supply Chain Compromise",
+                "tactic": "Initial Access",
+                "url": "https://attack.mitre.org/techniques/T1195/"
+              }
+            ],
+            "tags": [
+              "ci-security",
+              "supply-chain",
+              "external/cwe/cwe-829"
+            ],
+            "score": 100,
+            "exploitability": null,
+            "exploitability_tier": null
+          },
+          {
+            "title": "Request-reachable OS command execution",
+            "severity": "high",
+            "rule_id": "subprocess-shell",
+            "evidence": [
+              "route POST /run in app.py",
+              "sink at app.py:11 (command execution)",
+              "import path: app.py (0 hop(s))"
+            ],
+            "locations": [
+              {
+                "file": "app.py",
+                "line": 11,
+                "fingerprint": "110788d49ae89c6a"
+              },
+              {
+                "file": "app.py",
+                "line": null,
+                "fingerprint": "779af97a65abe2cd"
+              }
+            ],
+            "mitigation": "Prefer argv-list subprocess calls with shell=False. Never interpolate request data into a shell string; validate and constrain any external command inputs.",
+            "confidence": "medium",
+            "attack_techniques": [
+              {
+                "technique_id": "T1059",
+                "name": "Command and Scripting Interpreter",
+                "tactic": "Execution",
+                "url": "https://attack.mitre.org/techniques/T1059/"
+              }
+            ],
+            "tags": [
+              "taint-chain",
+              "input-handling",
+              "data-risk"
+            ],
+            "score": 75,
+            "exploitability": 100,
+            "exploitability_tier": "critical"
+          },
+          {
+            "title": "State-changing routes are reachable without an authentication control",
+            "severity": "high",
+            "rule_id": "unauth-state-change",
+            "evidence": [
+              "POST /run in app.py:9 \u2014 no authentication/authorization control found on the route's chain"
+            ],
+            "locations": [
+              {
+                "file": "app.py",
+                "line": 9,
+                "fingerprint": "76f599d4d92278d0"
+              }
+            ],
+            "mitigation": "Require authentication (and server-side authorization) on every state-changing endpoint \u2014 attach an auth middleware/guard to the route or its router, a dependency/decorator on the handler, or a global policy that defaults to deny. Confirm the control actually runs before the handler mutates state.",
+            "confidence": "medium",
+            "attack_techniques": [
+              {
+                "technique_id": "T1190",
+                "name": "Exploit Public-Facing Application",
+                "tactic": "Initial Access",
+                "url": "https://attack.mitre.org/techniques/T1190/"
+              }
+            ],
+            "tags": [
+              "exposed-endpoint",
+              "auth-missing",
+              "state-changing"
+            ],
+            "score": 75,
+            "exploitability": null,
+            "exploitability_tier": null
+          },
+          {
+            "title": "Secret-bearing environment variables are referenced in executable paths",
+            "severity": "medium",
+            "rule_id": "secret-env-reference",
+            "evidence": [
+              "DB_PASSWORD in app.py"
+            ],
+            "locations": [
+              {
+                "file": "app.py",
+                "line": 7,
+                "fingerprint": "3b943e1dc1c8aa71"
+              }
+            ],
+            "mitigation": "Confirm these secrets are injected securely, never logged or returned, rotated regularly, and scoped only to the privileges each route actually needs.",
+            "confidence": "high",
+            "attack_techniques": [
+              {
+                "technique_id": "T1552",
+                "name": "Unsecured Credentials",
+                "tactic": "Credential Access",
+                "url": "https://attack.mitre.org/techniques/T1552/"
+              },
+              {
+                "technique_id": "T1528",
+                "name": "Steal Application Access Token",
+                "tactic": "Credential Access",
+                "url": "https://attack.mitre.org/techniques/T1528/"
+              },
+              {
+                "technique_id": "T1059",
+                "name": "Command and Scripting Interpreter",
+                "tactic": "Execution",
+                "url": "https://attack.mitre.org/techniques/T1059/"
+              }
+            ],
+            "tags": [
+              "secret-exposure"
+            ],
+            "score": 50,
+            "exploitability": null,
+            "exploitability_tier": null
+          },
+          {
+            "title": "actions/checkout leaves the token in .git/config for untrusted code",
+            "severity": "medium",
+            "rule_id": "checkout-persist-credentials",
+            "evidence": [
+              ".github/workflows/ci.yml:8 [job 'build' step 'actions/checkout@v4'] \u2014 actions/checkout on pull_request_target without persist-credentials: false; later step job 'build' step 'step' runs code that can read the token from .git/config"
+            ],
+            "locations": [
+              {
+                "file": ".github/workflows/ci.yml",
+                "line": 8,
+                "fingerprint": "955596eed18ca475"
+              }
+            ],
+            "mitigation": "`actions/checkout` persists the `GITHUB_TOKEN` in `.git/config` by default. On `pull_request_target` / `issue_comment` / `workflow_run` jobs that later run PR code or artifacts, set `persist-credentials: false` so that code can't read the write-capable token.",
+            "confidence": "high",
+            "attack_techniques": [
+              {
+                "technique_id": "T1552.001",
+                "name": "Unsecured Credentials: Credentials In Files",
+                "tactic": "Credential Access",
+                "url": "https://attack.mitre.org/techniques/T1552/001/"
+              }
+            ],
+            "tags": [
+              "ci-security",
+              "supply-chain",
+              "external/cwe/cwe-522"
+            ],
+            "score": 50,
+            "exploitability": null,
+            "exploitability_tier": null
+          },
+          {
+            "title": "Debug mode or unrestricted management endpoints enabled",
+            "severity": "medium",
+            "rule_id": "debug-enabled",
+            "evidence": [
+              "app.py:19 \u2014 app.run(debug=True)"
+            ],
+            "locations": [
+              {
+                "file": "app.py",
+                "line": 19,
+                "fingerprint": "14220c815ef5e8f5"
+              }
+            ],
+            "mitigation": "Never ship with debug mode on (Flask/Django `DEBUG`, Rails `consider_all_requests_local`) or Spring actuator endpoints exposed with `*`. Debug consoles leak internals and can enable RCE.",
+            "confidence": "medium",
+            "attack_techniques": [
+              {
+                "technique_id": "T1190",
+                "name": "Exploit Public-Facing Application",
+                "tactic": "Initial Access",
+                "url": "https://attack.mitre.org/techniques/T1190/"
+              }
+            ],
+            "tags": [
+              "web-hardening"
+            ],
+            "score": 37,
+            "exploitability": null,
+            "exploitability_tier": null
+          },
+          {
+            "title": "Unpinned GitHub Action (not pinned to a commit SHA)",
+            "severity": "low",
+            "rule_id": "unpinned-action",
+            "evidence": [
+              ".github/workflows/ci.yml:8 [job 'build' step 'actions/checkout@v4'] \u2014 uses: actions/checkout@v4 (pin to a full commit SHA)"
+            ],
+            "locations": [
+              {
+                "file": ".github/workflows/ci.yml",
+                "line": 8,
+                "fingerprint": "b472c85c87c8d24c"
+              }
+            ],
+            "mitigation": "Pin third-party actions to a full 40-character commit SHA (`uses: org/action@<sha>`), not a moving tag or branch. A tag/branch lets the action owner \u2014 or anyone who compromises them \u2014 change what runs in your pipeline. Dependabot can keep the pinned SHAs updated.",
+            "confidence": "high",
+            "attack_techniques": [
+              {
+                "technique_id": "T1195.001",
+                "name": "Supply Chain Compromise: Compromise Software Dependencies and Development Tools",
+                "tactic": "Initial Access",
+                "url": "https://attack.mitre.org/techniques/T1195/001/"
+              }
+            ],
+            "tags": [
+              "ci-security",
+              "supply-chain",
+              "external/cwe/cwe-829"
+            ],
+            "score": 10,
+            "exploitability": null,
+            "exploitability_tier": null
+          }
+        ],
+        "attack_paths": [],
+        "assets": [],
+        "controls": [
+          {
+            "id": "control:absent:csrf_protection",
+            "kind": "csrf_protection",
+            "name": "CSRF protection",
+            "strength": "absent",
+            "scope": "global",
+            "placements": [],
+            "evidence": [],
+            "notes": "Public state-changing routes observed without CSRF markers."
+          },
+          {
+            "id": "control:absent:rate_limiting",
+            "kind": "rate_limiting",
+            "name": "Rate limiting",
+            "strength": "absent",
+            "scope": "global",
+            "placements": [],
+            "evidence": [],
+            "notes": "Public routes observed without any rate-limiting markers."
+          }
+        ],
+        "notable_observations": [],
+        "detection_opportunities": [
+          {
+            "id": "detect:findings:residual",
+            "title": "Detection coverage for findings without a paired insight",
+            "rationale": "These findings did not generate cross-cutting insights but are still actionable with runtime telemetry.",
+            "signal_kind": "log",
+            "suggested_rule": "Add per-finding logging at the affected handler with a structured `{finding_id, route, status_code}` payload, and aggregate in the SIEM.",
+            "related_insight_ids": [],
+            "related_finding_titles": [
+              "CI script injection via untrusted context in a run: step",
+              "Hard-coded secret literals were found in source or config",
+              "OIDC token (id-token: write) available to pull-request-triggered workflow",
+              "Over-broad GITHUB_TOKEN permissions (write-all)",
+              "pull_request_target checks out untrusted PR code"
+            ],
+            "attack_techniques": [
+              {
+                "technique_id": "T1552",
+                "name": "Unsecured Credentials",
+                "tactic": "Credential Access",
+                "url": "https://attack.mitre.org/techniques/T1552/"
+              },
+              {
+                "technique_id": "T1528",
+                "name": "Steal Application Access Token",
+                "tactic": "Credential Access",
+                "url": "https://attack.mitre.org/techniques/T1528/"
+              },
+              {
+                "technique_id": "T1059",
+                "name": "Command and Scripting Interpreter",
+                "tactic": "Execution",
+                "url": "https://attack.mitre.org/techniques/T1059/"
+              },
+              {
+                "technique_id": "T1078",
+                "name": "Valid Accounts",
+                "tactic": "Defense Evasion / Persistence / Initial Access",
+                "url": "https://attack.mitre.org/techniques/T1078/"
+              },
+              {
+                "technique_id": "T1110",
+                "name": "Brute Force",
+                "tactic": "Credential Access",
+                "url": "https://attack.mitre.org/techniques/T1110/"
+              },
+              {
+                "technique_id": "T1556",
+                "name": "Modify Authentication Process",
+                "tactic": "Defense Evasion / Persistence",
+                "url": "https://attack.mitre.org/techniques/T1556/"
+              }
+            ]
+          }
+        ]
+      },
+      "limitations_meta": {
+        "analysis_mode": "heuristic",
+        "defensive_only": true,
+        "notes": [
+          "Observed vs inferred classifications are heuristic and based on route, file, and signal patterns.",
+          "Low-quality paths (tests/fixtures/mocks/examples) are retained in raw signals but separated in evidence class counts.",
+          "Use this artifact as a triage source-of-truth; validate high-priority items with repository context and runtime controls.",
+          "Assets, controls, and notable observations are heuristic overlays; absent-control entries indicate scanner did not find evidence, not necessarily that the control is missing in production.",
+          "ATT&CK technique mappings and detection opportunities are derived from insight kinds and finding-title keywords; treat them as triage hooks for SIEM/detection-engineering work, not authoritative MITRE mappings."
+        ]
+      }
+    },
+    "analyzer_metadata_used": [
+      {
+        "name": "python",
+        "description": "Comprehensive Python analyzer for Django, Starlette, AIOHTTP, Sanic, Litestar, DRF; SQLAlchemy/asyncpg/motor; passlib/PyJWT/authlib; httpx/aiohttp.",
+        "scope": "Python projects (pyproject.toml, setup.py, manage.py, or any *.py tree). Additive over the built-in python-web analyzer.",
+        "ecosystems": [
+          "python",
+          "django",
+          "starlette",
+          "aiohttp",
+          "sanic",
+          "litestar"
+        ]
+      },
+      {
+        "name": "python-web",
+        "description": "Built-in analyzer for Python web frameworks and related security signals.",
+        "scope": "Python source files handled by the current scanner-backed web heuristics.",
+        "ecosystems": [
+          "python",
+          "fastapi",
+          "flask"
+        ]
+      },
+      {
+        "name": "config",
+        "description": "Broad built-in analyzer for YAML / TOML / JSON / INI / .env application config files.",
+        "scope": "Application config files. Extracts DB connection strings, external service URLs, and secret-shaped literals; deep IaC parsing (docker-compose service graph, Dockerfile hardening) lives in attackmap-analyzer-iac.",
+        "ecosystems": [
+          "yaml",
+          "toml",
+          "json",
+          "ini",
+          "env"
+        ]
+      },
+      {
+        "name": "iac",
+        "description": "Analyzer for infrastructure-as-code and deployment files: Dockerfile, docker-compose, GitHub Actions, .env templates, shell installers.",
+        "scope": "Deployment / operations repositories where the runtime posture is defined outside application source. Closes the coverage gap Bluesky FINDINGS \u00a72 documented for bluesky-social/pds.",
+        "ecosystems": [
+          "docker",
+          "docker-compose",
+          "github-actions",
+          "env-template",
+          "shell-installer"
+        ]
+      },
+      {
+        "name": "default",
+        "description": "Fallback built-in analyzer for code file suffixes not claimed by a specialized built-in.",
+        "scope": "Any CODE_EXTENSIONS suffix not covered by python-web or javascript-web.",
+        "ecosystems": []
+      }
+    ],
+    "source_quality_rules": {
+      "low_quality_path_segments": [
+        "/tests/",
+        "/__tests__/",
+        "/fixtures/",
+        "/mocks/",
+        "/examples/"
+      ],
+      "handling": {
+        "default": "down-rank low-quality signals in triage and prioritization",
+        "reporting": "retain low-quality signals in raw_structured_signals with explicit evidence-class labeling",
+        "operator_note": "do not treat low-quality-only evidence as strong production exposure without corroboration"
+      }
+    },
+    "output_hints": {
+      "audience": [
+        "security engineers",
+        "software engineers",
+        "tech leads"
+      ],
+      "style": {
+        "tone": "defensive, concrete, non-hype",
+        "reasoning": "evidence-first and uncertainty-aware",
+        "disallowed": [
+          "inventing findings or architecture elements",
+          "offensive exploitation guidance"
+        ]
+      },
+      "prioritization": "focus on highest-impact, highest-confidence chains and trust-boundary issues first"
+    },
+    "domain_hints": {
+      "tags": [
+        "general"
+      ],
+      "signals": []
+    },
+    "rag_expansion_hooks": {
+      "enabled": false,
+      "notes": "local-first context pack; retrieval slots intentionally minimal for future expansion",
+      "slots": []
+    },
+    "limitations_meta": {
+      "analysis_mode": "heuristic",
+      "notes": [
+        "Domain tags are inferred heuristically from routes, hints, and file patterns.",
+        "Analyzer metadata reflects analyzers selected to run after detect-filtering."
+      ]
+    }
+  },
+  "attack_surfaces": [
+    {
+      "route": "/run",
+      "method": "POST",
+      "file": "app.py",
+      "category": "public_api",
+      "exposure": "public",
+      "risk": "low",
+      "auth_signals": [],
+      "data_store_interaction": false,
+      "outbound_integration": false,
+      "rationale": [
+        "Public application routes are initial footholds for probing input handling and authorization gaps.",
+        "No auth indicators were observed near this route."
+      ],
+      "line": 9
+    },
+    {
+      "route": "/health",
+      "method": "GET",
+      "file": "app.py",
+      "category": "health",
+      "exposure": "public",
+      "risk": "low",
+      "auth_signals": [],
+      "data_store_interaction": false,
+      "outbound_integration": false,
+      "rationale": [
+        "Operational endpoints reveal limited attack surface but may disclose useful reconnaissance details.",
+        "No auth indicators were observed near this route."
+      ],
+      "line": 14
+    }
+  ],
+  "findings": [
+    {
+      "id": "8ef058b6bc382e61",
+      "title": "CI script injection via untrusted context in a run: step",
+      "severity": "high",
+      "rule_id": "script-injection",
+      "evidence": [
+        ".github/workflows/ci.yml:11 [job 'build' step 'step'] \u2014 attacker-controlled ${{ github.event.pull_request.title }} interpolated into run: script"
+      ],
+      "locations": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 11,
+          "fingerprint": "2a785d9cf6c5d3dd"
+        }
+      ],
+      "mitigation": "Never interpolate `${{ github.event.* }}` / `github.head_ref` directly into a run: script \u2014 a crafted issue/PR title or branch name runs arbitrary shell. Bind the value to an `env:` variable and reference it as `\"$ENVVAR\"` so it's passed as data, not expanded into the command.",
+      "confidence": "high",
+      "attack_techniques": [
+        {
+          "technique_id": "T1059",
+          "name": "Command and Scripting Interpreter",
+          "tactic": "Execution",
+          "url": "https://attack.mitre.org/techniques/T1059/"
+        }
+      ],
+      "tags": [
+        "ci-security",
+        "supply-chain",
+        "external/cwe/cwe-78"
+      ],
+      "score": 100,
+      "exploitability": null,
+      "exploitability_tier": null
+    },
+    {
+      "id": "216ea9c1af6d8013",
+      "title": "Hard-coded secret literals were found in source or config",
+      "severity": "high",
+      "rule_id": "hardcoded-secret",
+      "evidence": [
+        "[stripe_key] sk_l\u2026 in app.py"
+      ],
+      "locations": [
+        {
+          "file": "app.py",
+          "line": 6,
+          "fingerprint": "8d4e6f0be45c9049"
+        }
+      ],
+      "mitigation": "Rotate every detected credential immediately, purge it from git history, and move to environment-injected or vault-managed values. Anyone with read access to the repository already has these secrets.",
+      "confidence": "high",
+      "attack_techniques": [],
+      "tags": [
+        "secret-exposure",
+        "data-risk",
+        "hardcoded-literal"
+      ],
+      "score": 100,
+      "exploitability": null,
+      "exploitability_tier": null
+    },
+    {
+      "id": "fc7a6c3b2b4b269f",
+      "title": "OIDC token (id-token: write) available to pull-request-triggered workflow",
+      "severity": "high",
+      "rule_id": "oidc-on-untrusted-trigger",
+      "evidence": [
+        ".github/workflows/ci.yml:3 [workflow (top-level permissions)] \u2014 id-token: *** on a pull_request_target-triggered workflow \u2014 PR code can mint cloud OIDC credentials"
+      ],
+      "locations": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 3,
+          "fingerprint": "a771d1e0b89cd65b"
+        }
+      ],
+      "mitigation": "`id-token: write` lets any step mint an OIDC token your cloud trusts. Don't grant it on `pull_request_target`, `issue_comment` or `workflow_run` workflows that touch PR input; move deployment to a `push`/`release` workflow behind a protected environment, and scope the cloud trust policy to `ref:refs/heads/main`.",
+      "confidence": "high",
+      "attack_techniques": [
+        {
+          "technique_id": "T1078.004",
+          "name": "Valid Accounts: Cloud Accounts",
+          "tactic": "Privilege Escalation",
+          "url": "https://attack.mitre.org/techniques/T1078/004/"
+        }
+      ],
+      "tags": [
+        "ci-security",
+        "supply-chain",
+        "external/cwe/cwe-250"
+      ],
+      "score": 100,
+      "exploitability": null,
+      "exploitability_tier": null
+    },
+    {
+      "id": "7dffd92a2f27af23",
+      "title": "Over-broad GITHUB_TOKEN permissions (write-all)",
+      "severity": "high",
+      "rule_id": "broad-permissions",
+      "evidence": [
+        ".github/workflows/ci.yml:3 [workflow (top-level permissions)] \u2014 permissions: write-all"
+      ],
+      "locations": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 3,
+          "fingerprint": "972d4bdbc8ecc97e"
+        }
+      ],
+      "mitigation": "Set least-privilege `permissions:` per job (default to `contents: read` and grant only what a job needs). `write-all` gives a compromised step or action full write access to the repo, releases, packages, and more.",
+      "confidence": "high",
+      "attack_techniques": [
+        {
+          "technique_id": "T1078",
+          "name": "Valid Accounts",
+          "tactic": "Privilege Escalation",
+          "url": "https://attack.mitre.org/techniques/T1078/"
+        }
+      ],
+      "tags": [
+        "ci-security",
+        "supply-chain",
+        "external/cwe/cwe-250"
+      ],
+      "score": 100,
+      "exploitability": null,
+      "exploitability_tier": null
+    },
+    {
+      "id": "e6e1f7f3b974ac67",
+      "title": "pull_request_target checks out untrusted PR code",
+      "severity": "high",
+      "rule_id": "pr-target-checkout",
+      "evidence": [
+        ".github/workflows/ci.yml:10 [job 'build' step 'actions/checkout@v4'] \u2014 pull_request_target checks out untrusted PR code: ref: ${{ github.event.pull_request.head.sha }}"
+      ],
+      "locations": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 10,
+          "fingerprint": "703bf84b09f70b22"
+        }
+      ],
+      "mitigation": "`pull_request_target` runs with the base repo's secrets in scope. Don't check out and build the PR head ref in that context. Use `pull_request` for untrusted code, or check out only the base ref and never run fork-supplied build/test scripts with secrets available.",
+      "confidence": "high",
+      "attack_techniques": [
+        {
+          "technique_id": "T1195",
+          "name": "Supply Chain Compromise",
+          "tactic": "Initial Access",
+          "url": "https://attack.mitre.org/techniques/T1195/"
+        }
+      ],
+      "tags": [
+        "ci-security",
+        "supply-chain",
+        "external/cwe/cwe-829"
+      ],
+      "score": 100,
+      "exploitability": null,
+      "exploitability_tier": null
+    },
+    {
+      "id": "1d8ecde16c11bc7c",
+      "title": "Request-reachable OS command execution",
+      "severity": "high",
+      "rule_id": "subprocess-shell",
+      "evidence": [
+        "route POST /run in app.py",
+        "sink at app.py:11 (command execution)",
+        "import path: app.py (0 hop(s))"
+      ],
+      "locations": [
+        {
+          "file": "app.py",
+          "line": 11,
+          "fingerprint": "110788d49ae89c6a"
+        },
+        {
+          "file": "app.py",
+          "line": null,
+          "fingerprint": "779af97a65abe2cd"
+        }
+      ],
+      "mitigation": "Prefer argv-list subprocess calls with shell=False. Never interpolate request data into a shell string; validate and constrain any external command inputs.",
+      "confidence": "medium",
+      "attack_techniques": [
+        {
+          "technique_id": "T1059",
+          "name": "Command and Scripting Interpreter",
+          "tactic": "Execution",
+          "url": "https://attack.mitre.org/techniques/T1059/"
+        }
+      ],
+      "tags": [
+        "taint-chain",
+        "input-handling",
+        "data-risk"
+      ],
+      "score": 75,
+      "exploitability": 100,
+      "exploitability_tier": "critical"
+    },
+    {
+      "id": "4ba33a9e4e01e403",
+      "title": "State-changing routes are reachable without an authentication control",
+      "severity": "high",
+      "rule_id": "unauth-state-change",
+      "evidence": [
+        "POST /run in app.py:9 \u2014 no authentication/authorization control found on the route's chain"
+      ],
+      "locations": [
+        {
+          "file": "app.py",
+          "line": 9,
+          "fingerprint": "76f599d4d92278d0"
+        }
+      ],
+      "mitigation": "Require authentication (and server-side authorization) on every state-changing endpoint \u2014 attach an auth middleware/guard to the route or its router, a dependency/decorator on the handler, or a global policy that defaults to deny. Confirm the control actually runs before the handler mutates state.",
+      "confidence": "medium",
+      "attack_techniques": [
+        {
+          "technique_id": "T1190",
+          "name": "Exploit Public-Facing Application",
+          "tactic": "Initial Access",
+          "url": "https://attack.mitre.org/techniques/T1190/"
+        }
+      ],
+      "tags": [
+        "exposed-endpoint",
+        "auth-missing",
+        "state-changing"
+      ],
+      "score": 75,
+      "exploitability": null,
+      "exploitability_tier": null
+    },
+    {
+      "id": "05be54d5d848572b",
+      "title": "Secret-bearing environment variables are referenced in executable paths",
+      "severity": "medium",
+      "rule_id": "secret-env-reference",
+      "evidence": [
+        "DB_PASSWORD in app.py"
+      ],
+      "locations": [
+        {
+          "file": "app.py",
+          "line": 7,
+          "fingerprint": "3b943e1dc1c8aa71"
+        }
+      ],
+      "mitigation": "Confirm these secrets are injected securely, never logged or returned, rotated regularly, and scoped only to the privileges each route actually needs.",
+      "confidence": "high",
+      "attack_techniques": [],
+      "tags": [
+        "secret-exposure"
+      ],
+      "score": 50,
+      "exploitability": null,
+      "exploitability_tier": null
+    },
+    {
+      "id": "4247048e59893f23",
+      "title": "actions/checkout leaves the token in .git/config for untrusted code",
+      "severity": "medium",
+      "rule_id": "checkout-persist-credentials",
+      "evidence": [
+        ".github/workflows/ci.yml:8 [job 'build' step 'actions/checkout@v4'] \u2014 actions/checkout on pull_request_target without persist-credentials: false; later step job 'build' step 'step' runs code that can read the token from .git/config"
+      ],
+      "locations": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 8,
+          "fingerprint": "955596eed18ca475"
+        }
+      ],
+      "mitigation": "`actions/checkout` persists the `GITHUB_TOKEN` in `.git/config` by default. On `pull_request_target` / `issue_comment` / `workflow_run` jobs that later run PR code or artifacts, set `persist-credentials: false` so that code can't read the write-capable token.",
+      "confidence": "high",
+      "attack_techniques": [
+        {
+          "technique_id": "T1552.001",
+          "name": "Unsecured Credentials: Credentials In Files",
+          "tactic": "Credential Access",
+          "url": "https://attack.mitre.org/techniques/T1552/001/"
+        }
+      ],
+      "tags": [
+        "ci-security",
+        "supply-chain",
+        "external/cwe/cwe-522"
+      ],
+      "score": 50,
+      "exploitability": null,
+      "exploitability_tier": null
+    },
+    {
+      "id": "8a8a69bf4f2fbf4a",
+      "title": "Debug mode or unrestricted management endpoints enabled",
+      "severity": "medium",
+      "rule_id": "debug-enabled",
+      "evidence": [
+        "app.py:19 \u2014 app.run(debug=True)"
+      ],
+      "locations": [
+        {
+          "file": "app.py",
+          "line": 19,
+          "fingerprint": "14220c815ef5e8f5"
+        }
+      ],
+      "mitigation": "Never ship with debug mode on (Flask/Django `DEBUG`, Rails `consider_all_requests_local`) or Spring actuator endpoints exposed with `*`. Debug consoles leak internals and can enable RCE.",
+      "confidence": "medium",
+      "attack_techniques": [
+        {
+          "technique_id": "T1190",
+          "name": "Exploit Public-Facing Application",
+          "tactic": "Initial Access",
+          "url": "https://attack.mitre.org/techniques/T1190/"
+        }
+      ],
+      "tags": [
+        "web-hardening"
+      ],
+      "score": 37,
+      "exploitability": null,
+      "exploitability_tier": null
+    },
+    {
+      "id": "ea0d4c2c06b2ebcd",
+      "title": "Unpinned GitHub Action (not pinned to a commit SHA)",
+      "severity": "low",
+      "rule_id": "unpinned-action",
+      "evidence": [
+        ".github/workflows/ci.yml:8 [job 'build' step 'actions/checkout@v4'] \u2014 uses: actions/checkout@v4 (pin to a full commit SHA)"
+      ],
+      "locations": [
+        {
+          "file": ".github/workflows/ci.yml",
+          "line": 8,
+          "fingerprint": "b472c85c87c8d24c"
+        }
+      ],
+      "mitigation": "Pin third-party actions to a full 40-character commit SHA (`uses: org/action@<sha>`), not a moving tag or branch. A tag/branch lets the action owner \u2014 or anyone who compromises them \u2014 change what runs in your pipeline. Dependabot can keep the pinned SHAs updated.",
+      "confidence": "high",
+      "attack_techniques": [
+        {
+          "technique_id": "T1195.001",
+          "name": "Supply Chain Compromise: Compromise Software Dependencies and Development Tools",
+          "tactic": "Initial Access",
+          "url": "https://attack.mitre.org/techniques/T1195/001/"
+        }
+      ],
+      "tags": [
+        "ci-security",
+        "supply-chain",
+        "external/cwe/cwe-829"
+      ],
+      "score": 10,
+      "exploitability": null,
+      "exploitability_tier": null
+    }
+  ],
+  "suppressed_findings": [],
+  "attack_paths": [],
+  "exploitability": [
+    {
+      "subject": "POST /run \u2192 subprocess_shell",
+      "route": "/run",
+      "method": "POST",
+      "sink_kind": "subprocess_shell",
+      "location": "app.py:11",
+      "score": 100,
+      "raw_score": 110,
+      "tier": "critical",
+      "factors": [
+        {
+          "name": "reaches subprocess_shell sink",
+          "points": 35,
+          "detail": "request-derived data reaches a command execution sink at app.py:11"
+        },
+        {
+          "name": "public exposure",
+          "points": 20,
+          "detail": "entry route POST /run is public (public_api)"
+        },
+        {
+          "name": "no auth at entry",
+          "points": 20,
+          "detail": "no auth signal observed on the entry route"
+        },
+        {
+          "name": "0-hop reachability",
+          "points": 15,
+          "detail": "0 import edge(s) from route to sink"
+        },
+        {
+          "name": "secret material at sink",
+          "points": 15,
+          "detail": "a secret/credential is co-located with the sink"
+        },
+        {
+          "name": "crypto/web-hardening gap on path",
+          "points": 5,
+          "detail": "an insecure-crypto or web-hardening issue sits on this path"
+        }
+      ]
+    }
+  ]
+}
