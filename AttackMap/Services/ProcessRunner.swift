@@ -236,10 +236,16 @@ final class ProcessRunner: @unchecked Sendable {
             }
         }
         let stderrHandle = stderrPipe.fileHandleForReading
+        // Held while a handler invocation runs, so after clearing the handler
+        // we can wait out one that's mid-flight — otherwise its lines (e.g.
+        // the --fail-on-new-high message) could land after we read the tail.
+        let handlerLock = NSLock()
         stderrHandle.readabilityHandler = { handle in
-            let data = handle.availableData
-            guard !data.isEmpty else { return }
-            buffer.take(data).forEach(handleLine)
+            handlerLock.withLock {
+                let data = handle.availableData
+                guard !data.isEmpty else { return }
+                buffer.take(data).forEach(handleLine)
+            }
         }
 
         // Installed before run(): a CLI that exits immediately (usage error,
@@ -277,6 +283,7 @@ final class ProcessRunner: @unchecked Sendable {
         // Whatever stderr is still buffered (often the last lines of a Python
         // traceback) plus the final line if it had no trailing newline.
         stderrHandle.readabilityHandler = nil
+        handlerLock.withLock {}
         Self.drainNonBlocking(stderrHandle).map { buffer.take($0).forEach(handleLine) }
         buffer.flush().map(handleLine)
 
