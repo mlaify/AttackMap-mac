@@ -86,7 +86,15 @@ If `xcodebuild` isn't found, point it at full Xcode:
 
 ## CI release
 
-Add these **repository secrets** (Settings → Secrets and variables → Actions):
+The release job runs in the **`release` environment** (Settings → Environments →
+`release`): deployments only from `v*` tags, with `mlaifyxyz` as required
+reviewer. Add these as **environment secrets** there, never as repository
+secrets — repository secrets reach every workflow run on every branch, so any
+collaborator with write access could read the signing identity.
+
+```sh
+gh secret set MACOS_DEV_ID_CERT_P12 --env release --repo mlaify/AttackMap-mac < cert.p12.b64
+```
 
 | Secret | What it is | How to produce |
 |---|---|---|
@@ -99,6 +107,9 @@ Add these **repository secrets** (Settings → Secrets and variables → Actions
 
 `GITHUB_TOKEN` is provided automatically. No keychain password secret is needed
 — the workflow generates an ephemeral one and deletes the temp keychain after.
+
+A manual run (`workflow_dispatch`) must be started on a `v*` tag; the
+environment rejects any other ref.
 
 Then cut a release:
 

@@ -1,7 +1,8 @@
 name: Release
 
 # Builds, signs (Developer ID), notarizes, staples, and publishes a DMG when a
-# vX.Y.Z tag is pushed. All credentials come from repo secrets — see
+# vX.Y.Z tag is pushed. All credentials come from secrets in the `release`
+# environment (v* tags only, required reviewer) — never repo secrets. See
 # docs/RELEASE.md for the one-time setup and the exact secret names.
 
 on:
@@ -19,6 +20,7 @@ permissions:
 jobs:
   release:
     runs-on: macos-15
+    environment: release
     env:
       APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
       NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
@@ -64,9 +66,10 @@ jobs:
           TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
           NOTARY_ISSUER: ${{ secrets.NOTARY_ISSUER_ID }}
+          INPUT_VERSION: ${{ github.event.inputs.version }}
         run: |
           set -euo pipefail
-          VERSION="${{ github.event.inputs.version }}"
+          VERSION="$INPUT_VERSION"
           [ -n "$VERSION" ] || VERSION="${GITHUB_REF_NAME#v}"
           NOTARY_KEY="$RUNNER_TEMP/notary_key.p8" scripts/package.sh "$VERSION"
 
