@@ -139,13 +139,27 @@ else
   xcrun notarytool submit "$DMG" --keychain-profile "$NOTARY_PROFILE" --wait
 fi
 
+# stapler fetches the ticket from Apple's CloudKit endpoint, which drops
+# connections from GitHub's macOS runners now and then (NSURLErrorDomain -1005,
+# stapler error 68; v0.3.0 failed twice that way after notarization passed).
+# Retry it rather than fail a notarized build.
+stapler_retry() {
+  local i
+  for i in 1 2 3 4 5; do
+    xcrun stapler "$@" && return 0
+    log "stapler $1 failed (attempt $i of 5); retrying in $((i * 10)) s…"
+    sleep $((i * 10))
+  done
+  return 1
+}
+
 log "Stapling…"
-xcrun stapler staple "$DMG"
+stapler_retry staple "$DMG"
 
 # --- Verify -----------------------------------------------------------------
 log "Verifying signature + Gatekeeper acceptance…"
 codesign --verify --deep --strict --verbose=2 "$APP"
 spctl -a -t open --context context:primary-signature -vv "$DMG"
-xcrun stapler validate "$DMG"
+stapler_retry validate "$DMG"
 
 log "Done: $DMG"
