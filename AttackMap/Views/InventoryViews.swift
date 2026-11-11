@@ -88,8 +88,8 @@ struct DependenciesView: View {
                     .width(min: 140, ideal: 170)
                     TableColumn("Package") { v in
                         VStack(alignment: .leading, spacing: 1) {
-                            Text("\(v.packageName) \(v.packageVersion)").font(.callout)
-                            Text(v.direct ? v.ecosystem : "\(v.ecosystem) · via \(v.resolutionPath)")
+                            Text(verbatim: "\(v.packageName) \(v.packageVersion)").font(.callout)
+                            Text(verbatim: v.direct ? v.ecosystem : "\(v.ecosystem) · via \(v.resolutionPath)")
                                 .font(.caption).foregroundStyle(.secondary).lineLimit(1)
                         }
                     }
@@ -265,7 +265,7 @@ struct DataFlowsView: View {
                 paneHeader("Route → sink data flows (\(chains.count))", systemImage: "arrow.triangle.pull")
                 Table(chains) {
                     TableColumn("Route") { c in
-                        Text("\(c.routeMethod) \(c.routePath)").font(.callout.monospaced())
+                        Text(verbatim: "\(c.routeMethod) \(c.routePath)").font(.callout.monospaced())
                     }
                     .width(min: 120, ideal: 180)
                     TableColumn("Sink") { c in Text(WorkflowIssue.humanize(c.sinkKind)) }.width(min: 100, ideal: 140)
@@ -365,7 +365,7 @@ struct AnalyzersView: View {
                             .font(.caption.weight(.semibold)).foregroundStyle(.secondary)
                             ForEach(routes) { r in
                                 GridRow {
-                                    Text("\(r.method) \(r.path)").font(.callout.monospaced())
+                                    Text(verbatim: "\(r.method) \(r.path)").font(.callout.monospaced())
                                     Text(authLabel(r))
                                         .foregroundStyle(r.auth == "anonymous" ? Color.orange : r.auth == "required" ? .green : .secondary)
                                         .help(r.guards.joined(separator: ", "))

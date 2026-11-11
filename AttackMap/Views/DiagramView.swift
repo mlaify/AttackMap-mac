@@ -47,8 +47,13 @@ enum DiagramHTML {
         let blocks = diagrams.map {
             "<h2>\(escape($0.title))</h2>\n<pre class=\"mermaid\">\(escape($0.code))</pre>"
         }.joined(separator: "\n")
+        // The labels come from the scanned repository. Mermaid's strict mode
+        // still keeps <img>, <a> and media elements in HTML labels, so the page
+        // forbids every network load (default-src 'none'): the inlined
+        // mermaid script and its inline styles are the only things allowed.
         return """
         <!doctype html><html><head><meta charset="utf-8">
+        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:">
         <style>
           :root { color-scheme: light dark; }
           body { font: 13px -apple-system, system-ui, sans-serif; margin: 16px; background: transparent; }
@@ -76,11 +81,39 @@ enum DiagramHTML {
 private struct MermaidWebView: NSViewRepresentable {
     let html: String
 
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
     func makeNSView(context: Context) -> WKWebView {
-        WKWebView()
+        let configuration = WKWebViewConfiguration()
+        configuration.preferences.javaScriptCanOpenWindowsAutomatically = false
+        let webView = WKWebView(frame: .zero, configuration: configuration)
+        webView.navigationDelegate = context.coordinator
+        webView.uiDelegate = context.coordinator
+        return webView
     }
 
     func updateNSView(_ webView: WKWebView, context: Context) {
         webView.loadHTMLString(html, baseURL: nil)
+    }
+
+    /// Only the page we load ourselves may be shown. A surviving `<a href>`
+    /// in a label (repository-controlled text) must not navigate the view or
+    /// open a window.
+    final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate {
+        func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction,
+                     decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+            // loadHTMLString(_:baseURL: nil) arrives as an "other" navigation to
+            // about:blank; a link click is .linkActivated, a script-driven
+            // location change carries the attacker's http(s) URL.
+            let url = navigationAction.request.url
+            let isOurLoad = navigationAction.navigationType == .other
+                && (url == nil || url?.scheme == "about")
+            decisionHandler(isOurLoad ? .allow : .cancel)
+        }
+
+        func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration,
+                     for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
+            nil
+        }
     }
 }

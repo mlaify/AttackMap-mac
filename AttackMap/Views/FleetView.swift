@@ -174,11 +174,14 @@ struct FleetView: View {
                     description: Text("No outbound call in one repo matched a served route in another."))
             } else {
                 Table(fleet.crossRepoLinks) {
-                    TableColumn("Client") { Text($0.clientRepo) }
-                    TableColumn("Method") { Text($0.method).monospaced() }
-                    TableColumn("Route") { Text("/\($0.pathTemplate)").monospaced() }
-                    TableColumn("Server") { Text($0.serverRepo) }
-                    TableColumn("Caller") { Text($0.clientLocation).font(.caption).foregroundStyle(.secondary) }
+                    // Repository-derived strings: Text(verbatim:) so SwiftUI
+                    // doesn't parse them as Markdown (a `[text](url)` route
+                    // would otherwise render as a tappable link).
+                    TableColumn("Client") { Text(verbatim: $0.clientRepo) }
+                    TableColumn("Method") { Text(verbatim: $0.method).monospaced() }
+                    TableColumn("Route") { Text(verbatim: "/\($0.pathTemplate)").monospaced() }
+                    TableColumn("Server") { Text(verbatim: $0.serverRepo) }
+                    TableColumn("Caller") { Text(verbatim: $0.clientLocation).font(.caption).foregroundStyle(.secondary) }
                 }
             }
         }
