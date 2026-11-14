@@ -6,7 +6,7 @@
 > very welcome with the core engine, an analyzer, the macOS app, or the docs —
 > open an issue on [mlaify/AttackMap](https://github.com/mlaify/AttackMap/issues)
 > to say hello.
-> Security reports are still welcome at [security@mlaify.io](mailto:security@mlaify.io).
+> Report vulnerabilities through this repository's **Security** tab using **Report a vulnerability**. Report ordinary bugs and incorrect results in public issues.
 
 A native macOS GUI for [AttackMap](https://github.com/mlaify/AttackMap), the
 local-first defensive security analyzer. Point it at a repository, run a scan,
