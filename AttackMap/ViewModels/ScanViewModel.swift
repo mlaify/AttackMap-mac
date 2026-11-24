@@ -303,6 +303,18 @@ final class ScanViewModel {
         }
     }
 
+    /// UI tests (`-UITestReport <path>`): show a report without running the CLI.
+    func loadReportForUITest(_ url: URL) {
+        do {
+            report = try Report.load(from: url)
+            outputDirectory = url.deletingLastPathComponent()
+            phase = .done
+            statusLabel = "Done — \(report?.findings.count ?? 0) findings"
+        } catch {
+            phase = .failed("Couldn't load \(url.lastPathComponent): \(error.localizedDescription)")
+        }
+    }
+
     func cancel() {
         runner.cancel()
     }

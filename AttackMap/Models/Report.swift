@@ -13,6 +13,10 @@ struct Report: Decodable {
     /// `attackmap:ignore` directives) — retained with their reason for audit (#144).
     var suppressedFindings: [SuppressedFinding]
     var attackPaths: [AttackPath]
+    /// Composed attack chains (engine 0.7+); empty on older reports.
+    var attackChains: [AttackChain]
+    /// The report's schema version (engine 0.8+, docs/schemas.md); nil before.
+    var schemaVersion: String?
     var attackSurfaces: [AttackSurface]
     var exploitability: [ExploitabilityScore]
     var defensiveReviewMarkdown: String?
@@ -28,6 +32,8 @@ struct Report: Decodable {
         case reviewContextPack = "review_context_pack"
         case suppressedFindings = "suppressed_findings"
         case attackPaths = "attack_paths"
+        case attackChains = "attack_chains"
+        case schemaVersion = "schema_version"
         case attackSurfaces = "attack_surfaces"
         case defensiveReviewMarkdown = "defensive_review"
         case architectureSummary = "architecture_summary"
@@ -40,6 +46,8 @@ struct Report: Decodable {
         findings = (try? c.decode([Finding].self, forKey: .findings)) ?? []
         suppressedFindings = (try? c.decode([SuppressedFinding].self, forKey: .suppressedFindings)) ?? []
         attackPaths = (try? c.decode([AttackPath].self, forKey: .attackPaths)) ?? []
+        attackChains = (try? c.decode([AttackChain].self, forKey: .attackChains)) ?? []
+        schemaVersion = try? c.decode(String.self, forKey: .schemaVersion)
         attackSurfaces = (try? c.decode([AttackSurface].self, forKey: .attackSurfaces)) ?? []
         exploitability = (try? c.decode([ExploitabilityScore].self, forKey: .exploitability)) ?? []
         defensiveReviewMarkdown = try? c.decode(String.self, forKey: .defensiveReviewMarkdown)

@@ -42,3 +42,34 @@ final class ReportDecodingTests: XCTestCase {
         XCTAssertNil(report.scan)
     }
 }
+
+final class AttackChainDecodingTests: XCTestCase {
+    func testDecodesChainsAndSchemaVersion() throws {
+        let json = """
+        {"schema_version": "1.1.0", "findings": [], "attack_chains": [{
+          "id": "chain:1", "impact": "secrets", "likelihood": 0.64, "start": ["fork_pr"],
+          "steps": [
+            {"id": "a", "rule_id": "pr-target-checkout", "title": "PR checkout", "grants": ["ci_code_exec"],
+             "requires": ["fork_pr"], "evidence_ids": ["a"], "confidence": 0.8, "precondition_notes": [],
+             "location": {"file": ".github/workflows/pr.yml", "line": 9}},
+            {"id": "b", "rule_id": "secret-in-run", "title": "Secret in run", "grants": ["secrets"],
+             "requires": ["ci_code_exec"], "evidence_ids": ["b"], "confidence": 0.8,
+             "precondition_notes": ["assumes x"], "location": null}
+          ]}]}
+        """
+        let report = try JSONDecoder().decode(Report.self, from: Data(json.utf8))
+        XCTAssertEqual(report.schemaVersion, "1.1.0")
+        let chain = try XCTUnwrap(report.attackChains.first)
+        XCTAssertEqual(chain.steps.map(\.ruleId), ["pr-target-checkout", "secret-in-run"])
+        XCTAssertEqual(chain.steps[0].place, ".github/workflows/pr.yml:9")
+        XCTAssertNil(chain.steps[1].place)
+        XCTAssertEqual(chain.steps[1].preconditionNotes, ["assumes x"])
+        XCTAssertEqual(AttackChain.label("ci_code_exec"), "Ci Code Exec")
+    }
+
+    func testOlderReportsHaveNoChains() throws {
+        let report = try JSONDecoder().decode(Report.self, from: Data(#"{"findings": []}"#.utf8))
+        XCTAssertTrue(report.attackChains.isEmpty)
+        XCTAssertNil(report.schemaVersion)
+    }
+}
