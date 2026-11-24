@@ -61,7 +61,10 @@ final class AttackMapUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["chainsList"].waitForExistence(timeout: 10))
         let steps = app.descendants(matching: .any).matching(identifier: "chainStep")
         XCTAssertGreaterThanOrEqual(steps.count, 2, "chain steps not shown")
-        XCTAssertTrue(text(app, "pr-target-checkout").exists, "the chain's first step isn't shown")
+        let firstStep = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label CONTAINS %@ OR value CONTAINS %@", "pr-target-checkout", "pr-target-checkout"))
+        XCTAssertTrue(firstStep.firstMatch.exists, "the chain's first step isn't shown")
+        screenshot(app, "Attack chains (steps)")
     }
 
     /// The whole loop with the real CLI: pick a repo, scan, read findings.
