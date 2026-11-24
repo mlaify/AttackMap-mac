@@ -123,7 +123,10 @@ struct ContentView: View {
     private var llmOptionsBar: some View {
         HStack(spacing: 12) {
             Picker("Provider", selection: $model.provider) {
-                ForEach(ScanConfig.Provider.allCases) { Text($0.label).tag($0) }
+                // The local provider needs attackmap ≥ 0.8.
+                ForEach(ScanConfig.Provider.allCases.filter { $0 != .local || (model.capabilities?.localLLM ?? false) }) {
+                    Text($0.label).tag($0)
+                }
             }
             .frame(maxWidth: 190)
 
@@ -139,12 +142,21 @@ struct ContentView: View {
                     ForEach(ScanConfig.OpenAIModel.allCases) { Text($0.label).tag($0) }
                 }
                 .frame(maxWidth: 190)
+            case .local:
+                TextField("Model (e.g. qwen2.5-coder:32b)", text: $model.localModel)
+                    .frame(maxWidth: 220)
+                    .accessibilityIdentifier("localModel")
+                TextField("Server (default Ollama on 127.0.0.1:11434)", text: $model.localBaseURL)
+                    .frame(maxWidth: 260)
+                    .help("OpenAI-compatible base URL, e.g. http://127.0.0.1:8080/v1. Only local or private-network hosts are allowed.")
             }
 
-            Picker("Reasoning", selection: $model.effort) {
-                ForEach(ScanConfig.Effort.allCases) { Text($0.label).tag($0) }
+            if model.provider != .local {
+                Picker("Reasoning", selection: $model.effort) {
+                    ForEach(ScanConfig.Effort.allCases) { Text($0.label).tag($0) }
+                }
+                .frame(maxWidth: 180)
             }
-            .frame(maxWidth: 180)
 
             // Fast mode is Claude-only (Opus 4.8/4.7); hidden for OpenAI.
             if model.provider == .claude {
@@ -184,6 +196,16 @@ struct ContentView: View {
             .help(model.isFleet ? "LLM modes run per-repo; they don't apply to a fleet scan." : "")
 
             Toggle("CVE", isOn: $model.runCVE).disabled(model.isScanning)
+
+            if model.capabilities?.minConfidence ?? false {
+                Picker("Show", selection: $model.minConfidence) {
+                    ForEach(ScanConfig.MinConfidence.allCases) { Text($0.label).tag($0) }
+                }
+                .frame(maxWidth: 240)
+                .disabled(model.isScanning)
+                .help("Hide findings below this confidence (--min-confidence). The report notes how many were hidden.")
+                .accessibilityIdentifier("minConfidence")
+            }
 
             Toggle("Recall", isOn: $model.recall)
                 .disabled(model.isScanning || model.capabilities?.recall == false)

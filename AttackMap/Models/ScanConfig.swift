@@ -36,6 +36,25 @@ struct ScanConfig: Equatable {
     var failOnNewHigh: Bool = false
     /// Write a Markdown PR summary comment here (`--pr-comment`).
     var prCommentURL: URL?
+    /// Hide findings below this confidence (`--min-confidence`, ≥ 0.8). `.low`
+    /// shows everything and emits no flag.
+    var minConfidence: MinConfidence = .low
+    /// Local model (`--llm-provider local`, ≥ 0.8): its name and, optionally,
+    /// the OpenAI-compatible server URL (the engine defaults to Ollama).
+    var localModel: String = ""
+    var localBaseURL: String = ""
+
+    enum MinConfidence: String, CaseIterable, Identifiable, Equatable {
+        case low, medium, high
+        var id: String { rawValue }
+        var label: String {
+            switch self {
+            case .low: return "All findings"
+            case .medium: return "Medium confidence and up"
+            case .high: return "High confidence only"
+            }
+        }
+    }
 
     /// Multi-pass hunt-verify tuning (`--verify-votes` / `--hunt-lenses` /
     /// `--hunt-rounds` / `--hunt-budget`). Defaults match the engine's, so an
@@ -50,9 +69,15 @@ struct ScanConfig: Equatable {
     /// LLM provider (`--llm-provider`). Claude is the default and needs no flag;
     /// OpenAI emits `--llm-provider openai` (requires attackmap ≥ 0.4.3).
     enum Provider: String, CaseIterable, Identifiable, Equatable {
-        case claude, openai
+        case claude, openai, local
         var id: String { rawValue }
-        var label: String { self == .openai ? "OpenAI / Codex" : "Claude" }
+        var label: String {
+            switch self {
+            case .claude: return "Claude"
+            case .openai: return "OpenAI / Codex"
+            case .local: return "Local model"
+            }
+        }
     }
 
     /// Claude models the engine accepts for `--llm-model` (verified IDs).
@@ -185,6 +210,11 @@ struct ScanConfig: Equatable {
                     "--llm-effort", effort.rawValue,
                 ]
                 // Fast mode is Claude-only; never emit it for OpenAI.
+            case .local:
+                // An OpenAI-compatible server on this machine or network (≥ 0.8).
+                args += ["--llm-provider", "local", "--llm-model", localModel]
+                let url = localBaseURL.trimmingCharacters(in: .whitespaces)
+                if !url.isEmpty { args += ["--llm-base-url", url] }
             }
         }
         if let baselineURL {
@@ -194,6 +224,7 @@ struct ScanConfig: Equatable {
             if failOnNewHigh { args += ["--fail-on-new-high"] }
         }
         if let prCommentURL { args += ["--pr-comment", prCommentURL.path] }
+        if minConfidence != .low { args += ["--min-confidence", minConfidence.rawValue] }
         return args
     }
 
@@ -212,6 +243,7 @@ struct ScanConfig: Equatable {
         if noSuppress { args += ["--no-suppress"] }
         if let suppressFileURL { args += ["--suppress-file", suppressFileURL.path] }
         for module in modules.sorted() { args += ["--module", module] }
+        if minConfidence != .low { args += ["--min-confidence", minConfidence.rawValue] }
         return args
     }
 

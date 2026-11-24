@@ -26,6 +26,14 @@ final class ScanViewModel {
     var model: ScanConfig.LLMModel = .opus48
     var openAIModel: ScanConfig.OpenAIModel = .codex
     var effort: ScanConfig.Effort = .high
+    var minConfidence: ScanConfig.MinConfidence = .low
+    /// Remembered across launches: the local model and its server URL.
+    var localModel: String = UserDefaults.standard.string(forKey: "localModel") ?? "" {
+        didSet { UserDefaults.standard.set(localModel, forKey: "localModel") }
+    }
+    var localBaseURL: String = UserDefaults.standard.string(forKey: "localBaseURL") ?? "" {
+        didSet { UserDefaults.standard.set(localBaseURL, forKey: "localBaseURL") }
+    }
     var fast: Bool = false
     /// Recall mode (`--recall`): wider, speculative taint discovery.
     var recall: Bool = false
@@ -97,7 +105,12 @@ final class ScanViewModel {
     var isScanning: Bool { phase == .scanning }
     /// True when a multi-repo (cross-repo fleet) scan is configured.
     var isFleet: Bool { fleetRepoURLs.count > 1 }
-    var canRun: Bool { (repoURL != nil || isFleet) && !isScanning }
+    var canRun: Bool {
+        // A local model needs a name; the engine refuses to guess one.
+        let localMissing = !isFleet && llmMode != .none && provider == .local
+            && localModel.trimmingCharacters(in: .whitespaces).isEmpty
+        return (repoURL != nil || isFleet) && !isScanning && !localMissing
+    }
 
     /// Where this repo's previous report is set aside (the default baseline).
     var previousReportURL: URL? {
@@ -160,6 +173,8 @@ final class ScanViewModel {
                 if let key = Keychain.get(account: Keychain.openAIAPIKey), !key.isEmpty {
                     environment["OPENAI_API_KEY"] = key
                 }
+            case .local:
+                break  // no credentials: the server is local
             }
         }
 
@@ -186,7 +201,10 @@ final class ScanViewModel {
             jury: jury,
             baselineURL: nil,
             failOnNewHigh: failOnNewHigh,
-            prCommentURL: generatePRComment ? output.appendingPathComponent(Self.prCommentFilename) : nil)
+            prCommentURL: generatePRComment ? output.appendingPathComponent(Self.prCommentFilename) : nil,
+            minConfidence: minConfidence,
+            localModel: localModel,
+            localBaseURL: localBaseURL)
         let baselineChoice = baselineChoice
         let previous = ScanOutputLocation.previousReport(for: repoURL)
 
@@ -346,7 +364,7 @@ final class ScanViewModel {
             runCVE: runCVE, modules: Array(selectedModules),
             llmMode: .none, recall: recall,
             noSuppress: noSuppress, suppressFileURL: suppressFileURL,
-            baselineURL: nil)
+            baselineURL: nil, minConfidence: minConfidence)
         let paths = fleetRepoURLs
 
         phase = .scanning
