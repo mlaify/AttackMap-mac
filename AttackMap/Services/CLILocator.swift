@@ -98,6 +98,8 @@ enum CLILocator {
         var diffOutput: Bool = false
         var failOnNewHigh: Bool = false
         var prComment: Bool = false
+        var minConfidence: Bool = false
+        var localLLM: Bool = false
     }
 
     /// Prefers the structured `attackmap capabilities` JSON (newer CLIs) and
@@ -117,7 +119,9 @@ enum CLILocator {
             baseline: help.contains("--baseline"),
             diffOutput: help.contains("--diff-output"),
             failOnNewHigh: help.contains("--fail-on-new-high"),
-            prComment: help.contains("--pr-comment"))
+            prComment: help.contains("--pr-comment"),
+            minConfidence: help.contains("--min-confidence"),
+            localLLM: help.contains("--llm-base-url"))
     }
 
     /// Installed analyzer modules via `attackmap modules --json` (≥ 0.4.4).
@@ -156,7 +160,9 @@ enum CLILocator {
             baseline: options.contains("--baseline"),
             diffOutput: options.contains("--diff-output"),
             failOnNewHigh: options.contains("--fail-on-new-high"),
-            prComment: options.contains("--pr-comment"))
+            prComment: options.contains("--pr-comment"),
+            minConfidence: options.contains("--min-confidence"),
+            localLLM: options.contains("--llm-base-url"))
     }
 
     private static func structuredCapabilities(executable: URL) -> Capabilities? {

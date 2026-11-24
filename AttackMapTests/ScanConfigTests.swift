@@ -164,3 +164,51 @@ final class ScanConfigTests: XCTestCase {
         return args[i + 1]
     }
 }
+
+/// attackmap 0.8: `--min-confidence` and `--llm-provider local`.
+final class ScanConfigEngine08Tests: XCTestCase {
+    private func base() -> ScanConfig {
+        ScanConfig(repoURL: URL(fileURLWithPath: "/repo"), outputDirectory: URL(fileURLWithPath: "/out"))
+    }
+
+    private func value(after flag: String, in args: [String]) -> String? {
+        guard let i = args.firstIndex(of: flag), i + 1 < args.count else { return nil }
+        return args[i + 1]
+    }
+
+    func testMinConfidenceIsEmittedOnlyAboveLow() {
+        var config = base()
+        XCTAssertFalse(config.arguments(progressJSON: true).contains("--min-confidence"))
+        config.minConfidence = .high
+        XCTAssertEqual(value(after: "--min-confidence", in: config.arguments(progressJSON: true)), "high")
+        XCTAssertEqual(
+            value(after: "--min-confidence", in: config.fleetArguments(paths: [URL(fileURLWithPath: "/a")], progressJSON: true)),
+            "high")
+    }
+
+    func testLocalProviderPassesModelAndOptionalServer() {
+        var config = base()
+        config.llmMode = .review
+        config.provider = .local
+        config.localModel = "qwen2.5-coder:32b"
+        var args = config.arguments(progressJSON: true)
+        XCTAssertEqual(value(after: "--llm-provider", in: args), "local")
+        XCTAssertEqual(value(after: "--llm-model", in: args), "qwen2.5-coder:32b")
+        XCTAssertFalse(args.contains("--llm-base-url"))
+        XCTAssertFalse(args.contains("--llm-effort"), "local models take no reasoning effort")
+        config.localBaseURL = " http://127.0.0.1:8080/v1 "
+        args = config.arguments(progressJSON: true)
+        XCTAssertEqual(value(after: "--llm-base-url", in: args), "http://127.0.0.1:8080/v1")
+    }
+
+    func testCapabilitiesDetectTheNewFlags() throws {
+        let json = #"{"schema": 1, "analyze": {"options": ["--min-confidence", "--llm-base-url"], "multi_repo": true}}"#
+        let structured = try JSONDecoder().decode(CLILocator.StructuredCapabilities.self, from: Data(json.utf8))
+        let caps = CLILocator.capabilities(from: structured)
+        XCTAssertTrue(caps.minConfidence)
+        XCTAssertTrue(caps.localLLM)
+        let old = try JSONDecoder().decode(
+            CLILocator.StructuredCapabilities.self, from: Data(#"{"schema": 1, "analyze": {"options": [], "multi_repo": true}}"#.utf8))
+        XCTAssertFalse(CLILocator.capabilities(from: old).localLLM)
+    }
+}
