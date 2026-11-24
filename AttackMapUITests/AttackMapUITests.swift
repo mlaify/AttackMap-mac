@@ -61,9 +61,9 @@ final class AttackMapUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["chainsList"].waitForExistence(timeout: 10))
         let steps = app.descendants(matching: .any).matching(identifier: "chainStep")
         XCTAssertGreaterThanOrEqual(steps.count, 2, "chain steps not shown")
-        let firstStep = app.descendants(matching: .any)
-            .matching(NSPredicate(format: "label CONTAINS %@ OR value CONTAINS %@", "pr-target-checkout", "pr-target-checkout"))
-        XCTAssertTrue(firstStep.firstMatch.exists, "the chain's first step isn't shown")
+        // Only the few chain-step elements: a whole-tree label search times out.
+        let labels = steps.allElementsBoundByIndex.map { "\($0.label) \($0.value as? String ?? "")" }
+        XCTAssertTrue(labels.contains { $0.contains("pr-target-checkout") }, "the chain's first step isn't shown: \(labels)")
         screenshot(app, "Attack chains (steps)")
     }
 
