@@ -14,7 +14,9 @@ struct FindingsView: View {
             VStack(spacing: 0) {
                 List(findings, selection: $selection) { finding in
                     FindingRow(finding: finding).tag(finding.id)
+                        .accessibilityIdentifier("findingRow")
                 }
+                .accessibilityIdentifier("findingsList")
                 if !report.suppressedFindings.isEmpty {
                     Divider()
                     SuppressedPane(items: report.suppressedFindings)

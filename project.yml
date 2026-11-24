@@ -23,6 +23,10 @@ targets:
     platform: macOS
     sources:
       - path: AttackMap
+    scheme:
+      testTargets:
+        - AttackMapTests
+        - AttackMapUITests
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: io.mlaify.AttackMap
@@ -60,3 +64,19 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: io.mlaify.AttackMapTests
         GENERATE_INFOPLIST_FILE: YES
+
+  AttackMapUITests:
+    type: bundle.ui-testing
+    platform: macOS
+    sources:
+      - path: AttackMapUITests
+    dependencies:
+      - target: AttackMap
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.mlaify.AttackMapUITests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: AttackMap
+        # XCUIApplication is main-actor API; Swift 5 mode keeps the UI test
+        # runner free of Swift 6 isolation errors. The app stays on Swift 6.
+        SWIFT_VERSION: "5.0"

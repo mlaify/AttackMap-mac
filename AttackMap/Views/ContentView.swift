@@ -12,6 +12,7 @@ struct ContentView: View {
         case overview = "Overview"
         case findings = "Findings"
         case exploitability = "Exploitability"
+        case chains = "Attack chains"
         case paths = "Attack paths"
         case surface = "Attack surface"
         case diff = "Diff"
@@ -29,6 +30,7 @@ struct ContentView: View {
             case .overview: return "square.grid.2x2"
             case .findings: return "exclamationmark.shield"
             case .exploitability: return "flame"
+            case .chains: return "link"
             case .paths: return "arrow.triangle.branch"
             case .surface: return "point.topleft.down.to.point.bottomright.curvepath"
             case .diff: return "plusminus"
@@ -60,7 +62,20 @@ struct ContentView: View {
             Divider()
             resultsArea
         }
-        .task { model.loadAvailableModules() }
+        .task {
+            model.loadAvailableModules()
+            // UI tests drive the app through launch arguments, which land in
+            // UserDefaults: `-UITestReport <report.json>` shows a report without
+            // the CLI; `-UITestRepo <dir>` scans that repo with the CLI
+            // (`-cliPathOverride <path>` picks which one).
+            let defaults = UserDefaults.standard
+            if let path = defaults.string(forKey: "UITestReport") {
+                model.loadReportForUITest(URL(fileURLWithPath: path))
+            } else if let repo = defaults.string(forKey: "UITestRepo") {
+                model.setRepo(URL(fileURLWithPath: repo, isDirectory: true))
+                model.run()
+            }
+        }
         .alert("Export failed", isPresented: Binding(
             get: { exportError != nil }, set: { if !$0 { exportError = nil } })) {
             Button("OK") { exportError = nil }
@@ -199,6 +214,7 @@ struct ContentView: View {
                 Button { model.run() } label: {
                     Label("Run scan", systemImage: "play.fill")
                 }
+                .accessibilityIdentifier("runScan")
                 .keyboardShortcut(.return, modifiers: [.command])
                 .disabled(!model.canRun)
             }
@@ -346,13 +362,16 @@ struct ContentView: View {
             case .failed(let message):
                 Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
                 Text(message).foregroundStyle(.secondary).lineLimit(2)
+                    .accessibilityIdentifier("scanFailed")
             case .done:
                 Image(systemName: model.warning == nil ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
                     .foregroundStyle(model.warning == nil ? Color.green : .orange)
                 if let warning = model.warning {
                     Text(warning).foregroundStyle(.secondary).lineLimit(2)
+                        .accessibilityIdentifier("scanDone")
                 } else {
                     Text(model.statusLabel).foregroundStyle(.secondary)
+                        .accessibilityIdentifier("scanDone")
                 }
                 if let delta = model.lastDelta, delta.added > 0 || delta.resolved > 0 {
                     Text("+\(delta.added) new · \(delta.resolved) resolved")
@@ -459,6 +478,7 @@ struct ContentView: View {
             NavigationSplitView {
                 List(Section.allCases, selection: $section) { item in
                     Label(item.rawValue, systemImage: item.systemImage).tag(item)
+                        .accessibilityIdentifier("section.\(item.rawValue)")
                 }
                 .navigationSplitViewColumnWidth(min: 160, ideal: 180, max: 240)
             } detail: {
@@ -466,6 +486,7 @@ struct ContentView: View {
                 case .overview: OverviewView(report: report)
                 case .findings: FindingsView(report: report, suppressContext: suppressContext)
                 case .exploitability: ExploitabilityView(report: report)
+                case .chains: AttackChainsView(report: report)
                 case .paths: AttackPathsView(report: report)
                 case .surface: AttackSurfaceView(report: report)
                 case .diff:
