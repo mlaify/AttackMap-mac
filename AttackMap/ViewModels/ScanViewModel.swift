@@ -23,8 +23,26 @@ final class ScanViewModel {
     var selectedModules: Set<String> = []
     var llmMode: ScanConfig.LLMMode = .none
     var provider: ScanConfig.Provider = .claude
-    var model: ScanConfig.LLMModel = .opus55
-    var openAIModel: ScanConfig.OpenAIModel = .accountDefault
+    /// Claude model ID (remembered). Any ID the account can use works, gated ones included.
+    var model: String = UserDefaults.standard.string(forKey: "claudeModel") ?? "claude-opus-5-5" {
+        didSet { UserDefaults.standard.set(model, forKey: "claudeModel") }
+    }
+    /// OpenAI model ID (remembered); empty = the account's Codex default.
+    var openAIModel: String = UserDefaults.standard.string(forKey: "openAIModel") ?? "" {
+        didSet { UserDefaults.standard.set(openAIModel, forKey: "openAIModel") }
+    }
+    /// Values for installed LLM extensions' options (`--llm-option`, remembered);
+    /// an empty value leaves the extension's own default.
+    var llmOptionValues: [String: String] =
+        (UserDefaults.standard.dictionary(forKey: "llmOptionValues") as? [String: String]) ?? [:] {
+        didSet { UserDefaults.standard.set(llmOptionValues, forKey: "llmOptionValues") }
+    }
+    /// Models the user's credentials can use, per provider (`attackmap llm-models`, ≥ 1.1).
+    private(set) var claudeModels: [LLMModelOption] = LLMModelCatalog.claudePresets
+    private(set) var openAIModels: [LLMModelOption] = []
+    /// Explanation or error from the last model-list load, shown under the pickers.
+    private(set) var modelListMessage: String?
+    private(set) var loadingModels = false
     var effort: ScanConfig.Effort = .high
     var minConfidence: ScanConfig.MinConfidence = .low
     /// Remembered across launches: the local model and its server URL.
@@ -193,8 +211,10 @@ final class ScanViewModel {
             provider: provider,
             model: model,
             openAIModel: openAIModel,
+            llmOptions: llmOptionValues,
             effort: effort,
             fast: fast,
+            fastCapable: fastCapable,
             recall: recall,
             noSuppress: noSuppress,
             suppressFileURL: suppressFileURL,
@@ -265,6 +285,10 @@ final class ScanViewModel {
             if config.fast && !caps.llmSpeed {
                 config.fast = false
             }
+            // Extension options need --llm-option (≥ 1.1) and only keys an installed extension
+            // declares; anything else would stop the run.
+            config.llmOptions = caps.llmOption
+                ? config.llmOptions.filter { caps.llmOptions[$0.key] != nil } : [:]
             // Baseline diff: set the last report aside (it becomes the
             // "previous scan" baseline), then resolve the user's choice.
             BaselineSelection.rotate(reportsDirectory: output, previous: previous)
@@ -467,6 +491,85 @@ final class ScanViewModel {
             availableModules = mods
             capabilities = caps
             selectedModules.formIntersection(Set(mods.map(\.name)))
+        }
+    }
+
+    // MARK: LLM models
+
+    /// The selected model's entry in the loaded list, if it came from there.
+    var selectedModelOption: LLMModelOption? {
+        switch provider {
+        case .claude: return claudeModels.first { $0.id == model }
+        case .openai: return openAIModels.first { $0.id == openAIModel }
+        case .local: return nil
+        }
+    }
+
+    /// Fast mode for the chosen Claude model, from the model list or, for a custom ID, by ID.
+    var fastCapable: Bool {
+        claudeModels.first { $0.id == model }?.fast ?? LLMModelCatalog.fastCapableIDs.contains(model)
+    }
+
+    /// The environment a scan's LLM call gets, minus PATH: the provider's API key
+    /// from Settings. The login-shell PATH (to find the `claude` / `codex` CLIs) is
+    /// merged off the main thread, since resolving it may spawn the login shell.
+    private func llmEnvironment(for provider: ScanConfig.Provider) -> [String: String] {
+        var env = ProcessInfo.processInfo.environment
+        switch provider {
+        case .claude:
+            if let key = Keychain.get(account: Keychain.anthropicAPIKey), !key.isEmpty { env["ANTHROPIC_API_KEY"] = key }
+        case .openai:
+            if let key = Keychain.get(account: Keychain.openAIAPIKey), !key.isEmpty { env["OPENAI_API_KEY"] = key }
+        case .local:
+            break
+        }
+        return env
+    }
+
+    /// Ask the CLI which models the user's credentials can use for the current
+    /// provider (`attackmap llm-models --json`). Falls back to the built-in Claude
+    /// presets on CLIs that predate the command.
+    func loadLLMModels() {
+        let provider = provider
+        guard provider != .local else { return }
+        let override = UserDefaults.standard.string(forKey: "cliPathOverride") ?? cliPathOverride
+        let env = llmEnvironment(for: provider)
+        loadingModels = true
+        Task {
+            defer { loadingModels = false }
+            guard let cli = await CLILocator.locateAsync(explicitPath: override) else { return }
+            let caps = await Task.detached { CLILocator.capabilities(executable: cli) }.value
+            capabilities = caps
+            guard caps.llmModels else {
+                modelListMessage = "This attackmap has no model list (attackmap llm-models); "
+                    + "showing presets. Any model ID still works as a custom model."
+                return
+            }
+            let list = await Task.detached { () -> LLMModelList? in
+                var environment = env
+                environment["PATH"] = LoginShellEnvironment.mergedPath(with: environment["PATH"])
+                return LLMModelCatalog.load(executable: cli, provider: provider.rawValue, environment: environment)
+            }.value
+            guard let list else {
+                modelListMessage = "Couldn't run attackmap llm-models."
+                return
+            }
+            if let error = list.error {
+                modelListMessage = "Couldn't list \(provider.label) models: \(error)"
+                return
+            }
+            switch provider {
+            case .claude:
+                if !list.models.isEmpty { claudeModels = list.models }
+            case .openai:
+                openAIModels = list.models
+                if !openAIModel.isEmpty, !list.models.contains(where: { $0.id == openAIModel }) {
+                    openAIModel = ""   // no longer offered: back to the account default
+                }
+            case .local:
+                break
+            }
+            modelListMessage = list.note
         }
     }
 

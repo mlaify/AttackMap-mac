@@ -32,6 +32,8 @@ struct HelpView: View {
 
                 section("LLM providers & keys", [
                     "**Provider** — Claude or OpenAI / Codex, each with a Model and Reasoning picker.",
+                    "**Model** — the models your account can use when the installed attackmap lists them (`attackmap llm-models`), else presets; ↻ refreshes the list. **Custom model ID…** takes any ID.",
+                    "**Extension options** — settings that installed AttackMap extensions declare appear next to the model; **Default** leaves the extension's own default.",
                     "**Fast** — up to 2.5× faster output; Claude Opus 5.5, Fable 5.2 and Opus 5, with an API key.",
                     "Backends resolve automatically: Claude uses `ANTHROPIC_API_KEY` or the `claude` CLI; OpenAI uses `OPENAI_API_KEY` or the `codex` CLI.",
                     "Set API keys in **Settings** (⌘,) — they're stored in your login Keychain and passed only when an LLM mode runs.",
