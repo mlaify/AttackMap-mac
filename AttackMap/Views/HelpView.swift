@@ -32,7 +32,9 @@ struct HelpView: View {
 
                 section("LLM providers & keys", [
                     "**Provider** — Claude or OpenAI / Codex, each with a Model and Reasoning picker.",
-                    "**Fast** — ~2.5× faster output; Claude Opus 4.8/4.7 only.",
+                    "**Model** — the models your account can use, listed by `attackmap llm-models` (≥ 1.1); ↻ refreshes the list. Gated models such as Claude Mythos (verified organizations) work only if your account has them. **Custom model ID…** takes any ID.",
+                    "**Access** (OpenAI) — a Codex cyber access program such as Daybreak for this run. **Account default** follows your ChatGPT setting.",
+                    "**Fast** — up to 2.5× faster output; Claude Opus 5.5, Fable 5.2 and Mythos 5.2 with an API key.",
                     "Backends resolve automatically: Claude uses `ANTHROPIC_API_KEY` or the `claude` CLI; OpenAI uses `OPENAI_API_KEY` or the `codex` CLI.",
                     "Set API keys in **Settings** (⌘,) — they're stored in your login Keychain and passed only when an LLM mode runs.",
                     "OpenAI needs the CLI ≥ 0.4.3; Fast needs ≥ 0.4.3.",

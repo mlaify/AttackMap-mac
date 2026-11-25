@@ -7,6 +7,10 @@ import UniformTypeIdentifiers
 struct ContentView: View {
     @State private var model = ScanViewModel()
     @State private var section: Section? = .overview
+    /// The model pickers' "Custom model ID…" entry is selected.
+    @State private var customClaudeModel = false
+    @State private var customOpenAIModel = false
+    private static let customTag = "__custom__"
 
     enum Section: String, CaseIterable, Identifiable, Hashable {
         case overview = "Overview"
@@ -130,18 +134,21 @@ struct ContentView: View {
             }
             .frame(maxWidth: 190)
 
-            // The model list depends on the provider.
+            // The model list is what the user's credentials can use (attackmap llm-models).
             switch model.provider {
             case .claude:
-                Picker("Model", selection: $model.model) {
-                    ForEach(ScanConfig.LLMModel.allCases) { Text($0.label).tag($0) }
-                }
-                .frame(maxWidth: 190)
+                claudeModelPicker
             case .openai:
-                Picker("Model", selection: $model.openAIModel) {
-                    ForEach(ScanConfig.OpenAIModel.allCases) { Text($0.label).tag($0) }
+                openAIModelPicker
+                if model.capabilities?.llmAccessProgram ?? false {
+                    Picker("Access", selection: $model.accessProgram) {
+                        Text("Account default").tag("")
+                        ForEach(model.availableAccessPrograms, id: \.self) { Text(Self.accessLabel($0)).tag($0) }
+                    }
+                    .frame(maxWidth: 200)
+                    .accessibilityIdentifier("accessProgram")
+                    .help("Codex cyber access program for this run (--llm-access-program). Account default follows your ChatGPT setting, such as Daybreak. Only the programs the chosen model offers on your account are listed.")
                 }
-                .frame(maxWidth: 190)
             case .local:
                 TextField("Model (e.g. qwen2.5-coder:32b)", text: $model.localModel)
                     .frame(maxWidth: 220)
@@ -158,20 +165,94 @@ struct ContentView: View {
                 .frame(maxWidth: 180)
             }
 
-            // Fast mode is Claude-only (Opus 4.8/4.7); hidden for OpenAI.
+            // Fast mode is Claude-only; hidden for OpenAI.
             if model.provider == .claude {
                 Toggle("Fast", isOn: $model.fast)
-                    .disabled(!model.model.fastCapable)
-                    .help(model.model.fastCapable
-                          ? "~2.5× faster output (premium). Needs an API key in Settings."
-                          : "Fast mode is only available on Opus 4.8 / 4.7.")
+                    .disabled(!model.fastCapable)
+                    .help(model.fastCapable
+                          ? "Up to 2.5× faster output (premium). Needs an API key in Settings."
+                          : "Fast mode is available on Opus 5.5, Fable 5.2 and Mythos 5.2.")
+            }
+
+            if model.provider != .local {
+                Button { model.loadLLMModels() } label: {
+                    if model.loadingModels { ProgressView().controlSize(.small) } else { Image(systemName: "arrow.clockwise") }
+                }
+                .buttonStyle(.borderless)
+                .help("Refresh the models your account can use")
+                .accessibilityIdentifier("refreshModels")
+                if let message = model.modelListMessage {
+                    Image(systemName: "info.circle").help(message)
+                }
             }
 
             Spacer()
         }
+        .task(id: model.provider) { model.loadLLMModels() }
         .padding(.horizontal, 12)
         .frame(height: 34)
         .disabled(model.isScanning)
+    }
+
+    private var claudeModelPicker: some View {
+        let listed = model.claudeModels.contains { $0.id == model.model }
+        let custom = customClaudeModel || !listed
+        return HStack(spacing: 6) {
+            Picker("Model", selection: Binding(
+                get: { custom ? Self.customTag : model.model },
+                set: { choice in
+                    customClaudeModel = choice == Self.customTag
+                    if choice != Self.customTag { model.model = choice }
+                })) {
+                ForEach(model.claudeModels) { Text($0.label).tag($0.id) }
+                Divider()
+                Text("Custom model ID…").tag(Self.customTag)
+            }
+            .frame(maxWidth: 280)
+            .accessibilityIdentifier("claudeModel")
+            .help(model.selectedModelOption?.gated.map { "Gated: \($0). It works only if your account has it." }
+                  ?? "Models your credentials can use. Any model ID works as a custom model.")
+            if custom {
+                TextField("Model ID, e.g. claude-mythos-5-2", text: $model.model)
+                    .frame(maxWidth: 200)
+                    .accessibilityIdentifier("claudeModelID")
+            }
+        }
+    }
+
+    private var openAIModelPicker: some View {
+        let listed = model.openAIModel.isEmpty || model.openAIModels.contains { $0.id == model.openAIModel }
+        let custom = customOpenAIModel || !listed
+        return HStack(spacing: 6) {
+            Picker("Model", selection: Binding(
+                get: { custom ? Self.customTag : model.openAIModel },
+                set: { choice in
+                    customOpenAIModel = choice == Self.customTag
+                    if choice != Self.customTag { model.openAIModel = choice }
+                })) {
+                Text("Account default").tag("")
+                ForEach(model.openAIModels) { Text($0.label).tag($0.id) }
+                Divider()
+                Text("Custom model ID…").tag(Self.customTag)
+            }
+            .frame(maxWidth: 280)
+            .accessibilityIdentifier("openAIModel")
+            .help("Models in your Codex / OpenAI account. Account default is the first model in your Codex catalog.")
+            if custom {
+                TextField("Model ID", text: $model.openAIModel)
+                    .frame(maxWidth: 160)
+                    .accessibilityIdentifier("openAIModelID")
+            }
+        }
+    }
+
+    private static func accessLabel(_ program: String) -> String {
+        switch program {
+        case "standard": return "Standard"
+        case "daybreak_blue": return "Daybreak (blue)"
+        case "daybreak_red": return "Daybreak (red)"
+        default: return program
+        }
     }
 
     private var repoButtonTitle: String {

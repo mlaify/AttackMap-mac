@@ -11,10 +11,17 @@ struct ScanConfig: Equatable {
     var modules: [String] = []
     var llmMode: LLMMode = .none
     var provider: Provider = .claude
-    var model: LLMModel = .opus48
-    var openAIModel: OpenAIModel = .codex
+    /// Claude model ID for `--llm-model`; any ID the account can use, gated ones included.
+    var model: String = "claude-opus-5-5"
+    /// OpenAI model ID; empty lets the engine use the account's Codex default.
+    var openAIModel: String = ""
+    /// Codex cyber access program (`--llm-access-program`, ≥ 1.1), e.g. daybreak_blue;
+    /// empty uses the account's own default (the Daybreak setting in ChatGPT).
+    var accessProgram: String = ""
     var effort: Effort = .high
     var fast: Bool = false
+    /// Whether the chosen Claude model has fast mode (from `llm-models`, else by ID).
+    var fastCapable: Bool = false
     /// Recall mode (`--recall`, ≥ 0.4.20): widen taint discovery. The extra
     /// reach is marked SPECULATIVE by the engine and kept out of the high-severity
     /// gate; pair with Hunt + verify to adjudicate it.
@@ -76,48 +83,6 @@ struct ScanConfig: Equatable {
             case .claude: return "Claude"
             case .openai: return "OpenAI / Codex"
             case .local: return "Local model"
-            }
-        }
-    }
-
-    /// Claude models the engine accepts for `--llm-model` (verified IDs).
-    enum LLMModel: String, CaseIterable, Identifiable, Equatable {
-        case opus48 = "claude-opus-4-8"
-        case fable5 = "claude-fable-5"
-        case sonnet5 = "claude-sonnet-5"
-        case opus47 = "claude-opus-4-7"
-        case opus46 = "claude-opus-4-6"
-        case sonnet46 = "claude-sonnet-4-6"
-        var id: String { rawValue }
-        var label: String {
-            switch self {
-            case .opus48: return "Opus 4.8"
-            case .fable5: return "Fable 5"
-            case .sonnet5: return "Sonnet 5"
-            case .opus47: return "Opus 4.7"
-            case .opus46: return "Opus 4.6"
-            case .sonnet46: return "Sonnet 4.6"
-            }
-        }
-        /// Fast mode is Opus 4.8 / 4.7 only.
-        var fastCapable: Bool { self == .opus48 || self == .opus47 }
-    }
-
-    /// OpenAI/Codex model presets for `--llm-model`. `gpt-5-codex` is the safe
-    /// default (code-optimized, Responses API); the point releases are presets
-    /// for convenience — the engine passes any `--llm-model` string through.
-    enum OpenAIModel: String, CaseIterable, Identifiable, Equatable {
-        case codex = "gpt-5-codex"
-        case gpt55 = "gpt-5.5"
-        case gpt54 = "gpt-5.4"
-        case gpt54mini = "gpt-5.4-mini"
-        var id: String { rawValue }
-        var label: String {
-            switch self {
-            case .codex: return "GPT-5-Codex"
-            case .gpt55: return "GPT-5.5"
-            case .gpt54: return "GPT-5.4"
-            case .gpt54mini: return "GPT-5.4 mini"
             }
         }
     }
@@ -199,16 +164,18 @@ struct ScanConfig: Equatable {
             case .claude:
                 // Claude is the engine default; omit --llm-provider so older
                 // CLIs that predate the flag still work.
-                args += ["--llm-model", model.rawValue, "--llm-effort", effort.rawValue]
-                if fast && model.fastCapable {
+                let claudeModel = model.trimmingCharacters(in: .whitespaces)
+                if !claudeModel.isEmpty { args += ["--llm-model", claudeModel] }
+                args += ["--llm-effort", effort.rawValue]
+                if fast && fastCapable {
                     args += ["--llm-speed", "fast"]
                 }
             case .openai:
-                args += [
-                    "--llm-provider", "openai",
-                    "--llm-model", openAIModel.rawValue,
-                    "--llm-effort", effort.rawValue,
-                ]
+                args += ["--llm-provider", "openai"]
+                let openAI = openAIModel.trimmingCharacters(in: .whitespaces)
+                if !openAI.isEmpty { args += ["--llm-model", openAI] }
+                args += ["--llm-effort", effort.rawValue]
+                if !accessProgram.isEmpty { args += ["--llm-access-program", accessProgram] }
                 // Fast mode is Claude-only; never emit it for OpenAI.
             case .local:
                 // An OpenAI-compatible server on this machine or network (≥ 0.8).

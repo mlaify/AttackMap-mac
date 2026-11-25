@@ -8,10 +8,12 @@ final class ScanConfigTests: XCTestCase {
         modules: [String] = [],
         llmMode: ScanConfig.LLMMode = .review,
         provider: ScanConfig.Provider = .claude,
-        model: ScanConfig.LLMModel = .opus48,
-        openAIModel: ScanConfig.OpenAIModel = .codex,
+        model: String = "claude-opus-5-5",
+        openAIModel: String = "",
+        accessProgram: String = "",
         effort: ScanConfig.Effort = .high,
-        fast: Bool = false
+        fast: Bool = false,
+        fastCapable: Bool = false
     ) -> ScanConfig {
         ScanConfig(
             repoURL: URL(fileURLWithPath: "/repo"),
@@ -21,8 +23,10 @@ final class ScanConfigTests: XCTestCase {
             provider: provider,
             model: model,
             openAIModel: openAIModel,
+            accessProgram: accessProgram,
             effort: effort,
-            fast: fast)
+            fast: fast,
+            fastCapable: fastCapable)
     }
 
     func testRequestsAllFormatsBecauseDiagramsReadMarkdown() {
@@ -53,34 +57,50 @@ final class ScanConfigTests: XCTestCase {
     }
 
     func testClaudeOmitsProviderFlagForBackwardCompatibility() {
-        let args = config(provider: .claude, model: .sonnet5).arguments(progressJSON: true)
+        let args = config(provider: .claude, model: "claude-sonnet-5").arguments(progressJSON: true)
         XCTAssertFalse(args.contains("--llm-provider"))
         XCTAssertEqual(value(after: "--llm-model", in: args), "claude-sonnet-5")
         XCTAssertEqual(value(after: "--llm-effort", in: args), "high")
     }
 
     func testClaudeFastEmittedOnlyOnCapableModel() {
-        let capable = config(model: .opus48, fast: true).arguments(progressJSON: true)
+        let capable = config(model: "claude-opus-5-5", fast: true, fastCapable: true).arguments(progressJSON: true)
         XCTAssertEqual(value(after: "--llm-speed", in: capable), "fast")
 
-        let incapable = config(model: .sonnet5, fast: true).arguments(progressJSON: true)
+        let incapable = config(model: "claude-sonnet-5", fast: true).arguments(progressJSON: true)
         XCTAssertFalse(incapable.contains("--llm-speed"))
     }
 
     func testOpenAIEmitsProviderAndModelAndNoFast() {
         let args = config(
-            provider: .openai, openAIModel: .gpt55, effort: .max, fast: true
+            provider: .openai, openAIModel: "gpt-6-sol", effort: .max, fast: true
         ).arguments(progressJSON: true)
         XCTAssertEqual(value(after: "--llm-provider", in: args), "openai")
-        XCTAssertEqual(value(after: "--llm-model", in: args), "gpt-5.5")
+        XCTAssertEqual(value(after: "--llm-model", in: args), "gpt-6-sol")
         XCTAssertEqual(value(after: "--llm-effort", in: args), "max")
         // Fast mode is Claude-only; never emitted for OpenAI even if toggled.
         XCTAssertFalse(args.contains("--llm-speed"))
     }
 
-    func testOpenAIDefaultModelIsCodex() {
+    func testOpenAIAccountDefaultOmitsModelAndAccessProgram() {
+        // Empty = the account's Codex default model and its own access-program setting (Daybreak).
         let args = config(provider: .openai).arguments(progressJSON: true)
-        XCTAssertEqual(value(after: "--llm-model", in: args), "gpt-5-codex")
+        XCTAssertFalse(args.contains("--llm-model"))
+        XCTAssertFalse(args.contains("--llm-access-program"))
+    }
+
+    func testOpenAIAccessProgramIsPassedThrough() {
+        let args = config(provider: .openai, openAIModel: "gpt-6-sol", accessProgram: "daybreak_blue")
+            .arguments(progressJSON: true)
+        XCTAssertEqual(value(after: "--llm-access-program", in: args), "daybreak_blue")
+        // Never for Claude: its access (CVP, Mythos) comes with the account.
+        let claude = config(provider: .claude, accessProgram: "daybreak_blue").arguments(progressJSON: true)
+        XCTAssertFalse(claude.contains("--llm-access-program"))
+    }
+
+    func testGatedClaudeModelIsPassedThrough() {
+        let args = config(model: "claude-mythos-5-2").arguments(progressJSON: true)
+        XCTAssertEqual(value(after: "--llm-model", in: args), "claude-mythos-5-2")
     }
 
     func testNoLLMModeEmitsNoLLMFlags() {

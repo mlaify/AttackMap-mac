@@ -100,6 +100,10 @@ enum CLILocator {
         var prComment: Bool = false
         var minConfidence: Bool = false
         var localLLM: Bool = false
+        /// `attackmap llm-models` (≥ 1.1): list the models the user's credentials can use.
+        var llmModels: Bool = false
+        /// `--llm-access-program` (≥ 1.1): Codex cyber access programs such as Daybreak.
+        var llmAccessProgram: Bool = false
     }
 
     /// Prefers the structured `attackmap capabilities` JSON (newer CLIs) and
@@ -121,7 +125,8 @@ enum CLILocator {
             failOnNewHigh: help.contains("--fail-on-new-high"),
             prComment: help.contains("--pr-comment"),
             minConfidence: help.contains("--min-confidence"),
-            localLLM: help.contains("--llm-base-url"))
+            localLLM: help.contains("--llm-base-url"),
+            llmAccessProgram: help.contains("--llm-access-program"))
     }
 
     /// Installed analyzer modules via `attackmap modules --json` (≥ 0.4.4).
@@ -144,6 +149,7 @@ enum CLILocator {
         }
         let schema: Int
         let analyze: Analyze
+        let commands: [String]?
     }
 
     static func capabilities(from structured: StructuredCapabilities) -> Capabilities {
@@ -162,7 +168,9 @@ enum CLILocator {
             failOnNewHigh: options.contains("--fail-on-new-high"),
             prComment: options.contains("--pr-comment"),
             minConfidence: options.contains("--min-confidence"),
-            localLLM: options.contains("--llm-base-url"))
+            localLLM: options.contains("--llm-base-url"),
+            llmModels: structured.commands?.contains("llm-models") ?? false,
+            llmAccessProgram: options.contains("--llm-access-program"))
     }
 
     private static func structuredCapabilities(executable: URL) -> Capabilities? {
