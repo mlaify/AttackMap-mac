@@ -263,7 +263,6 @@ struct ContentView: View {
         let words = key.replacingOccurrences(of: "_", with: " ")
         return words.prefix(1).uppercased() + words.dropFirst()
     }
-    }
 
     private var repoButtonTitle: String {
         if model.isFleet { return "\(model.fleetRepoURLs.count) repos (fleet)" }
