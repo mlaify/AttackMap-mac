@@ -8,8 +8,8 @@ final class ScanConfigTests: XCTestCase {
         modules: [String] = [],
         llmMode: ScanConfig.LLMMode = .review,
         provider: ScanConfig.Provider = .claude,
-        model: ScanConfig.LLMModel = .opus48,
-        openAIModel: ScanConfig.OpenAIModel = .codex,
+        model: ScanConfig.LLMModel = .opus55,
+        openAIModel: ScanConfig.OpenAIModel = .accountDefault,
         effort: ScanConfig.Effort = .high,
         fast: Bool = false
     ) -> ScanConfig {
@@ -60,7 +60,7 @@ final class ScanConfigTests: XCTestCase {
     }
 
     func testClaudeFastEmittedOnlyOnCapableModel() {
-        let capable = config(model: .opus48, fast: true).arguments(progressJSON: true)
+        let capable = config(model: .opus55, fast: true).arguments(progressJSON: true)
         XCTAssertEqual(value(after: "--llm-speed", in: capable), "fast")
 
         let incapable = config(model: .sonnet5, fast: true).arguments(progressJSON: true)
@@ -69,18 +69,20 @@ final class ScanConfigTests: XCTestCase {
 
     func testOpenAIEmitsProviderAndModelAndNoFast() {
         let args = config(
-            provider: .openai, openAIModel: .gpt55, effort: .max, fast: true
+            provider: .openai, openAIModel: .gpt62sol, effort: .max, fast: true
         ).arguments(progressJSON: true)
         XCTAssertEqual(value(after: "--llm-provider", in: args), "openai")
-        XCTAssertEqual(value(after: "--llm-model", in: args), "gpt-5.5")
+        XCTAssertEqual(value(after: "--llm-model", in: args), "gpt-6.2-sol")
         XCTAssertEqual(value(after: "--llm-effort", in: args), "max")
         // Fast mode is Claude-only; never emitted for OpenAI even if toggled.
         XCTAssertFalse(args.contains("--llm-speed"))
     }
 
-    func testOpenAIDefaultModelIsCodex() {
+    func testOpenAIDefaultLetsCodexPickItsModel() {
+        // The default passes no --llm-model, so the codex CLI uses its own current default.
         let args = config(provider: .openai).arguments(progressJSON: true)
-        XCTAssertEqual(value(after: "--llm-model", in: args), "gpt-5-codex")
+        XCTAssertEqual(value(after: "--llm-provider", in: args), "openai")
+        XCTAssertFalse(args.contains("--llm-model"))
     }
 
     func testNoLLMModeEmitsNoLLMFlags() {
