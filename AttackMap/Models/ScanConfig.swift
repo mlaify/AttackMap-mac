@@ -11,10 +11,17 @@ struct ScanConfig: Equatable {
     var modules: [String] = []
     var llmMode: LLMMode = .none
     var provider: Provider = .claude
-    var model: LLMModel = .opus55
-    var openAIModel: OpenAIModel = .accountDefault
+    /// Claude model ID for `--llm-model`; any ID the account can use, gated ones included.
+    var model: String = "claude-opus-5-5"
+    /// OpenAI model ID; empty lets the engine use the account's Codex default.
+    var openAIModel: String = ""
+    /// Settings for installed LLM extensions (`--llm-option KEY=VALUE`, ≥ 1.1).
+    /// Empty values are left out, so the extension's own default applies.
+    var llmOptions: [String: String] = [:]
     var effort: Effort = .high
     var fast: Bool = false
+    /// Whether the chosen Claude model has fast mode (from `llm-models`, else by ID).
+    var fastCapable: Bool = false
     /// Recall mode (`--recall`, ≥ 0.4.20): widen taint discovery. The extra
     /// reach is marked SPECULATIVE by the engine and kept out of the high-severity
     /// gate; pair with Hunt + verify to adjudicate it.
@@ -76,48 +83,6 @@ struct ScanConfig: Equatable {
             case .claude: return "Claude"
             case .openai: return "OpenAI / Codex"
             case .local: return "Local model"
-            }
-        }
-    }
-
-    /// Claude models the engine accepts for `--llm-model` (verified IDs).
-    enum LLMModel: String, CaseIterable, Identifiable, Equatable {
-        case opus55 = "claude-opus-5-5"
-        case fable52 = "claude-fable-5-2"
-        case sonnet55 = "claude-sonnet-5-5"
-        case haiku55 = "claude-haiku-5-5"
-        case opus5 = "claude-opus-5"
-        case fable5 = "claude-fable-5"
-        case sonnet5 = "claude-sonnet-5"
-        case opus48 = "claude-opus-4-8"
-        var id: String { rawValue }
-        var label: String {
-            switch self {
-            case .opus55: return "Opus 5.5"
-            case .fable52: return "Fable 5.2"
-            case .sonnet55: return "Sonnet 5.5"
-            case .haiku55: return "Haiku 5.5"
-            case .opus5: return "Opus 5"
-            case .fable5: return "Fable 5"
-            case .sonnet5: return "Sonnet 5"
-            case .opus48: return "Opus 4.8"
-            }
-        }
-        /// Fast mode: GA on Opus 5.5 and Fable 5.2, a research preview on Opus 5.
-        var fastCapable: Bool { self == .opus55 || self == .fable52 || self == .opus5 }
-    }
-
-    /// OpenAI/Codex model for `--llm-model`. `accountDefault` passes no model, so
-    /// the `codex` CLI uses its own current default (the API backend picks one);
-    /// the engine passes any other ID through.
-    enum OpenAIModel: String, CaseIterable, Identifiable, Equatable {
-        case accountDefault = ""
-        case gpt62sol = "gpt-6.2-sol"
-        var id: String { rawValue }
-        var label: String {
-            switch self {
-            case .accountDefault: return "Codex default"
-            case .gpt62sol: return "GPT-6.2-Sol"
             }
         }
     }
@@ -199,13 +164,16 @@ struct ScanConfig: Equatable {
             case .claude:
                 // Claude is the engine default; omit --llm-provider so older
                 // CLIs that predate the flag still work.
-                args += ["--llm-model", model.rawValue, "--llm-effort", effort.rawValue]
-                if fast && model.fastCapable {
+                let claudeModel = model.trimmingCharacters(in: .whitespaces)
+                if !claudeModel.isEmpty { args += ["--llm-model", claudeModel] }
+                args += ["--llm-effort", effort.rawValue]
+                if fast && fastCapable {
                     args += ["--llm-speed", "fast"]
                 }
             case .openai:
                 args += ["--llm-provider", "openai"]
-                if openAIModel != .accountDefault { args += ["--llm-model", openAIModel.rawValue] }
+                let openAI = openAIModel.trimmingCharacters(in: .whitespaces)
+                if !openAI.isEmpty { args += ["--llm-model", openAI] }
                 args += ["--llm-effort", effort.rawValue]
                 // Fast mode is Claude-only; never emit it for OpenAI.
             case .local:
@@ -213,6 +181,9 @@ struct ScanConfig: Equatable {
                 args += ["--llm-provider", "local", "--llm-model", localModel]
                 let url = localBaseURL.trimmingCharacters(in: .whitespaces)
                 if !url.isEmpty { args += ["--llm-base-url", url] }
+            }
+            for (key, value) in llmOptions.sorted(by: { $0.key < $1.key }) where !value.isEmpty {
+                args += ["--llm-option", "\(key)=\(value)"]
             }
         }
         if let baselineURL {

@@ -55,6 +55,18 @@ final class CLILocatorTests: XCTestCase {
         XCTAssertFalse(caps.triage)
     }
 
+    func testReadsExtensionModelListAndOptions() async throws {
+        let exe = try script("""
+        if [ "$1" = capabilities ]; then
+          echo '{"schema": 1, "version": "1.1.0", "commands": ["analyze", "llm-models"], "analyze": {"options": ["--llm-option"], "multi_repo": true}, "progress_protocol": 1, "extensions": {"cli": ["acme"], "llm": ["acme"], "llm_options": {"tier": {"description": "Tier", "choices": ["a", "b"]}}}}'
+        fi
+        """)
+        let caps = await offMain { CLILocator.capabilities(executable: exe) }
+        XCTAssertTrue(caps.llmModels)
+        XCTAssertTrue(caps.llmOption)
+        XCTAssertEqual(caps.llmOptions["tier"]?.choices, ["a", "b"])
+    }
+
     func testFallsBackToHelpForOlderCLIs() async throws {
         let exe = try script("""
         if [ "$1" = capabilities ]; then echo "No such command" >&2; exit 2; fi

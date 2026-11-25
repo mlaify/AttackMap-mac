@@ -7,6 +7,10 @@ import UniformTypeIdentifiers
 struct ContentView: View {
     @State private var model = ScanViewModel()
     @State private var section: Section? = .overview
+    /// The model pickers' "Custom model ID…" entry is selected.
+    @State private var customClaudeModel = false
+    @State private var customOpenAIModel = false
+    private static let customTag = "__custom__"
 
     enum Section: String, CaseIterable, Identifiable, Hashable {
         case overview = "Overview"
@@ -130,18 +134,12 @@ struct ContentView: View {
             }
             .frame(maxWidth: 190)
 
-            // The model list depends on the provider.
+            // The model list is what the user's credentials can use (attackmap llm-models).
             switch model.provider {
             case .claude:
-                Picker("Model", selection: $model.model) {
-                    ForEach(ScanConfig.LLMModel.allCases) { Text($0.label).tag($0) }
-                }
-                .frame(maxWidth: 190)
+                claudeModelPicker
             case .openai:
-                Picker("Model", selection: $model.openAIModel) {
-                    ForEach(ScanConfig.OpenAIModel.allCases) { Text($0.label).tag($0) }
-                }
-                .frame(maxWidth: 190)
+                openAIModelPicker
             case .local:
                 TextField("Model (e.g. qwen2.5-coder:32b)", text: $model.localModel)
                     .frame(maxWidth: 220)
@@ -158,20 +156,112 @@ struct ContentView: View {
                 .frame(maxWidth: 180)
             }
 
-            // Fast mode is Claude-only (Opus 5.5, Fable 5.2, Opus 5); hidden for OpenAI.
+            // Fast mode is Claude-only; hidden for OpenAI.
             if model.provider == .claude {
                 Toggle("Fast", isOn: $model.fast)
-                    .disabled(!model.model.fastCapable)
-                    .help(model.model.fastCapable
+                    .disabled(!model.fastCapable)
+                    .help(model.fastCapable
                           ? "Up to 2.5× faster output (premium). Needs an API key in Settings."
                           : "Fast mode is available on Opus 5.5, Fable 5.2 and Opus 5.")
             }
 
+            // Options declared by installed LLM extensions (`--llm-option`), rendered generically.
+            if model.capabilities?.llmOption ?? false {
+                ForEach(llmOptionKeys, id: \.self) { key in
+                    if let choices = model.capabilities?.llmOptions[key]?.choices, !choices.isEmpty {
+                        Picker(Self.optionLabel(key), selection: Binding(
+                            get: { model.llmOptionValues[key] ?? "" },
+                            set: { model.llmOptionValues[key] = $0 })) {
+                            Text("Default").tag("")
+                            ForEach(choices, id: \.self) { Text($0).tag($0) }
+                        }
+                        .frame(maxWidth: 220)
+                        .help(model.capabilities?.llmOptions[key]?.description ?? key)
+                        .accessibilityIdentifier("llmOption.\(key)")
+                    }
+                }
+            }
+
+            if model.provider != .local {
+                Button { model.loadLLMModels() } label: {
+                    if model.loadingModels { ProgressView().controlSize(.small) } else { Image(systemName: "arrow.clockwise") }
+                }
+                .buttonStyle(.borderless)
+                .help("Refresh the models your account can use")
+                .accessibilityIdentifier("refreshModels")
+                if let message = model.modelListMessage {
+                    Image(systemName: "info.circle").help(message)
+                }
+            }
+
             Spacer()
         }
+        .task(id: model.provider) { model.loadLLMModels() }
         .padding(.horizontal, 12)
         .frame(height: 34)
         .disabled(model.isScanning)
+    }
+
+    private var claudeModelPicker: some View {
+        let listed = model.claudeModels.contains { $0.id == model.model }
+        let custom = customClaudeModel || !listed
+        return HStack(spacing: 6) {
+            Picker("Model", selection: Binding(
+                get: { custom ? Self.customTag : model.model },
+                set: { choice in
+                    customClaudeModel = choice == Self.customTag
+                    if choice != Self.customTag { model.model = choice }
+                })) {
+                ForEach(model.claudeModels) { Text($0.label).tag($0.id) }
+                Divider()
+                Text("Custom model ID…").tag(Self.customTag)
+            }
+            .frame(maxWidth: 280)
+            .accessibilityIdentifier("claudeModel")
+            .help(model.selectedModelOption?.gated.map { "Restricted: \($0). It works only if your account has it." }
+                  ?? "Models your credentials can use. Any model ID works as a custom model.")
+            if custom {
+                TextField("Model ID, e.g. claude-opus-5-5", text: $model.model)
+                    .frame(maxWidth: 200)
+                    .accessibilityIdentifier("claudeModelID")
+            }
+        }
+    }
+
+    private var openAIModelPicker: some View {
+        let listed = model.openAIModel.isEmpty || model.openAIModels.contains { $0.id == model.openAIModel }
+        let custom = customOpenAIModel || !listed
+        return HStack(spacing: 6) {
+            Picker("Model", selection: Binding(
+                get: { custom ? Self.customTag : model.openAIModel },
+                set: { choice in
+                    customOpenAIModel = choice == Self.customTag
+                    if choice != Self.customTag { model.openAIModel = choice }
+                })) {
+                Text("Codex default").tag("")
+                ForEach(model.openAIModels) { Text($0.label).tag($0.id) }
+                Divider()
+                Text("Custom model ID…").tag(Self.customTag)
+            }
+            .frame(maxWidth: 280)
+            .accessibilityIdentifier("openAIModel")
+            .help("Models your Codex / OpenAI account can use. Codex default leaves the choice to the codex CLI.")
+            if custom {
+                TextField("Model ID", text: $model.openAIModel)
+                    .frame(maxWidth: 160)
+                    .accessibilityIdentifier("openAIModelID")
+            }
+        }
+    }
+
+    private var llmOptionKeys: [String] {
+        (model.capabilities?.llmOptions.keys).map { Array($0).sorted() } ?? []
+    }
+
+    /// `some_option` → "Some option".
+    private static func optionLabel(_ key: String) -> String {
+        let words = key.replacingOccurrences(of: "_", with: " ")
+        return words.prefix(1).uppercased() + words.dropFirst()
     }
 
     private var repoButtonTitle: String {

@@ -100,6 +100,18 @@ enum CLILocator {
         var prComment: Bool = false
         var minConfidence: Bool = false
         var localLLM: Bool = false
+        /// `attackmap llm-models` (from an installed extension): the models the user's credentials can use.
+        var llmModels: Bool = false
+        /// `--llm-option KEY=VALUE` (≥ 1.1): settings for installed LLM extensions.
+        var llmOption: Bool = false
+        /// The `--llm-option` keys installed extensions declare (`capabilities.extensions.llm_options`).
+        var llmOptions: [String: LLMOptionSpec] = [:]
+    }
+
+    /// One `--llm-option` key an installed extension declares.
+    struct LLMOptionSpec: Decodable, Equatable {
+        let description: String?
+        let choices: [String]?
     }
 
     /// Prefers the structured `attackmap capabilities` JSON (newer CLIs) and
@@ -121,7 +133,8 @@ enum CLILocator {
             failOnNewHigh: help.contains("--fail-on-new-high"),
             prComment: help.contains("--pr-comment"),
             minConfidence: help.contains("--min-confidence"),
-            localLLM: help.contains("--llm-base-url"))
+            localLLM: help.contains("--llm-base-url"),
+            llmOption: help.contains("--llm-option"))
     }
 
     /// Installed analyzer modules via `attackmap modules --json` (≥ 0.4.4).
@@ -142,8 +155,14 @@ enum CLILocator {
             let multiRepo: Bool
             enum CodingKeys: String, CodingKey { case options, multiRepo = "multi_repo" }
         }
+        struct Extensions: Decodable {
+            let llmOptions: [String: LLMOptionSpec]?
+            enum CodingKeys: String, CodingKey { case llmOptions = "llm_options" }
+        }
         let schema: Int
         let analyze: Analyze
+        let commands: [String]?
+        let extensions: Extensions?
     }
 
     static func capabilities(from structured: StructuredCapabilities) -> Capabilities {
@@ -162,7 +181,10 @@ enum CLILocator {
             failOnNewHigh: options.contains("--fail-on-new-high"),
             prComment: options.contains("--pr-comment"),
             minConfidence: options.contains("--min-confidence"),
-            localLLM: options.contains("--llm-base-url"))
+            localLLM: options.contains("--llm-base-url"),
+            llmModels: structured.commands?.contains("llm-models") ?? false,
+            llmOption: options.contains("--llm-option"),
+            llmOptions: structured.extensions?.llmOptions ?? [:])
     }
 
     private static func structuredCapabilities(executable: URL) -> Capabilities? {
