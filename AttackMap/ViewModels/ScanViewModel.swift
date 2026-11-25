@@ -23,8 +23,8 @@ final class ScanViewModel {
     var selectedModules: Set<String> = []
     var llmMode: ScanConfig.LLMMode = .none
     var provider: ScanConfig.Provider = .claude
-    var model: ScanConfig.LLMModel = .opus48
-    var openAIModel: ScanConfig.OpenAIModel = .codex
+    var model: ScanConfig.LLMModel = .opus55
+    var openAIModel: ScanConfig.OpenAIModel = .accountDefault
     var effort: ScanConfig.Effort = .high
     var minConfidence: ScanConfig.MinConfidence = .low
     /// Remembered across launches: the local model and its server URL.

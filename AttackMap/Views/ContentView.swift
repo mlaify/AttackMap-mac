@@ -158,13 +158,13 @@ struct ContentView: View {
                 .frame(maxWidth: 180)
             }
 
-            // Fast mode is Claude-only (Opus 4.8/4.7); hidden for OpenAI.
+            // Fast mode is Claude-only (Opus 5.5, Fable 5.2, Opus 5); hidden for OpenAI.
             if model.provider == .claude {
                 Toggle("Fast", isOn: $model.fast)
                     .disabled(!model.model.fastCapable)
                     .help(model.model.fastCapable
-                          ? "~2.5× faster output (premium). Needs an API key in Settings."
-                          : "Fast mode is only available on Opus 4.8 / 4.7.")
+                          ? "Up to 2.5× faster output (premium). Needs an API key in Settings."
+                          : "Fast mode is available on Opus 5.5, Fable 5.2 and Opus 5.")
             }
 
             Spacer()
