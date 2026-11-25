@@ -49,6 +49,25 @@ final class LiveCLIFixtureTests: XCTestCase {
 
     /// The engine emits attack_techniques as objects
     /// ({technique_id, name, tactic, url}); the app decodes [String].
+    /// `live-report-0100`: attackmap 0.10.0 from PyPI (report schema 1.2.0), run as
+    /// ScanConfig.arguments() builds it (`--format all --no-progress`) over a small
+    /// Express app with an XXE parse, a plaintext password insert and a SQL query.
+    /// Kinds added after the app's last release must still decode.
+    func testCore0100ReportDecodes() throws {
+        let report = try Report.load(from: url("live-report-0100"))
+        XCTAssertEqual(report.schemaVersion, "1.2.0")
+        XCTAssertEqual(report.findings.count, try rawFindings("live-report-0100").count)
+        XCTAssertEqual(report.findings.count, 10)
+        for f in report.findings {
+            XCTAssertNotEqual(f.title, "(untitled)")
+            XCTAssertNotEqual(Severity(f.severity), .unknown)
+        }
+        XCTAssertTrue(report.findings.contains { $0.title == "Password stored in plaintext" })
+        let scan = try XCTUnwrap(report.scan)
+        XCTAssertTrue(scan.taintChains.contains { $0.sinkKind == "xml_external_entity" })
+        XCTAssertTrue(scan.taintChains.contains { $0.sinkKind == "sql_execute" })
+    }
+
     func testAttackTechniquesSurvive() throws {
         let report = try Report.load(from: url("live-report"))
         let raw = try rawFindings("live-report")
