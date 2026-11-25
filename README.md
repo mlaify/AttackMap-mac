@@ -16,8 +16,9 @@ you already have installed.
 User guide: **[docs.mlaify.io/gui](https://docs.mlaify.io/gui/)** · full AttackMap
 documentation: **[docs.mlaify.io](https://docs.mlaify.io)**.
 
-> **Status:** v1.0.0, **stable**, released with
-> **attackmap 1.0.0**. CI runs the live contract test against AttackMap `main`
+> **Status:** v1.1.0, **stable**, released with
+> **attackmap 1.1.0**. The model pickers list the models your account can use when the
+> installed attackmap provides them, and show options that installed extensions declare. CI runs the live contract test against AttackMap `main`
 > and decodes a real 0.10.0 report (schema 1.2.0). It spawns
 > the CLI and decodes its report: Overview + Findings master-detail, exploitability / attack-path / attack-surface / review
 > views, Mermaid diagrams, Settings (CLI path + API key), recent scans, and
